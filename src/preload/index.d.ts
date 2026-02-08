@@ -1,0 +1,75 @@
+import { ElectronAPI } from '@electron-toolkit/preload'
+import type {
+  Session,
+  Message,
+  Provider,
+  FileNode,
+  Skill,
+  Command,
+  MCPConfig,
+  PermissionMode,
+  StreamEvent,
+  IPCResponse,
+  FileAttachment
+} from '../shared/types'
+
+interface API {
+  chat: {
+    sendMessage: (sessionId: string, message: string, files?: FileAttachment[]) => Promise<IPCResponse<void>>
+    onStream: (callback: (event: StreamEvent) => void) => () => void
+    respondPermission: (requestId: string, approved: boolean, input?: Record<string, unknown>) => Promise<IPCResponse<void>>
+    setPermissionMode: (mode: PermissionMode) => Promise<IPCResponse<void>>
+    abort: (sessionId: string) => Promise<IPCResponse<void>>
+  }
+  sessions: {
+    create: (workspacePath: string, name: string) => Promise<IPCResponse<Session>>
+    list: () => Promise<IPCResponse<Session[]>>
+    get: (sessionId: string) => Promise<IPCResponse<Session>>
+    update: (sessionId: string, data: Partial<Session>) => Promise<IPCResponse<void>>
+    delete: (sessionId: string) => Promise<IPCResponse<void>>
+    getMessages: (sessionId: string) => Promise<IPCResponse<Message[]>>
+  }
+  workspace: {
+    select: (path: string) => Promise<IPCResponse<void>>
+    getCurrent: () => Promise<IPCResponse<string>>
+    getFileTree: () => Promise<IPCResponse<FileNode[]>>
+    getFileContent: (path: string) => Promise<IPCResponse<{ content: string; size: number; type: string }>>
+    onFileChange: (callback: (event: { path: string; type: string }) => void) => () => void
+  }
+  settings: {
+    getProviders: () => Promise<IPCResponse<Provider[]>>
+    createProvider: (provider: Omit<Provider, 'id' | 'createdAt' | 'updatedAt'>) => Promise<IPCResponse<Provider>>
+    updateProvider: (id: string, provider: Partial<Provider>) => Promise<IPCResponse<void>>
+    deleteProvider: (id: string) => Promise<IPCResponse<void>>
+    activateProvider: (id: string) => Promise<IPCResponse<void>>
+    getActiveProvider: () => Promise<IPCResponse<Provider>>
+    syncToFile: (providerId: string) => Promise<IPCResponse<void>>
+  }
+  skills: {
+    list: (scope: 'global' | 'workspace') => Promise<IPCResponse<Skill[]>>
+    get: (name: string, scope: 'global' | 'workspace') => Promise<IPCResponse<Skill>>
+    create: (name: string, content: string, scope: 'global' | 'workspace') => Promise<IPCResponse<void>>
+    update: (name: string, content: string, scope: 'global' | 'workspace') => Promise<IPCResponse<void>>
+    delete: (name: string, scope: 'global' | 'workspace') => Promise<IPCResponse<void>>
+    onSkillsChange: (callback: () => void) => () => void
+  }
+  commands: {
+    list: (scope: 'global' | 'workspace') => Promise<IPCResponse<Command[]>>
+    get: (name: string, scope: 'global' | 'workspace') => Promise<IPCResponse<Command>>
+    create: (name: string, content: string, scope: 'global' | 'workspace') => Promise<IPCResponse<void>>
+    delete: (name: string, scope: 'global' | 'workspace') => Promise<IPCResponse<void>>
+    onCommandsChange: (callback: () => void) => () => void
+  }
+  mcp: {
+    getConfig: (scope: 'global' | 'workspace') => Promise<IPCResponse<MCPConfig>>
+    updateConfig: (config: MCPConfig, scope: 'global' | 'workspace') => Promise<IPCResponse<void>>
+  }
+  selectDirectory: () => Promise<string | null>
+}
+
+declare global {
+  interface Window {
+    electron: ElectronAPI
+    api: API
+  }
+}
