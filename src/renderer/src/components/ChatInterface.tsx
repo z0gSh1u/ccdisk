@@ -6,10 +6,12 @@ import { useState, useEffect, useRef } from 'react'
 import { useChatStore } from '../stores/chat-store'
 import { Button, Input, ScrollArea } from './ui'
 import type { ChatMessage } from '../stores/chat-store'
+import { User, Sparkles, ArrowUp } from 'lucide-react'
 
 export function ChatInterface() {
-  const { currentSession, sendMessage, pendingPermissionRequest, respondToPermission } =
+  const { sessions, currentSessionId, sendMessage, pendingPermissionRequest, respondToPermission } =
     useChatStore()
+  const currentSession = sessions.find((session) => session.id === currentSessionId) || null
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -43,76 +45,112 @@ export function ChatInterface() {
 
   if (!currentSession) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center text-gray-500 dark:text-gray-400">
-          <div className="mb-2 text-lg font-medium">No session selected</div>
-          <div className="text-sm">Select or create a session to start chatting</div>
+      <div className="flex h-full flex-col items-center justify-center bg-[var(--bg-primary)]">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-color)] text-white shadow-lg mb-6">
+          <Sparkles className="h-6 w-6" />
+        </div>
+        <div className="text-center max-w-md px-6">
+          <h2 className="mb-2 text-2xl font-serif text-[var(--text-primary)]">
+            Welcome to Claude Code
+          </h2>
+          <p className="text-[var(--text-secondary)]">
+            Select a session from the sidebar or start a new conversation to begin collaborating.
+          </p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-[var(--bg-primary)] relative">
       {/* Messages area */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="mx-auto max-w-3xl space-y-4">
+      <ScrollArea className="flex-1">
+        <div className="mx-auto max-w-3xl px-4 py-8 space-y-8">
           {currentSession.messages.map((message) => (
             <MessageBubble key={message.id} message={message} />
           ))}
-          <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} className="h-4" />
         </div>
       </ScrollArea>
 
-      {/* Permission request dialog */}
+      {/* Permission request dialog - Floating */}
       {pendingPermissionRequest && (
-        <div className="border-t border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-900 dark:bg-yellow-950">
-          <div className="mx-auto max-w-3xl">
-            <div className="mb-2 font-medium text-yellow-900 dark:text-yellow-100">
-              Permission Request
-            </div>
-            <div className="mb-3 text-sm text-yellow-800 dark:text-yellow-200">
-              <div className="font-medium">{pendingPermissionRequest.toolName}</div>
-              <div className="text-xs">{pendingPermissionRequest.description}</div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="primary"
-                onClick={() =>
-                  respondToPermission(pendingPermissionRequest.permissionRequestId, true)
-                }
-              >
-                Allow
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() =>
-                  respondToPermission(pendingPermissionRequest.permissionRequestId, false)
-                }
-              >
-                Deny
-              </Button>
+        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-20">
+          <div className="rounded-xl border border-yellow-200 bg-yellow-50/95 backdrop-blur-sm p-4 shadow-lg dark:border-yellow-900 dark:bg-yellow-950/90">
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-yellow-100 p-2 text-yellow-600 dark:bg-yellow-900/50 dark:text-yellow-400">
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <div className="flex-1">
+                <div className="mb-1 font-semibold text-yellow-900 dark:text-yellow-100">
+                  Tool Permission Request
+                </div>
+                <div className="mb-3 text-sm text-yellow-800 dark:text-yellow-200">
+                  <span className="font-mono text-xs bg-yellow-100/50 px-1 py-0.5 rounded mr-1">
+                    {pendingPermissionRequest.toolName}
+                  </span>
+                  {pendingPermissionRequest.description}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="bg-yellow-600 hover:bg-yellow-700 text-white border-none shadow-sm"
+                    onClick={() =>
+                      respondToPermission(pendingPermissionRequest.permissionRequestId, true)
+                    }
+                  >
+                    Allow Access
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-yellow-700 hover:bg-yellow-100 hover:text-yellow-900 dark:text-yellow-300 dark:hover:bg-yellow-900/50"
+                    onClick={() =>
+                      respondToPermission(pendingPermissionRequest.permissionRequestId, false)
+                    }
+                  >
+                    Deny
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {/* Input area */}
-      <div className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4">
-        <div className="mx-auto max-w-3xl flex gap-2">
-          <Input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type your message..."
-            disabled={isLoading}
-            className="flex-1"
-          />
-          <Button onClick={handleSend} disabled={isLoading || !inputValue.trim()}>
-            {isLoading ? 'Sending...' : 'Send'}
-          </Button>
+      <div className="p-4 bg-[var(--bg-primary)]/80 backdrop-blur-md sticky bottom-0 z-10">
+        <div className="mx-auto max-w-3xl relative">
+          <div className="relative rounded-2xl border border-[var(--border-strong)] bg-white shadow-sm transition-shadow focus-within:shadow-md focus-within:border-[var(--accent-color)] overflow-hidden">
+            <Input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask Claude..."
+              disabled={isLoading}
+              className="w-full border-none bg-transparent py-4 pl-4 pr-12 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:ring-0 text-base"
+            />
+            <div className="absolute right-2 bottom-2">
+              <Button
+                onClick={handleSend}
+                disabled={isLoading || !inputValue.trim()}
+                className={`h-8 w-8 p-0 rounded-lg transition-colors flex items-center justify-center ${
+                  !inputValue.trim()
+                    ? 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                    : 'bg-[var(--accent-color)] text-white hover:bg-[var(--accent-hover)] shadow-sm'
+                }`}
+              >
+                {isLoading ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <ArrowUp className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+          <div className="mt-2 text-center text-xs text-[var(--text-tertiary)]">
+            Claude can make mistakes. Please use with caution.
+          </div>
         </div>
       </div>
     </div>
@@ -143,22 +181,42 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   }
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`group flex gap-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
+      {!isUser && (
+        <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-lg bg-[var(--accent-color)] text-white shadow-sm">
+          <Sparkles className="h-5 w-5" />
+        </div>
+      )}
+
       <div
-        className={`max-w-[80%] rounded-lg px-4 py-2 ${
+        className={`relative max-w-[85%] ${
           isUser
-            ? 'bg-blue-600 text-white'
-            : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100'
+            ? 'bg-[var(--bg-accent)] text-[var(--text-primary)] px-5 py-3 rounded-2xl rounded-tr-sm'
+            : 'text-[var(--text-primary)] py-1'
         }`}
       >
-        <div className="text-sm whitespace-pre-wrap">{textContent}</div>
+        <div
+          className={`text-base leading-relaxed whitespace-pre-wrap ${!isUser && 'font-normal'}`}
+        >
+          {textContent}
+        </div>
+
         {message.isStreaming && (
-          <div className="mt-1 flex items-center gap-1 text-xs opacity-70">
-            <div className="animate-pulse">●</div>
-            <span>Streaming...</span>
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-[var(--accent-color)] font-medium">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-color)] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent-color)]"></span>
+            </span>
+            Thinking...
           </div>
         )}
       </div>
+
+      {isUser && (
+        <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-lg bg-[var(--bg-accent)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
+          <User className="h-5 w-5" />
+        </div>
+      )}
     </div>
   )
 }

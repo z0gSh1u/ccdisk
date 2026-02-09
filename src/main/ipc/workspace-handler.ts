@@ -68,10 +68,7 @@ async function buildFileTree(
 /**
  * Register workspace IPC handlers
  */
-export function registerWorkspaceHandlers(
-  win: BrowserWindow,
-  fileWatcher: FileWatcherService
-) {
+export function registerWorkspaceHandlers(win: BrowserWindow, fileWatcher: FileWatcherService) {
   // Select directory dialog (utility)
   ipcMain.handle(IPC_CHANNELS.SELECT_DIRECTORY, async (): Promise<string | null> => {
     try {
@@ -91,59 +88,80 @@ export function registerWorkspaceHandlers(
   })
 
   // Select workspace directory
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_SELECT, async (): Promise<IPCResponse<string | null>> => {
-    try {
-      const result = await dialog.showOpenDialog(win, {
-        properties: ['openDirectory']
-      })
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_SELECT,
+    async (_event, path?: string): Promise<IPCResponse<string | null>> => {
+      try {
+        let selectedPath: string | null = null
 
-      if (result.canceled) {
-        return { success: true, data: null }
+        // If path is provided, use it directly
+        if (path) {
+          selectedPath = path
+        } else {
+          // Otherwise, show dialog to select directory
+          const result = await dialog.showOpenDialog(win, {
+            properties: ['openDirectory']
+          })
+
+          if (result.canceled) {
+            return { success: true, data: null }
+          }
+
+          selectedPath = result.filePaths[0]
+        }
+
+        fileWatcher.setWorkspacePath(selectedPath)
+        await fileWatcher.startWatching()
+
+        return { success: true, data: selectedPath }
+      } catch (error) {
+        console.error('WORKSPACE_SELECT error:', error)
+        return { success: false, error: (error as Error).message }
       }
-
-      const selectedPath = result.filePaths[0]
-      fileWatcher.setWorkspacePath(selectedPath)
-      await fileWatcher.startWatching()
-
-      return { success: true, data: selectedPath }
-    } catch (error) {
-      console.error('WORKSPACE_SELECT error:', error)
-      return { success: false, error: (error as Error).message }
     }
-  })
+  )
 
   // Get current workspace path
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_GET_CURRENT, async (): Promise<IPCResponse<string | null>> => {
-    try {
-      const workspacePath = fileWatcher.getWorkspacePath()
-      return { success: true, data: workspacePath }
-    } catch (error) {
-      console.error('WORKSPACE_GET_CURRENT error:', error)
-      return { success: false, error: (error as Error).message }
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_GET_CURRENT,
+    async (): Promise<IPCResponse<string | null>> => {
+      try {
+        const workspacePath = fileWatcher.getWorkspacePath()
+        return { success: true, data: workspacePath }
+      } catch (error) {
+        console.error('WORKSPACE_GET_CURRENT error:', error)
+        return { success: false, error: (error as Error).message }
+      }
     }
-  })
+  )
 
   // Get file tree
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_GET_FILE_TREE, async (): Promise<IPCResponse<FileNode[]>> => {
-    try {
-      const workspacePath = fileWatcher.getWorkspacePath()
-      
-      if (!workspacePath) {
-        return { success: false, error: 'No workspace selected' }
-      }
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_GET_FILE_TREE,
+    async (): Promise<IPCResponse<FileNode[]>> => {
+      try {
+        const workspacePath = fileWatcher.getWorkspacePath()
 
-      const tree = await buildFileTree(workspacePath)
-      return { success: true, data: tree }
-    } catch (error) {
-      console.error('WORKSPACE_GET_FILE_TREE error:', error)
-      return { success: false, error: (error as Error).message }
+        if (!workspacePath) {
+          return { success: false, error: 'No workspace selected' }
+        }
+
+        const tree = await buildFileTree(workspacePath)
+        return { success: true, data: tree }
+      } catch (error) {
+        console.error('WORKSPACE_GET_FILE_TREE error:', error)
+        return { success: false, error: (error as Error).message }
+      }
     }
-  })
+  )
 
   // Get file content
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_GET_FILE_CONTENT,
-    async (_event, filePath: string): Promise<IPCResponse<{ content: string; size: number; type: string }>> => {
+    async (
+      _event,
+      filePath: string
+    ): Promise<IPCResponse<{ content: string; size: number; type: string }>> => {
       try {
         const workspacePath = fileWatcher.getWorkspacePath()
 

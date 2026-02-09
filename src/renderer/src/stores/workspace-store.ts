@@ -35,8 +35,8 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
     set({ isLoading: true })
     try {
       const response = await window.api.workspace.select(path)
-      if (response.success) {
-        set({ currentWorkspace: path })
+      if (response.success && response.data) {
+        set({ currentWorkspace: response.data })
         await get().loadFileTree()
       } else {
         console.error('Failed to select workspace:', response.error)

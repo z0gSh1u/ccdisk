@@ -4,7 +4,13 @@
  */
 
 import { create } from 'zustand'
-import type { StreamEvent, Message, Session, PermissionMode, PermissionRequest } from '../../../shared/types'
+import type {
+  StreamEvent,
+  Message,
+  Session,
+  PermissionMode,
+  PermissionRequest
+} from '../../../shared/types'
 
 // Extended message type with local UI state
 export interface ChatMessage extends Message {
@@ -23,9 +29,6 @@ interface ChatStore {
   currentSessionId: string | null
   permissionMode: PermissionMode
   pendingPermissionRequest: PermissionRequest | null
-
-  // Computed
-  currentSession: ChatSession | null
 
   // Actions - Session management
   loadSessions: () => Promise<void>
@@ -55,12 +58,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   permissionMode: 'prompt',
   pendingPermissionRequest: null,
 
-  // Computed
-  get currentSession() {
-    const { sessions, currentSessionId } = get()
-    return sessions.find((s) => s.id === currentSessionId) || null
-  },
-
   // Load all sessions from database
   loadSessions: async () => {
     const response = await window.api.sessions.list()
@@ -68,7 +65,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       const sessionsWithMessages = await Promise.all(
         response.data.map(async (session) => {
           const messagesResponse = await window.api.sessions.getMessages(session.id)
-          const messages = messagesResponse.success && messagesResponse.data ? messagesResponse.data : []
+          const messages =
+            messagesResponse.success && messagesResponse.data ? messagesResponse.data : []
           return {
             ...session,
             messages: messages.map((m) => ({
@@ -117,7 +115,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
   // Send message to Claude
   sendMessage: async (message: string) => {
-    const { currentSessionId, currentSession } = get()
+    const { currentSessionId, sessions } = get()
+    const currentSession = sessions.find((session) => session.id === currentSessionId) || null
     if (!currentSessionId || !currentSession) {
       throw new Error('No active session')
     }

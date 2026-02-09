@@ -1,19 +1,19 @@
 /**
  * Claude service for integrating Claude Agent SDK
- * 
+ *
  * This service provides the core AI integration for the application, handling:
  * - Message sending and streaming responses via Claude Agent SDK
  * - Permission management with user prompts for tool usage
  * - Session tracking and lifecycle management
  * - MCP server integration for extended tool capabilities
- * 
+ *
  * Architecture:
  * - Uses Claude Agent SDK v0.2.37+ which provides an AsyncGenerator-based API
  * - Streams SDK messages (SDKMessage types) and maps them to StreamEvent types
  * - Implements canUseTool callback for permission flow with Promise-based blocking
  * - Tracks active Query objects (SDK sessions) by sessionId
  * - Supports resuming conversations via SDK session IDs
- * 
+ *
  * Permission Flow:
  * 1. SDK calls canUseTool(toolName, input, options)
  * 2. Generate unique permissionRequestId and create Promise
@@ -22,10 +22,15 @@
  * 5. UI calls respondToPermission(permissionRequestId, approved)
  * 6. Resolve Promise with PermissionResult
  * 7. SDK continues execution
- * 
+ *
  * @see https://github.com/anthropics/anthropic-sdk-typescript
  */
-import { query, type Query, type CanUseTool, type PermissionResult } from '@anthropic-ai/claude-agent-sdk'
+import {
+  query,
+  type Query,
+  type CanUseTool,
+  type PermissionResult
+} from '@anthropic-ai/claude-agent-sdk'
 import type {
   StreamEvent,
   PermissionRequest,
@@ -79,7 +84,7 @@ export class ClaudeService {
    * @param message - User message text
    * @param _files - Optional file attachments (not yet implemented)
    * @param sdkSessionId - Optional SDK session ID for resuming
-   * 
+   *
    * Note: Returns immediately without SDK session ID. The actual SDK session ID
    * will be emitted via a 'status' stream event once the first message arrives.
    * This is necessary because the SDK provides session IDs asynchronously.
@@ -160,6 +165,17 @@ export class ClaudeService {
         }
       }
 
+      // Merge process env with settings env for child process spawning
+      const mergedEnv: Record<string, string> = {}
+      for (const [key, value] of Object.entries(process.env)) {
+        if (typeof value === 'string') {
+          mergedEnv[key] = value
+        }
+      }
+      if (settings.env && typeof settings.env === 'object') {
+        Object.assign(mergedEnv, settings.env as Record<string, string>)
+      }
+
       // Create query
       const queryInstance = query({
         prompt: message,
@@ -169,7 +185,7 @@ export class ClaudeService {
           canUseTool,
           abortController,
           resume: sdkSessionId,
-          env: settings.env as Record<string, string> | undefined,
+          env: mergedEnv,
           permissionMode: this.permissionMode === 'prompt' ? 'default' : this.permissionMode
         }
       })

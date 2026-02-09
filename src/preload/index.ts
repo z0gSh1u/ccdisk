@@ -50,7 +50,7 @@ const api = {
 
   // Workspace operations
   workspace: {
-    select: (path: string): Promise<IPCResponse<void>> =>
+    select: (path?: string): Promise<IPCResponse<string | null>> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SELECT, path),
     getCurrent: (): Promise<IPCResponse<string>> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_CURRENT),
@@ -76,8 +76,7 @@ const api = {
       ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_PROVIDERS_CREATE, provider),
     updateProvider: (id: string, provider: Partial<Provider>) =>
       ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_PROVIDERS_UPDATE, id, provider),
-    deleteProvider: (id: string) =>
-      ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_PROVIDERS_DELETE, id),
+    deleteProvider: (id: string) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_PROVIDERS_DELETE, id),
     activateProvider: (id: string) =>
       ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_PROVIDERS_ACTIVATE, id),
     getActiveProvider: (): Promise<IPCResponse<Provider>> =>

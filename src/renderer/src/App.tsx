@@ -44,8 +44,9 @@ function App() {
 function Toolbar() {
   return (
     <div className="flex items-center gap-2">
-      <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">CCDisk</div>
-      <div className="text-xs text-gray-500 dark:text-gray-400">
+      <div className="text-sm font-semibold text-[var(--text-primary)]">CCDisk</div>
+      <div className="h-4 w-[1px] bg-[var(--border-subtle)]"></div>
+      <div className="text-xs text-[var(--text-tertiary)] font-medium">
         Claude Code Desktop Interface
       </div>
     </div>
