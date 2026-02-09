@@ -1,34 +1,54 @@
-import Versions from './components/Versions'
-import electronLogo from './assets/electron.svg'
+/**
+ * App Component - Main application entry point
+ */
 
-function App(): React.JSX.Element {
-  const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
+import { useEffect } from 'react'
+import { MainLayout } from './components/MainLayout'
+import { Sidebar } from './components/Sidebar'
+import { ChatInterface } from './components/ChatInterface'
+import { useChatStore, setupChatStreamListener } from './stores/chat-store'
+import { useWorkspaceStore } from './stores/workspace-store'
+import { useSettingsStore } from './stores/settings-store'
+
+function App() {
+  const { loadSessions } = useChatStore()
+  const { setupFileWatcher } = useWorkspaceStore()
+  const { loadProviders } = useSettingsStore()
+
+  // Initialize app on mount
+  useEffect(() => {
+    // Setup stream listener for real-time chat updates
+    setupChatStreamListener()
+
+    // Load initial data
+    loadSessions()
+    loadProviders()
+
+    // Setup file watcher
+    const unwatchFiles = setupFileWatcher()
+
+    // Cleanup on unmount
+    return () => {
+      unwatchFiles()
+    }
+  }, [loadSessions, loadProviders, setupFileWatcher])
 
   return (
-    <>
-      <img alt="logo" className="logo" src={electronLogo} />
-      <div className="creator">Powered by electron-vite</div>
-      <div className="text">
-        Build an Electron app with <span className="react">React</span>
-        &nbsp;and <span className="ts">TypeScript</span>
+    <MainLayout sidebar={<Sidebar />} toolbar={<Toolbar />}>
+      <ChatInterface />
+    </MainLayout>
+  )
+}
+
+// Toolbar component
+function Toolbar() {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">CCDisk</div>
+      <div className="text-xs text-gray-500 dark:text-gray-400">
+        Claude Code Desktop Interface
       </div>
-      <p className="tip">
-        Please try pressing <code>F12</code> to open the devTool
-      </p>
-      <div className="actions">
-        <div className="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
-            Documentation
-          </a>
-        </div>
-        <div className="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
-            Send IPC
-          </a>
-        </div>
-      </div>
-      <Versions></Versions>
-    </>
+    </div>
   )
 }
 
