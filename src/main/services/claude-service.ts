@@ -79,14 +79,17 @@ export class ClaudeService {
    * @param message - User message text
    * @param _files - Optional file attachments (not yet implemented)
    * @param sdkSessionId - Optional SDK session ID for resuming
-   * @returns Object with SDK session ID
+   * 
+   * Note: Returns immediately without SDK session ID. The actual SDK session ID
+   * will be emitted via a 'status' stream event once the first message arrives.
+   * This is necessary because the SDK provides session IDs asynchronously.
    */
   async sendMessage(
     sessionId: string,
     message: string,
     _files?: Array<{ path: string; content: string }>,
     sdkSessionId?: string
-  ): Promise<{ sdkSessionId: string }> {
+  ): Promise<void> {
     try {
       // Abort any existing session for this sessionId
       this.abortSession(sessionId)
@@ -186,8 +189,7 @@ export class ClaudeService {
         })
       })
 
-      // Return immediately with session ID
-      return { sdkSessionId: sdkSessionId || randomUUID() }
+      // Return immediately - SDK session ID will be emitted via status event
     } catch (error) {
       console.error('Failed to send message:', error)
       this.onStreamEvent(sessionId, {
@@ -204,11 +206,23 @@ export class ClaudeService {
   private async processMessages(_sessionId: string, queryInstance: Query): Promise<void> {
     try {
       let actualSdkSessionId: string | undefined
+      let sessionIdEmitted = false
 
       for await (const message of queryInstance) {
         // Extract session ID from message
         if ('session_id' in message && message.session_id) {
           actualSdkSessionId = message.session_id
+
+          // Emit session ID as soon as we get it (once)
+          if (!sessionIdEmitted) {
+            sessionIdEmitted = true
+            this.onStreamEvent(_sessionId, {
+              type: 'status',
+              data: {
+                session_id: actualSdkSessionId
+              }
+            })
+          }
         }
 
         // Map SDK message to StreamEvent
