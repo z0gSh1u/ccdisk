@@ -4,6 +4,7 @@
  */
 
 import { ipcMain } from 'electron'
+import { nanoid } from 'nanoid'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import type { IPCResponse } from '../../shared/types'
 import { DatabaseService } from '../services/db-service'
@@ -13,6 +14,7 @@ export function registerSessionsHandlers(dbService: DatabaseService) {
   ipcMain.handle(IPC_CHANNELS.SESSIONS_CREATE, async (_event, name: string, workspacePath: string) => {
     try {
       const session = await dbService.createSession({
+        id: nanoid(),
         name,
         workspacePath,
         sdkSessionId: null,

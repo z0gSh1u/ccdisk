@@ -72,6 +72,24 @@ export function registerWorkspaceHandlers(
   win: BrowserWindow,
   fileWatcher: FileWatcherService
 ) {
+  // Select directory dialog (utility)
+  ipcMain.handle(IPC_CHANNELS.SELECT_DIRECTORY, async (): Promise<string | null> => {
+    try {
+      const result = await dialog.showOpenDialog(win, {
+        properties: ['openDirectory']
+      })
+
+      if (result.canceled || result.filePaths.length === 0) {
+        return null
+      }
+
+      return result.filePaths[0]
+    } catch (error) {
+      console.error('SELECT_DIRECTORY error:', error)
+      return null
+    }
+  })
+
   // Select workspace directory
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_SELECT, async (): Promise<IPCResponse<string | null>> => {
     try {

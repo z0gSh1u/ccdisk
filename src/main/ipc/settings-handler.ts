@@ -4,6 +4,7 @@
  */
 
 import { ipcMain } from 'electron'
+import { nanoid } from 'nanoid'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import type { IPCResponse, Provider } from '../../shared/types'
 import { DatabaseService } from '../services/db-service'
@@ -13,6 +14,17 @@ export function registerSettingsHandlers(
   dbService: DatabaseService,
   configService: ConfigService
 ) {
+  // Get active provider
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_PROVIDERS_GET_ACTIVE, async () => {
+    try {
+      const provider = await dbService.getActiveProvider()
+      return { success: true, data: provider } as IPCResponse
+    } catch (error) {
+      console.error('SETTINGS_PROVIDERS_GET_ACTIVE error:', error)
+      return { success: false, error: (error as Error).message } as IPCResponse
+    }
+  })
+
   // List providers
   ipcMain.handle(IPC_CHANNELS.SETTINGS_PROVIDERS_LIST, async () => {
     try {
@@ -28,6 +40,7 @@ export function registerSettingsHandlers(
   ipcMain.handle(IPC_CHANNELS.SETTINGS_PROVIDERS_CREATE, async (_event, provider: Omit<Provider, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       const newProvider = await dbService.createProvider({
+        id: nanoid(),
         ...provider,
         createdAt: new Date(),
         updatedAt: new Date()
