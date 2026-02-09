@@ -2,14 +2,39 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+
+// Import services
+import { DatabaseService } from './services/db-service'
+import { ConfigService } from './services/config-service'
+import { MCPService } from './services/mcp-service'
+import { SkillsService } from './services/skills-service'
+import { CommandsService } from './services/commands-service'
 import { FileWatcherService } from './services/file-watcher'
+import { ClaudeService } from './services/claude-service'
+
+// Import IPC handlers
 import { registerWorkspaceHandlers } from './ipc/workspace-handler'
+import { registerSessionsHandlers } from './ipc/sessions-handler'
+import { registerSettingsHandlers } from './ipc/settings-handler'
+import { registerSkillsHandlers } from './ipc/skills-handler'
+import { registerCommandsHandlers } from './ipc/commands-handler'
+import { registerMcpHandlers } from './ipc/mcp-handler'
+import { registerChatHandlers, createStreamEventEmitter } from './ipc/chat-handler'
+
+// Global services (initialized once)
+let dbService: DatabaseService
+let configService: ConfigService
+let mcpService: MCPService
+let skillsService: SkillsService
+let commandsService: CommandsService
+let fileWatcher: FileWatcherService
+let claudeService: ClaudeService
 
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 1200,
+    height: 800,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -29,10 +54,51 @@ function createWindow(): void {
   })
 
   // Initialize services
-  const fileWatcher = new FileWatcherService()
-  
+  dbService = new DatabaseService()
+  configService = new ConfigService()
+  mcpService = new MCPService() // No workspace path initially
+  skillsService = new SkillsService() // No workspace path initially
+  commandsService = new CommandsService() // No workspace path initially
+  fileWatcher = new FileWatcherService() // No workspace path initially
+
+  // Create stream event emitter for Claude service
+  const streamEventEmitter = createStreamEventEmitter(mainWindow)
+  claudeService = new ClaudeService(configService, mcpService, streamEventEmitter)
+
   // Register IPC handlers
   registerWorkspaceHandlers(mainWindow, fileWatcher)
+  registerSessionsHandlers(dbService)
+  registerSettingsHandlers(dbService, configService)
+  registerSkillsHandlers(skillsService)
+  registerCommandsHandlers(commandsService)
+  registerMcpHandlers(mcpService)
+  registerChatHandlers(mainWindow, claudeService, dbService)
+
+  // Handle workspace changes - update services with new workspace path
+  ipcMain.on('workspace:changed', (_event, workspacePath: string | null) => {
+    console.log('Workspace changed to:', workspacePath)
+
+    // Update services with new workspace path
+    mcpService.setWorkspacePath(workspacePath)
+    skillsService.setWorkspacePath(workspacePath)
+    commandsService.setWorkspacePath(workspacePath)
+
+    if (workspacePath) {
+      // Start watching the new workspace
+      fileWatcher.setWorkspacePath(workspacePath)
+      fileWatcher.startWatching()
+    } else {
+      // Stop watching if workspace is cleared
+      fileWatcher.stopWatching()
+    }
+  })
+
+  // Cleanup on window close
+  mainWindow.on('close', () => {
+    console.log('Cleaning up services...')
+    fileWatcher.stopWatching()
+    claudeService.cleanup()
+  })
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
@@ -48,7 +114,7 @@ function createWindow(): void {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  electronApp.setAppUserModelId('com.ccdisk')
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
@@ -78,5 +144,13 @@ app.on('window-all-closed', () => {
   }
 })
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+// Cleanup on quit
+app.on('before-quit', () => {
+  console.log('App quitting, cleaning up...')
+  if (fileWatcher) {
+    fileWatcher.stopWatching()
+  }
+  if (claudeService) {
+    claudeService.cleanup()
+  }
+})
