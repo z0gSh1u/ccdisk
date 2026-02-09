@@ -2,6 +2,8 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { FileWatcherService } from './services/file-watcher'
+import { registerWorkspaceHandlers } from './ipc/workspace-handler'
 
 function createWindow(): void {
   // Create the browser window.
@@ -25,6 +27,12 @@ function createWindow(): void {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
+
+  // Initialize services
+  const fileWatcher = new FileWatcherService()
+  
+  // Register IPC handlers
+  registerWorkspaceHandlers(mainWindow, fileWatcher)
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.

@@ -30,6 +30,13 @@ export class FileWatcherService {
   }
 
   /**
+   * Get current workspace path
+   */
+  getWorkspacePath(): string | null {
+    return this.workspacePath
+  }
+
+  /**
    * Set change callback
    */
   setOnChange(onChange: (filePath: string) => void): void {
