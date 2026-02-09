@@ -16,7 +16,7 @@ import type {
 interface API {
   chat: {
     sendMessage: (sessionId: string, message: string, files?: FileAttachment[]) => Promise<IPCResponse<void>>
-    onStream: (callback: (event: StreamEvent) => void) => () => void
+    onStream: (callback: (sessionId: string, event: StreamEvent) => void) => () => void
     respondPermission: (requestId: string, approved: boolean, input?: Record<string, unknown>) => Promise<IPCResponse<void>>
     setPermissionMode: (mode: PermissionMode) => Promise<IPCResponse<void>>
     abort: (sessionId: string) => Promise<IPCResponse<void>>

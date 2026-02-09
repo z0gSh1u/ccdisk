@@ -21,8 +21,9 @@ const api = {
   chat: {
     sendMessage: (sessionId: string, message: string, files?: FileAttachment[]) =>
       ipcRenderer.invoke(IPC_CHANNELS.CHAT_SEND, sessionId, message, files),
-    onStream: (callback: (event: StreamEvent) => void) => {
-      const handler = (_event: Electron.IpcRendererEvent, data: StreamEvent) => callback(data)
+    onStream: (callback: (sessionId: string, event: StreamEvent) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, sessionId: string, data: StreamEvent) =>
+        callback(sessionId, data)
       ipcRenderer.on(IPC_CHANNELS.CHAT_STREAM, handler)
       return () => ipcRenderer.removeListener(IPC_CHANNELS.CHAT_STREAM, handler)
     },
