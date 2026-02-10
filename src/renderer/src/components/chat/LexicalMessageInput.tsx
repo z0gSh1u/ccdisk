@@ -14,6 +14,7 @@ import { $getRoot, $createParagraphNode, KEY_ENTER_COMMAND, COMMAND_PRIORITY_HIG
 import { mergeRegister } from '@lexical/utils'
 import { Button } from '../ui'
 import { ArrowUp, Paperclip } from 'lucide-react'
+import { TypeaheadPlugin } from './TypeaheadPlugin'
 
 interface LexicalMessageInputProps {
   onSend: (message: string) => void
@@ -25,7 +26,7 @@ interface LexicalMessageInputProps {
 const theme = {
   paragraph: 'mb-0',
   text: {
-    base: 'text-[var(--text-primary)]'
+    base: 'text-text-primary'
   }
 }
 
@@ -152,14 +153,14 @@ export function LexicalMessageInput({
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <div className="relative rounded-2xl border border-[var(--border-strong)] bg-white shadow-sm transition-shadow focus-within:shadow-md focus-within:border-[var(--accent-color)] overflow-hidden">
+      <div className="relative rounded-2xl border border-border-strong bg-white shadow-sm transition-shadow focus-within:shadow-md focus-within:border-accent overflow-hidden">
         {/* File upload button */}
         <div className="absolute left-2 bottom-2 z-10">
           <Button
             onClick={handleFileUpload}
             disabled={disabled}
             variant="ghost"
-            className="h-8 w-8 p-0 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100"
+            className="h-8 w-8 p-0 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-gray-100"
           >
             <Paperclip className="h-4 w-4" />
           </Button>
@@ -169,10 +170,10 @@ export function LexicalMessageInput({
         <div className="relative">
           <PlainTextPlugin
             contentEditable={
-              <ContentEditable className="w-full min-h-[48px] max-h-[200px] overflow-y-auto border-none bg-transparent py-4 pl-12 pr-12 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none text-base resize-none" />
+              <ContentEditable className="w-full min-h-[48px] max-h-[200px] overflow-y-auto border-none bg-transparent py-4 pl-12 pr-12 text-text-primary placeholder-text-tertiary focus:outline-none text-base resize-none" />
             }
             placeholder={
-              <div className="absolute top-4 left-12 text-[var(--text-tertiary)] pointer-events-none select-none">
+              <div className="absolute top-4 left-12 text-text-tertiary pointer-events-none select-none">
                 {placeholder}
               </div>
             }
@@ -188,7 +189,7 @@ export function LexicalMessageInput({
             className={`h-8 w-8 p-0 rounded-lg transition-colors flex items-center justify-center ${
               !hasText.current
                 ? 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                : 'bg-[var(--accent-color)] text-white hover:bg-[var(--accent-hover)] shadow-sm'
+                : 'bg-accent text-white hover:bg-accent-hover shadow-sm'
             }`}
           >
             {disabled ? (
@@ -212,6 +213,7 @@ export function LexicalMessageInput({
         />
         <EnterKeyPlugin onSend={onSend} disabled={disabled} onTextChange={handleTextChange} />
         <ClearEditorPlugin clearRef={clearEditorRef} />
+        <TypeaheadPlugin />
       </div>
     </LexicalComposer>
   )

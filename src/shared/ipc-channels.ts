@@ -19,8 +19,8 @@ export const IPC_CHANNELS = {
   SESSIONS_GET_MESSAGES: 'sessions:messages',
 
   // Workspace operations
-  WORKSPACE_SELECT: 'workspace:select',
   WORKSPACE_GET_CURRENT: 'workspace:get-current',
+  WORKSPACE_OPEN_IN_EXPLORER: 'workspace:open-in-explorer',
   WORKSPACE_GET_FILE_TREE: 'workspace:file-tree',
   WORKSPACE_GET_FILE_CONTENT: 'workspace:file-content',
   WORKSPACE_FILE_CHANGED: 'workspace:file-changed',
@@ -52,10 +52,7 @@ export const IPC_CHANNELS = {
   // MCP servers
   MCP_GET_CONFIG: 'mcp:get-config',
   MCP_GET_CONFIG_BY_SCOPE: 'mcp:get-config-by-scope',
-  MCP_UPDATE_CONFIG: 'mcp:update-config',
-
-  // Utility
-  SELECT_DIRECTORY: 'dialog:select-directory'
+  MCP_UPDATE_CONFIG: 'mcp:update-config'
 } as const
 
 export type IPCChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]

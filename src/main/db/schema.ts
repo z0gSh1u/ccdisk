@@ -5,7 +5,6 @@ import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
 
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
-  workspacePath: text('workspace_path').notNull(),
   name: text('name').notNull(),
   sdkSessionId: text('sdk_session_id'),
   model: text('model'),

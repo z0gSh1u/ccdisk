@@ -16,12 +16,12 @@ export function MainLayout({ children, sidebar, toolbar }: MainLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[var(--bg-primary)]">
+    <div className="flex h-screen w-screen overflow-hidden bg-bg-primary">
       {/* Sidebar */}
       {sidebar && (
         <aside
           className={cn(
-            'flex flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-secondary)] transition-all duration-300 ease-in-out',
+            'flex flex-col border-r border-border-subtle bg-bg-secondary transition-all duration-300 ease-in-out',
             isSidebarOpen ? 'w-[260px]' : 'w-0 border-r-0'
           )}
         >
@@ -42,7 +42,7 @@ export function MainLayout({ children, sidebar, toolbar }: MainLayoutProps) {
         <div className="absolute top-4 left-4 z-50">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="rounded-lg p-2 text-[var(--text-tertiary)] hover:bg-[var(--bg-accent)] hover:text-[var(--text-secondary)] transition-colors"
+            className="rounded-lg p-2 text-text-tertiary hover:bg-bg-accent hover:text-text-secondary transition-colors"
             aria-label="Toggle sidebar"
             title={isSidebarOpen ? 'Close Sidebar' : 'Open Sidebar'}
           >
@@ -51,7 +51,7 @@ export function MainLayout({ children, sidebar, toolbar }: MainLayoutProps) {
         </div>
 
         {toolbar && (
-          <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-primary)] px-4 py-2 pl-16">
+          <div className="flex items-center justify-between border-b border-border-subtle bg-bg-primary px-4 py-2 pl-16">
             {toolbar}
           </div>
         )}

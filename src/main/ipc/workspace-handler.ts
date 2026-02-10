@@ -2,7 +2,7 @@
  * Workspace IPC Handlers
  * Wires workspace-related IPC channels to file system and file watcher service
  */
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, shell } from 'electron'
 import type { BrowserWindow } from 'electron'
 import * as fs from 'fs/promises'
 import * as path from 'path'
@@ -69,58 +69,6 @@ async function buildFileTree(
  * Register workspace IPC handlers
  */
 export function registerWorkspaceHandlers(win: BrowserWindow, fileWatcher: FileWatcherService) {
-  // Select directory dialog (utility)
-  ipcMain.handle(IPC_CHANNELS.SELECT_DIRECTORY, async (): Promise<string | null> => {
-    try {
-      const result = await dialog.showOpenDialog(win, {
-        properties: ['openDirectory']
-      })
-
-      if (result.canceled || result.filePaths.length === 0) {
-        return null
-      }
-
-      return result.filePaths[0]
-    } catch (error) {
-      console.error('SELECT_DIRECTORY error:', error)
-      return null
-    }
-  })
-
-  // Select workspace directory
-  ipcMain.handle(
-    IPC_CHANNELS.WORKSPACE_SELECT,
-    async (_event, path?: string): Promise<IPCResponse<string | null>> => {
-      try {
-        let selectedPath: string | null = null
-
-        // If path is provided, use it directly
-        if (path) {
-          selectedPath = path
-        } else {
-          // Otherwise, show dialog to select directory
-          const result = await dialog.showOpenDialog(win, {
-            properties: ['openDirectory']
-          })
-
-          if (result.canceled) {
-            return { success: true, data: null }
-          }
-
-          selectedPath = result.filePaths[0]
-        }
-
-        fileWatcher.setWorkspacePath(selectedPath)
-        await fileWatcher.startWatching()
-
-        return { success: true, data: selectedPath }
-      } catch (error) {
-        console.error('WORKSPACE_SELECT error:', error)
-        return { success: false, error: (error as Error).message }
-      }
-    }
-  )
-
   // Get current workspace path
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_GET_CURRENT,
@@ -134,6 +82,21 @@ export function registerWorkspaceHandlers(win: BrowserWindow, fileWatcher: FileW
       }
     }
   )
+
+  // Open workspace directory in file manager
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_IN_EXPLORER, async (): Promise<IPCResponse<void>> => {
+    try {
+      const workspacePath = fileWatcher.getWorkspacePath()
+      if (!workspacePath) {
+        return { success: false, error: 'No workspace available' }
+      }
+      await shell.openPath(workspacePath)
+      return { success: true, data: undefined }
+    } catch (error) {
+      console.error('WORKSPACE_OPEN_IN_EXPLORER error:', error)
+      return { success: false, error: (error as Error).message }
+    }
+  })
 
   // Get file tree
   ipcMain.handle(

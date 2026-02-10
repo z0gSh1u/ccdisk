@@ -30,7 +30,7 @@ interface API {
     abort: (sessionId: string) => Promise<IPCResponse<void>>
   }
   sessions: {
-    create: (workspacePath: string, name: string) => Promise<IPCResponse<Session>>
+    create: (name: string) => Promise<IPCResponse<Session>>
     list: () => Promise<IPCResponse<Session[]>>
     get: (sessionId: string) => Promise<IPCResponse<Session>>
     update: (sessionId: string, data: Partial<Session>) => Promise<IPCResponse<void>>
@@ -38,8 +38,8 @@ interface API {
     getMessages: (sessionId: string) => Promise<IPCResponse<Message[]>>
   }
   workspace: {
-    select: (path: string) => Promise<IPCResponse<void>>
     getCurrent: () => Promise<IPCResponse<string>>
+    openInExplorer: () => Promise<IPCResponse<void>>
     getFileTree: () => Promise<IPCResponse<FileNode[]>>
     getFileContent: (
       path: string
@@ -92,7 +92,6 @@ interface API {
     getConfigByScope: (scope: 'global' | 'workspace') => Promise<IPCResponse<MCPConfig>>
     updateConfig: (config: MCPConfig, scope: 'global' | 'workspace') => Promise<IPCResponse<void>>
   }
-  selectDirectory: () => Promise<string | null>
 }
 
 declare global {

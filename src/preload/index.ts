@@ -36,8 +36,7 @@ const api = {
 
   // Session management
   sessions: {
-    create: (workspacePath: string, name: string) =>
-      ipcRenderer.invoke(IPC_CHANNELS.SESSIONS_CREATE, workspacePath, name),
+    create: (name: string) => ipcRenderer.invoke(IPC_CHANNELS.SESSIONS_CREATE, name),
     list: (): Promise<IPCResponse<Session[]>> => ipcRenderer.invoke(IPC_CHANNELS.SESSIONS_LIST),
     get: (sessionId: string): Promise<IPCResponse<Session>> =>
       ipcRenderer.invoke(IPC_CHANNELS.SESSIONS_GET, sessionId),
@@ -50,10 +49,10 @@ const api = {
 
   // Workspace operations
   workspace: {
-    select: (path?: string): Promise<IPCResponse<string | null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SELECT, path),
     getCurrent: (): Promise<IPCResponse<string>> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_CURRENT),
+    openInExplorer: (): Promise<IPCResponse<void>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_IN_EXPLORER),
     getFileTree: (): Promise<IPCResponse<FileNode[]>> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_FILE_TREE),
     getFileContent: (
@@ -130,10 +129,7 @@ const api = {
       ipcRenderer.invoke(IPC_CHANNELS.MCP_GET_CONFIG_BY_SCOPE, scope),
     updateConfig: (config: MCPConfig, scope: 'global' | 'workspace') =>
       ipcRenderer.invoke(IPC_CHANNELS.MCP_UPDATE_CONFIG, config, scope)
-  },
-
-  // Utility
-  selectDirectory: (): Promise<string | null> => ipcRenderer.invoke(IPC_CHANNELS.SELECT_DIRECTORY)
+  }
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

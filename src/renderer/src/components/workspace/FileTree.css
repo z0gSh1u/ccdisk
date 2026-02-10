@@ -1,0 +1,22 @@
+/* FileTree component styles */
+
+.file-tree-container {
+  width: 100%;
+}
+
+.tree-node {
+  width: 100%;
+}
+
+/* Override react-arborist default styles */
+.react-arborist-tree-view {
+  height: 100% !important;
+}
+
+.react-arborist-node {
+  cursor: pointer;
+}
+
+.react-arborist-node-content {
+  width: 100%;
+}

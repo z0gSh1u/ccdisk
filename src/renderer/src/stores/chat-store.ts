@@ -32,7 +32,7 @@ interface ChatStore {
 
   // Actions - Session management
   loadSessions: () => Promise<void>
-  createSession: (name: string, workspacePath: string) => Promise<string>
+  createSession: (name: string) => Promise<string>
   selectSession: (sessionId: string) => void
   deleteSession: (sessionId: string) => Promise<void>
 
@@ -81,8 +81,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
 
   // Create new session
-  createSession: async (name: string, workspacePath: string) => {
-    const response = await window.api.sessions.create(name, workspacePath)
+  createSession: async (name: string) => {
+    const response = await window.api.sessions.create(name)
     if (response.success && response.data) {
       const newSession: ChatSession = {
         ...response.data,

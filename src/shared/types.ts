@@ -69,7 +69,6 @@ export interface StatusData {
 // Session types
 export interface Session {
   id: string
-  workspacePath: string
   name: string
   sdkSessionId: string | null
   model: string | null

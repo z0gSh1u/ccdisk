@@ -41,18 +41,55 @@ export class DatabaseService {
   }
 
   private migrate(): void {
-    // Create tables if they don't exist
-    this.sqlite.exec(`
-      CREATE TABLE IF NOT EXISTS sessions (
-        id TEXT PRIMARY KEY,
-        workspace_path TEXT NOT NULL,
-        name TEXT NOT NULL,
-        sdk_session_id TEXT,
-        model TEXT,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
-      );
+    // Check if sessions table exists and has workspace_path column
+    const tableInfo = this.sqlite
+      .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='sessions'")
+      .get() as { sql?: string } | undefined
 
+    if (tableInfo?.sql?.includes('workspace_path')) {
+      console.log('Migrating sessions table to remove workspace_path column...')
+
+      // Create new table without workspace_path
+      this.sqlite.exec(`
+        -- Create new sessions table without workspace_path
+        CREATE TABLE sessions_new (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          sdk_session_id TEXT,
+          model TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+
+        -- Copy data from old table (excluding workspace_path)
+        INSERT INTO sessions_new (id, name, sdk_session_id, model, created_at, updated_at)
+        SELECT id, name, sdk_session_id, model, created_at, updated_at
+        FROM sessions;
+
+        -- Drop old table
+        DROP TABLE sessions;
+
+        -- Rename new table
+        ALTER TABLE sessions_new RENAME TO sessions;
+      `)
+
+      console.log('Migration completed successfully')
+    } else {
+      // Create tables if they don't exist
+      this.sqlite.exec(`
+        CREATE TABLE IF NOT EXISTS sessions (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          sdk_session_id TEXT,
+          model TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+      `)
+    }
+
+    // Create other tables
+    this.sqlite.exec(`
       CREATE TABLE IF NOT EXISTS messages (
         id TEXT PRIMARY KEY,
         session_id TEXT NOT NULL,
@@ -163,7 +200,10 @@ export class DatabaseService {
     // Deactivate all providers first
     await this.db.update(schema.providers).set({ isActive: false })
     // Activate the target provider
-    await this.db.update(schema.providers).set({ isActive: true }).where(eq(schema.providers.id, id))
+    await this.db
+      .update(schema.providers)
+      .set({ isActive: true })
+      .where(eq(schema.providers.id, id))
   }
 
   async updateProvider(id: string, data: Partial<ProviderInsert>): Promise<void> {

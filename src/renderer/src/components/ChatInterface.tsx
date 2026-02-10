@@ -38,15 +38,15 @@ export function ChatInterface() {
 
   if (!currentSession) {
     return (
-      <div className="flex h-full flex-col items-center justify-center bg-[var(--bg-primary)]">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-color)] text-white shadow-lg mb-6">
+      <div className="flex h-full flex-col items-center justify-center bg-bg-primary">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-white shadow-lg mb-6">
           <Sparkles className="h-6 w-6" />
         </div>
         <div className="text-center max-w-md px-6">
-          <h2 className="mb-2 text-2xl font-serif text-[var(--text-primary)]">
+          <h2 className="mb-2 text-2xl font-serif text-text-primary">
             Welcome to Claude Code
           </h2>
-          <p className="text-[var(--text-secondary)]">
+          <p className="text-text-secondary">
             Select a session from the sidebar or start a new conversation to begin collaborating.
           </p>
         </div>
@@ -55,7 +55,7 @@ export function ChatInterface() {
   }
 
   return (
-    <div className="flex h-full flex-col bg-[var(--bg-primary)] relative">
+    <div className="flex h-full flex-col bg-bg-primary relative">
       {/* Messages area */}
       <ScrollArea className="flex-1">
         <div className="mx-auto max-w-3xl px-4 py-8 space-y-8">
@@ -112,14 +112,14 @@ export function ChatInterface() {
       )}
 
       {/* Input area */}
-      <div className="p-4 bg-[var(--bg-primary)]/80 backdrop-blur-md sticky bottom-0 z-10">
+      <div className="p-4 bg-bg-primary/80 backdrop-blur-md sticky bottom-0 z-10">
         <div className="mx-auto max-w-3xl relative">
           <LexicalMessageInput
             onSend={handleSend}
             disabled={isLoading}
             placeholder="Ask Claude..."
           />
-          <div className="mt-2 text-center text-xs text-[var(--text-tertiary)]">
+          <div className="mt-2 text-center text-xs text-text-tertiary">
             Claude can make mistakes. Please use with caution.
           </div>
         </div>
@@ -135,15 +135,23 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   // Parse content
   let textContent = ''
   try {
-    const content = JSON.parse(message.content)
+    // Content might already be parsed or still be a string
+    let content = message.content
+    if (typeof content === 'string') {
+      content = JSON.parse(content)
+    }
+
     if (Array.isArray(content)) {
       textContent = content
         .filter((block) => block.type === 'text')
         .map((block) => block.text)
         .join(' ')
+    } else if (typeof content === 'string') {
+      textContent = content
     }
   } catch {
-    textContent = message.content
+    // If parsing fails, try to use content as-is if it's a string
+    textContent = typeof message.content === 'string' ? message.content : ''
   }
 
   // Show streaming text if available
@@ -155,7 +163,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   return (
     <div className={`group flex gap-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
       {!isUser && (
-        <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-lg bg-[var(--accent-color)] text-white shadow-sm">
+        <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-lg bg-accent text-white shadow-sm">
           <Sparkles className="h-5 w-5" />
         </div>
       )}
@@ -163,8 +171,8 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       <div
         className={`relative max-w-[85%] ${
           isUser
-            ? 'bg-[var(--bg-accent)] text-[var(--text-primary)] px-5 py-3 rounded-2xl rounded-tr-sm'
-            : 'text-[var(--text-primary)] py-1'
+            ? 'bg-bg-accent text-text-primary px-5 py-3 rounded-2xl rounded-tr-sm'
+            : 'text-text-primary py-1'
         }`}
       >
         {isUser ? (
@@ -178,10 +186,10 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         )}
 
         {isStreaming && (
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-[var(--accent-color)] font-medium">
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-accent font-medium">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-color)] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent-color)]"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
             </span>
             Thinking...
           </div>
@@ -189,7 +197,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       </div>
 
       {isUser && (
-        <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-lg bg-[var(--bg-accent)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
+        <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-lg bg-bg-accent text-text-secondary border border-border-subtle">
           <User className="h-5 w-5" />
         </div>
       )}

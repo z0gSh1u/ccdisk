@@ -2,6 +2,8 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { existsSync, mkdirSync } from 'fs'
+import { homedir } from 'os'
 
 // Import services
 import { DatabaseService } from './services/db-service'
@@ -30,6 +32,17 @@ let commandsService: CommandsService
 let fileWatcher: FileWatcherService
 let claudeService: ClaudeService
 
+// Default workspace path
+const DEFAULT_WORKSPACE_PATH = join(homedir(), '.ccdisk')
+
+// Ensure workspace directory exists
+function ensureWorkspaceDirectory(): void {
+  if (!existsSync(DEFAULT_WORKSPACE_PATH)) {
+    mkdirSync(DEFAULT_WORKSPACE_PATH, { recursive: true })
+    console.log('Created default workspace directory:', DEFAULT_WORKSPACE_PATH)
+  }
+}
+
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -56,10 +69,22 @@ function createWindow(): void {
   // Initialize services
   dbService = new DatabaseService()
   configService = new ConfigService()
-  mcpService = new MCPService() // No workspace path initially
-  skillsService = new SkillsService() // No workspace path initially
-  commandsService = new CommandsService() // No workspace path initially
-  fileWatcher = new FileWatcherService() // No workspace path initially
+
+  // Ensure workspace directory exists and initialize with it
+  ensureWorkspaceDirectory()
+
+  mcpService = new MCPService()
+  mcpService.setWorkspacePath(DEFAULT_WORKSPACE_PATH)
+
+  skillsService = new SkillsService()
+  skillsService.setWorkspacePath(DEFAULT_WORKSPACE_PATH)
+
+  commandsService = new CommandsService()
+  commandsService.setWorkspacePath(DEFAULT_WORKSPACE_PATH)
+
+  fileWatcher = new FileWatcherService()
+  fileWatcher.setWorkspacePath(DEFAULT_WORKSPACE_PATH)
+  fileWatcher.startWatching()
 
   // Create stream event emitter for Claude service
   const streamEventEmitter = createStreamEventEmitter(mainWindow)
@@ -73,25 +98,6 @@ function createWindow(): void {
   registerCommandsHandlers(commandsService)
   registerMcpHandlers(mcpService)
   registerChatHandlers(mainWindow, claudeService, dbService)
-
-  // Handle workspace changes - update services with new workspace path
-  ipcMain.on('workspace:changed', (_event, workspacePath: string | null) => {
-    console.log('Workspace changed to:', workspacePath)
-
-    // Update services with new workspace path
-    mcpService.setWorkspacePath(workspacePath)
-    skillsService.setWorkspacePath(workspacePath)
-    commandsService.setWorkspacePath(workspacePath)
-
-    if (workspacePath) {
-      // Start watching the new workspace
-      fileWatcher.setWorkspacePath(workspacePath)
-      fileWatcher.startWatching()
-    } else {
-      // Stop watching if workspace is cleared
-      fileWatcher.stopWatching()
-    }
-  })
 
   // Cleanup on window close
   mainWindow.on('close', () => {

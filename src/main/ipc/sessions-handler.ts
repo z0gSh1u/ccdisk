@@ -11,12 +11,11 @@ import { DatabaseService } from '../services/db-service'
 
 export function registerSessionsHandlers(dbService: DatabaseService) {
   // Create session
-  ipcMain.handle(IPC_CHANNELS.SESSIONS_CREATE, async (_event, name: string, workspacePath: string) => {
+  ipcMain.handle(IPC_CHANNELS.SESSIONS_CREATE, async (_event, name: string) => {
     try {
       const session = await dbService.createSession({
         id: nanoid(),
         name,
-        workspacePath,
         sdkSessionId: null,
         model: null,
         createdAt: new Date(),

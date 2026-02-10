@@ -14,10 +14,11 @@ interface WorkspaceStore {
   isLoading: boolean
 
   // Actions
-  selectWorkspace: (path: string) => Promise<void>
+  loadWorkspace: () => Promise<void>
   loadFileTree: () => Promise<void>
   selectFile: (path: string) => void
   getFileContent: (path: string) => Promise<string | null>
+  openWorkspaceInExplorer: () => Promise<void>
 
   // File watching
   setupFileWatcher: () => () => void
@@ -30,21 +31,25 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
   selectedFile: null,
   isLoading: false,
 
-  // Select workspace
-  selectWorkspace: async (path: string) => {
-    set({ isLoading: true })
+  // Load workspace path from backend
+  loadWorkspace: async () => {
     try {
-      const response = await window.api.workspace.select(path)
+      const response = await window.api.workspace.getCurrent()
       if (response.success && response.data) {
         set({ currentWorkspace: response.data })
         await get().loadFileTree()
-      } else {
-        console.error('Failed to select workspace:', response.error)
       }
     } catch (error) {
-      console.error('Failed to select workspace:', error)
-    } finally {
-      set({ isLoading: false })
+      console.error('Failed to load workspace:', error)
+    }
+  },
+
+  // Open workspace in file explorer
+  openWorkspaceInExplorer: async () => {
+    try {
+      await window.api.workspace.openInExplorer()
+    } catch (error) {
+      console.error('Failed to open workspace in explorer:', error)
     }
   },
 
