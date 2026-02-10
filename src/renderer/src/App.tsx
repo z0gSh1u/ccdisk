@@ -26,7 +26,7 @@ function App() {
   // Initialize app on mount
   useEffect(() => {
     // Setup stream listener for real-time chat updates
-    setupChatStreamListener()
+    const teardownStreamListener = setupChatStreamListener()
 
     // Load initial data
     loadWorkspace() // Load default workspace first
@@ -38,6 +38,7 @@ function App() {
 
     // Cleanup on unmount
     return () => {
+      teardownStreamListener()
       unwatchFiles()
     }
   }, [loadSessions, loadProviders, loadWorkspace, setupFileWatcher])
@@ -78,9 +79,6 @@ function Toolbar() {
       <div className="flex items-center gap-2">
         <div className="text-sm font-semibold text-text-primary">CCDisk</div>
         <div className="h-4 w-[1px] bg-border-subtle"></div>
-        <div className="text-xs text-text-tertiary font-medium">
-          Claude Code Desktop Interface
-        </div>
       </div>
 
       <DropdownMenu>

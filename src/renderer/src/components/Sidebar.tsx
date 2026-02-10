@@ -60,7 +60,7 @@ export function Sidebar() {
           <div className="h-6 w-6 rounded bg-accent flex items-center justify-center text-white font-serif font-bold text-xs">
             C
           </div>
-          <div className="font-semibold text-text-primary">Claude Code</div>
+          <div className="font-semibold text-text-primary">CCDisk</div>
         </div>
 
         {/* Workspace section */}

@@ -186,7 +186,8 @@ export class ClaudeService {
           abortController,
           resume: sdkSessionId,
           env: mergedEnv,
-          permissionMode: this.permissionMode === 'prompt' ? 'default' : this.permissionMode
+          permissionMode: this.permissionMode === 'prompt' ? 'default' : this.permissionMode,
+          includePartialMessages: true
         }
       })
 
@@ -223,6 +224,8 @@ export class ClaudeService {
     try {
       let actualSdkSessionId: string | undefined
       let sessionIdEmitted = false
+      let sawPartialText = false
+      let pendingAssistantText = ''
 
       for await (const message of queryInstance) {
         // Extract session ID from message
@@ -251,11 +254,7 @@ export class ClaudeService {
             // Process content blocks
             for (const block of betaMessage.content) {
               if (block.type === 'text') {
-                // Emit text event
-                this.onStreamEvent(_sessionId, {
-                  type: 'text',
-                  data: block.text
-                })
+                pendingAssistantText += block.text
               } else if (block.type === 'tool_use') {
                 // Emit tool_use event
                 const toolUseData: ToolUseData = {
@@ -343,9 +342,9 @@ export class ClaudeService {
             // SDKPartialAssistantMessage - streaming deltas
             const streamMsg = message as any
             const event = streamMsg.event
-
             if (event.type === 'content_block_delta') {
               if (event.delta.type === 'text_delta') {
+                sawPartialText = true
                 this.onStreamEvent(_sessionId, {
                   type: 'text',
                   data: event.delta.text
@@ -368,6 +367,12 @@ export class ClaudeService {
       }
 
       // Emit done event when iteration completes
+      if (!sawPartialText && pendingAssistantText) {
+        this.onStreamEvent(_sessionId, {
+          type: 'text',
+          data: pendingAssistantText
+        })
+      }
       this.onStreamEvent(_sessionId, {
         type: 'done',
         data: actualSdkSessionId || 'completed'

@@ -97,7 +97,7 @@ export class FileWatcherService {
    * Stop watching
    * Safe to call multiple times
    */
-  async stopWatching(): Promise<void> {
+  async stopWatching(timeoutMs = 0): Promise<void> {
     // Clear all pending debounce timers
     for (const timer of this.debounceTimers.values()) {
       clearTimeout(timer)
@@ -107,7 +107,25 @@ export class FileWatcherService {
     // Close watcher if it exists
     if (this.watcher) {
       try {
-        await this.watcher.close()
+        const watcher = this.watcher
+        const closePromise = watcher.close()
+        if (timeoutMs > 0) {
+          let timedOut = false
+          await Promise.race([
+            closePromise,
+            new Promise<void>((resolve) => {
+              setTimeout(() => {
+                timedOut = true
+                resolve()
+              }, timeoutMs)
+            })
+          ])
+          if (timedOut) {
+            console.warn('File watcher close timed out, continuing shutdown')
+          }
+        } else {
+          await closePromise
+        }
       } catch (error) {
         console.error('Error closing file watcher:', error)
       }
@@ -129,7 +147,7 @@ export class FileWatcherService {
     // Start new timer
     const timer = setTimeout(() => {
       this.debounceTimers.delete(filePath)
-      
+
       // Call onChange callback if set
       if (this.onChange) {
         this.onChange(filePath)

@@ -282,7 +282,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
 // Setup stream event listener (call once on app init)
 export function setupChatStreamListener() {
-  window.api.chat.onStream((sessionId, event) => {
+  return window.api.chat.onStream((sessionId, event) => {
     useChatStore.getState().handleStreamEvent(sessionId, event)
   })
 }

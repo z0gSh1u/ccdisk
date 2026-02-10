@@ -43,9 +43,7 @@ export function ChatInterface() {
           <Sparkles className="h-6 w-6" />
         </div>
         <div className="text-center max-w-md px-6">
-          <h2 className="mb-2 text-2xl font-serif text-text-primary">
-            Welcome to Claude Code
-          </h2>
+          <h2 className="mb-2 text-2xl font-serif text-text-primary">Welcome to CCDisk</h2>
           <p className="text-text-secondary">
             Select a session from the sidebar or start a new conversation to begin collaborating.
           </p>

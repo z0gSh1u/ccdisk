@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       '@anthropic-ai/claude-agent-sdk':
-        specifier: ^0.2.33
+        specifier: ^0.2.37
         version: 0.2.37(zod@4.3.6)
       '@electron-toolkit/preload':
         specifier: ^3.0.2

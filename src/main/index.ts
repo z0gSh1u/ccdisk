@@ -31,6 +31,7 @@ let skillsService: SkillsService
 let commandsService: CommandsService
 let fileWatcher: FileWatcherService
 let claudeService: ClaudeService
+let isCleaningUp = false
 
 // Default workspace path
 const DEFAULT_WORKSPACE_PATH = join(homedir(), '.ccdisk')
@@ -87,7 +88,7 @@ function createWindow(): void {
   fileWatcher.startWatching()
 
   // Create stream event emitter for Claude service
-  const streamEventEmitter = createStreamEventEmitter(mainWindow)
+  const streamEventEmitter = createStreamEventEmitter(mainWindow, dbService)
   claudeService = new ClaudeService(configService, mcpService, streamEventEmitter)
 
   // Register IPC handlers
@@ -100,10 +101,11 @@ function createWindow(): void {
   registerChatHandlers(mainWindow, claudeService, dbService)
 
   // Cleanup on window close
-  mainWindow.on('close', () => {
-    console.log('Cleaning up services...')
-    fileWatcher.stopWatching()
-    claudeService.cleanup()
+  mainWindow.on('close', async (event) => {
+    if (isCleaningUp) return
+    event.preventDefault()
+    await cleanupServices()
+    app.quit()
   })
 
   // HMR for renderer base on electron-vite cli.
@@ -151,12 +153,38 @@ app.on('window-all-closed', () => {
 })
 
 // Cleanup on quit
-app.on('before-quit', () => {
-  console.log('App quitting, cleaning up...')
-  if (fileWatcher) {
-    fileWatcher.stopWatching()
-  }
-  if (claudeService) {
-    claudeService.cleanup()
-  }
+app.on('before-quit', async (event) => {
+  if (isCleaningUp) return
+  event.preventDefault()
+  await cleanupServices()
+  app.exit(0)
 })
+async function cleanupServices(): Promise<void> {
+  if (isCleaningUp) return
+  isCleaningUp = true
+  console.log('Cleaning up services...')
+
+  try {
+    if (fileWatcher) {
+      await fileWatcher.stopWatching(2000)
+    }
+  } catch (error) {
+    console.error('Error stopping file watcher:', error)
+  }
+
+  try {
+    if (claudeService) {
+      claudeService.cleanup()
+    }
+  } catch (error) {
+    console.error('Error cleaning Claude service:', error)
+  }
+
+  try {
+    if (dbService) {
+      dbService.close()
+    }
+  } catch (error) {
+    console.error('Error closing database:', error)
+  }
+}
