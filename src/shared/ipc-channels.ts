@@ -51,10 +51,11 @@ export const IPC_CHANNELS = {
 
   // MCP servers
   MCP_GET_CONFIG: 'mcp:get-config',
+  MCP_GET_CONFIG_BY_SCOPE: 'mcp:get-config-by-scope',
   MCP_UPDATE_CONFIG: 'mcp:update-config',
 
   // Utility
-  SELECT_DIRECTORY: 'dialog:select-directory',
+  SELECT_DIRECTORY: 'dialog:select-directory'
 } as const
 
 export type IPCChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]

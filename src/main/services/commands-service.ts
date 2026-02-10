@@ -15,9 +15,9 @@ export class CommandsService {
   constructor(workspacePath?: string | null) {
     // Global commands directory
     this.globalCommandsDir = path.join(os.homedir(), '.claude', 'commands')
-    
+
     // Workspace commands directory (if workspace is set)
-    this.workspaceCommandsDir = workspacePath 
+    this.workspaceCommandsDir = workspacePath
       ? path.join(workspacePath, '.claude', 'commands')
       : null
   }
@@ -51,12 +51,12 @@ export class CommandsService {
         try {
           // Use lstat instead of stat to not follow symlinks
           const stats = await fs.lstat(commandPath)
-          
+
           // Only include regular files (not directories or symlinks)
           if (stats.isFile()) {
             // Check if file has executable permissions
             const isExecutable = (stats.mode & 0o111) !== 0
-            
+
             commands.push({
               name: file,
               path: commandPath,
@@ -90,12 +90,12 @@ export class CommandsService {
           try {
             // Use lstat instead of stat to not follow symlinks
             const stats = await fs.lstat(commandPath)
-            
+
             // Only include regular files (not directories or symlinks)
             if (stats.isFile()) {
               // Check if file has executable permissions
               const isExecutable = (stats.mode & 0o111) !== 0
-              
+
               commands.push({
                 name: file,
                 path: commandPath,
@@ -120,10 +120,50 @@ export class CommandsService {
   }
 
   /**
+   * Get command content by name
+   * Throws if command doesn't exist
+   */
+  async getCommand(
+    name: string,
+    scope: 'global' | 'workspace'
+  ): Promise<{ command: Command; content: string }> {
+    const dir = this.getCommandsDir(scope)
+    const commandPath = path.join(dir, name)
+
+    try {
+      // Read command content
+      const content = await fs.readFile(commandPath, 'utf-8')
+
+      // Get file stats for executable check
+      const stats = await fs.lstat(commandPath)
+      const isExecutable = (stats.mode & 0o111) !== 0
+
+      const command: Command = {
+        name,
+        path: commandPath,
+        scope,
+        isExecutable
+      }
+
+      return { command, content }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new Error(`Command "${name}" not found in ${scope} scope`)
+      }
+      console.error(`Failed to read command ${name}:`, error)
+      throw new Error(`Failed to read command: ${error}`)
+    }
+  }
+
+  /**
    * Create new command
    * Throws if command already exists
    */
-  async createCommand(name: string, content: string, scope: 'global' | 'workspace'): Promise<Command> {
+  async createCommand(
+    name: string,
+    content: string,
+    scope: 'global' | 'workspace'
+  ): Promise<Command> {
     const dir = this.getCommandsDir(scope)
     const commandPath = path.join(dir, name)
 

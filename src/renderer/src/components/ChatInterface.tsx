@@ -4,15 +4,16 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useChatStore } from '../stores/chat-store'
-import { Button, Input, ScrollArea } from './ui'
+import { Button, ScrollArea } from './ui'
 import type { ChatMessage } from '../stores/chat-store'
-import { User, Sparkles, ArrowUp } from 'lucide-react'
+import { User, Sparkles } from 'lucide-react'
+import { MarkdownRenderer } from './chat/MarkdownRenderer'
+import { LexicalMessageInput } from './chat/LexicalMessageInput'
 
 export function ChatInterface() {
   const { sessions, currentSessionId, sendMessage, pendingPermissionRequest, respondToPermission } =
     useChatStore()
   const currentSession = sessions.find((session) => session.id === currentSessionId) || null
-  const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -21,25 +22,17 @@ export function ChatInterface() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [currentSession?.messages])
 
-  const handleSend = async () => {
-    if (!inputValue.trim() || !currentSession) return
+  const handleSend = async (message: string) => {
+    if (!message.trim() || !currentSession) return
 
     setIsLoading(true)
     try {
-      await sendMessage(inputValue)
-      setInputValue('')
+      await sendMessage(message)
     } catch (error) {
       console.error('Failed to send message:', error)
       alert('Failed to send message')
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
     }
   }
 
@@ -121,33 +114,11 @@ export function ChatInterface() {
       {/* Input area */}
       <div className="p-4 bg-[var(--bg-primary)]/80 backdrop-blur-md sticky bottom-0 z-10">
         <div className="mx-auto max-w-3xl relative">
-          <div className="relative rounded-2xl border border-[var(--border-strong)] bg-white shadow-sm transition-shadow focus-within:shadow-md focus-within:border-[var(--accent-color)] overflow-hidden">
-            <Input
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask Claude..."
-              disabled={isLoading}
-              className="w-full border-none bg-transparent py-4 pl-4 pr-12 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:ring-0 text-base"
-            />
-            <div className="absolute right-2 bottom-2">
-              <Button
-                onClick={handleSend}
-                disabled={isLoading || !inputValue.trim()}
-                className={`h-8 w-8 p-0 rounded-lg transition-colors flex items-center justify-center ${
-                  !inputValue.trim()
-                    ? 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                    : 'bg-[var(--accent-color)] text-white hover:bg-[var(--accent-hover)] shadow-sm'
-                }`}
-              >
-                {isLoading ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                ) : (
-                  <ArrowUp className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
+          <LexicalMessageInput
+            onSend={handleSend}
+            disabled={isLoading}
+            placeholder="Ask Claude..."
+          />
           <div className="mt-2 text-center text-xs text-[var(--text-tertiary)]">
             Claude can make mistakes. Please use with caution.
           </div>
@@ -176,7 +147,8 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   }
 
   // Show streaming text if available
-  if (message.isStreaming && message.streamingText) {
+  const isStreaming = message.isStreaming || false
+  if (isStreaming && message.streamingText) {
     textContent = message.streamingText
   }
 
@@ -195,13 +167,17 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             : 'text-[var(--text-primary)] py-1'
         }`}
       >
-        <div
-          className={`text-base leading-relaxed whitespace-pre-wrap ${!isUser && 'font-normal'}`}
-        >
-          {textContent}
-        </div>
+        {isUser ? (
+          <div className="text-base leading-relaxed whitespace-pre-wrap">{textContent}</div>
+        ) : (
+          <MarkdownRenderer
+            content={textContent}
+            isStreaming={isStreaming}
+            className="text-base leading-relaxed"
+          />
+        )}
 
-        {message.isStreaming && (
+        {isStreaming && (
           <div className="mt-2 flex items-center gap-1.5 text-xs text-[var(--accent-color)] font-medium">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-color)] opacity-75"></span>

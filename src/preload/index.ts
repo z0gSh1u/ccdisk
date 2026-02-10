@@ -87,8 +87,7 @@ const api = {
 
   // Skills management
   skills: {
-    list: (scope: 'global' | 'workspace'): Promise<IPCResponse<Skill[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.SKILLS_LIST, scope),
+    list: (): Promise<IPCResponse<Skill[]>> => ipcRenderer.invoke(IPC_CHANNELS.SKILLS_LIST),
     get: (name: string, scope: 'global' | 'workspace'): Promise<IPCResponse<Skill>> =>
       ipcRenderer.invoke(IPC_CHANNELS.SKILLS_GET, name, scope),
     create: (name: string, content: string, scope: 'global' | 'workspace') =>
@@ -106,9 +105,11 @@ const api = {
 
   // Commands management
   commands: {
-    list: (scope: 'global' | 'workspace'): Promise<IPCResponse<Command[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.COMMANDS_LIST, scope),
-    get: (name: string, scope: 'global' | 'workspace'): Promise<IPCResponse<Command>> =>
+    list: (): Promise<IPCResponse<Command[]>> => ipcRenderer.invoke(IPC_CHANNELS.COMMANDS_LIST),
+    get: (
+      name: string,
+      scope: 'global' | 'workspace'
+    ): Promise<IPCResponse<{ command: Command; content: string }>> =>
       ipcRenderer.invoke(IPC_CHANNELS.COMMANDS_GET, name, scope),
     create: (name: string, content: string, scope: 'global' | 'workspace') =>
       ipcRenderer.invoke(IPC_CHANNELS.COMMANDS_CREATE, name, content, scope),
@@ -123,8 +124,10 @@ const api = {
 
   // MCP servers
   mcp: {
-    getConfig: (scope: 'global' | 'workspace'): Promise<IPCResponse<MCPConfig>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.MCP_GET_CONFIG, scope),
+    getConfig: (): Promise<IPCResponse<MCPConfig>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.MCP_GET_CONFIG),
+    getConfigByScope: (scope: 'global' | 'workspace'): Promise<IPCResponse<MCPConfig>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.MCP_GET_CONFIG_BY_SCOPE, scope),
     updateConfig: (config: MCPConfig, scope: 'global' | 'workspace') =>
       ipcRenderer.invoke(IPC_CHANNELS.MCP_UPDATE_CONFIG, config, scope)
   },

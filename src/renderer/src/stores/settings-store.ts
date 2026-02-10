@@ -28,13 +28,13 @@ interface SettingsStore {
   activateProvider: (id: string) => Promise<void>
 
   // Actions - Skills
-  loadSkills: (scope: 'global' | 'workspace') => Promise<void>
+  loadSkills: () => Promise<void>
   createSkill: (name: string, content: string, scope: 'global' | 'workspace') => Promise<void>
   updateSkill: (name: string, content: string, scope: 'global' | 'workspace') => Promise<void>
   deleteSkill: (name: string, scope: 'global' | 'workspace') => Promise<void>
 
   // Actions - Commands
-  loadCommands: (scope: 'global' | 'workspace') => Promise<void>
+  loadCommands: () => Promise<void>
   createCommand: (name: string, content: string, scope: 'global' | 'workspace') => Promise<void>
   deleteCommand: (name: string, scope: 'global' | 'workspace') => Promise<void>
 
@@ -136,9 +136,9 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
   },
 
   // Load skills
-  loadSkills: async (scope) => {
+  loadSkills: async () => {
     try {
-      const response = await window.api.skills.list(scope)
+      const response = await window.api.skills.list()
       if (response.success && response.data) {
         set({ skills: response.data })
       }
@@ -153,7 +153,7 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
       const response = await window.api.skills.create(name, content, scope)
       if (response.success) {
         // Reload skills
-        const listResponse = await window.api.skills.list(scope)
+        const listResponse = await window.api.skills.list()
         if (listResponse.success && listResponse.data) {
           set({ skills: listResponse.data })
         }
@@ -170,7 +170,7 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
       const response = await window.api.skills.update(name, content, scope)
       if (response.success) {
         // Reload skills
-        const listResponse = await window.api.skills.list(scope)
+        const listResponse = await window.api.skills.list()
         if (listResponse.success && listResponse.data) {
           set({ skills: listResponse.data })
         }
@@ -197,9 +197,9 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
   },
 
   // Load commands
-  loadCommands: async (scope) => {
+  loadCommands: async () => {
     try {
-      const response = await window.api.commands.list(scope)
+      const response = await window.api.commands.list()
       if (response.success && response.data) {
         set({ commands: response.data })
       }
@@ -214,7 +214,7 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
       const response = await window.api.commands.create(name, content, scope)
       if (response.success) {
         // Reload commands
-        const listResponse = await window.api.commands.list(scope)
+        const listResponse = await window.api.commands.list()
         if (listResponse.success && listResponse.data) {
           set({ commands: listResponse.data })
         }
@@ -243,7 +243,7 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
   // Load MCP config
   loadMCPConfig: async (scope) => {
     try {
-      const response = await window.api.mcp.getConfig(scope)
+      const response = await window.api.mcp.getConfigByScope(scope)
       if (response.success && response.data) {
         set({ mcpConfig: response.data })
       }

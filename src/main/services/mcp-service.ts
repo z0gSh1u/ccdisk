@@ -14,7 +14,7 @@ export class MCPService {
   constructor(workspacePath?: string | null) {
     // Global config at ~/.claude/mcp.json
     this.globalMcpConfigPath = path.join(os.homedir(), '.claude', 'mcp.json')
-    
+
     // Workspace config at <workspace>/.claude/mcp.json
     this.workspaceMcpConfigPath = workspacePath
       ? path.join(workspacePath, '.claude', 'mcp.json')
@@ -47,6 +47,23 @@ export class MCPService {
     }
 
     return { mcpServers: mergedServers }
+  }
+
+  /**
+   * Get config for specific scope (without merging)
+   * @param scope - 'global' or 'workspace'
+   * @returns Config for the specified scope
+   * @throws Error if workspace scope used without workspace path
+   */
+  async getConfigByScope(scope: 'global' | 'workspace'): Promise<MCPConfig> {
+    if (scope === 'global') {
+      return await this.readConfigFile(this.globalMcpConfigPath)
+    } else {
+      if (!this.workspaceMcpConfigPath) {
+        throw new Error('Cannot get workspace config: no workspace path set')
+      }
+      return await this.readConfigFile(this.workspaceMcpConfigPath)
+    }
   }
 
   /**
@@ -93,20 +110,20 @@ export class MCPService {
     try {
       const content = await fs.readFile(configPath, 'utf-8')
       const parsed = JSON.parse(content)
-      
+
       // Validate parsed config
       if (!this.isValidConfig(parsed)) {
         console.error(`Invalid MCP config structure in ${configPath}, skipping`)
         return { mcpServers: {} }
       }
-      
+
       return parsed
     } catch (error) {
       // File doesn't exist - return empty config
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
         return { mcpServers: {} }
       }
-      
+
       // Invalid JSON - log and return empty config
       console.error(`Failed to parse MCP config from ${configPath}:`, error)
       return { mcpServers: {} }
