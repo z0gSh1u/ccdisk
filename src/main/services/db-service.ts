@@ -142,8 +142,24 @@ export class DatabaseService {
     return await this.db.select().from(schema.sessions).orderBy(desc(schema.sessions.updatedAt))
   }
 
-  async updateSession(id: string, data: Partial<SessionInsert>): Promise<void> {
-    await this.db.update(schema.sessions).set(data).where(eq(schema.sessions.id, id))
+  /**
+   * Update session by ID
+   */
+  async updateSession(
+    id: string,
+    data: Partial<SessionInsert>
+  ): Promise<SessionSelect | null> {
+    try {
+      const result = await this.db
+        .update(schema.sessions)
+        .set(data)
+        .where(eq(schema.sessions.id, id))
+        .returning()
+      return result[0] || null
+    } catch (error) {
+      console.error('Failed to update session:', error)
+      throw error
+    }
   }
 
   async deleteSession(id: string): Promise<void> {
