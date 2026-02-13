@@ -4,12 +4,16 @@
  */
 
 import { useEffect, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
+
 import { useMCPStore } from '../../stores/mcp-store'
+import { useChatStore } from '../../stores/chat-store'
 import { Tabs, TabsList, TabsTrigger } from '../ui/Tabs'
 import { Button } from '../ui/Button'
-import type { MCPServerConfig } from '../../../../shared/types'
 import { ServerList } from './ServerList'
 import { ServerEditor } from './ServerEditor'
+
+import type { MCPServerConfig } from '../../../../shared/types'
 
 export function MCPManager() {
   const {
@@ -24,8 +28,15 @@ export function MCPManager() {
     setIsEditing,
     addServer,
     updateServer,
-    deleteServer
+    deleteServer,
+    liveStatuses,
+    isStatusLoading,
+    loadLiveStatus,
+    reconnectServer,
+    toggleServer
   } = useMCPStore()
+
+  const currentSessionId = useChatStore((s) => s.currentSessionId)
 
   const [isAddingNew, setIsAddingNew] = useState(false)
 
@@ -33,6 +44,13 @@ export function MCPManager() {
   useEffect(() => {
     loadConfig()
   }, [loadConfig])
+
+  // Load live status when session is active
+  useEffect(() => {
+    if (currentSessionId) {
+      loadLiveStatus(currentSessionId)
+    }
+  }, [currentSessionId, loadLiveStatus])
 
   // Get current scope's config
   const currentConfig = scope === 'global' ? globalConfig : workspaceConfig
@@ -159,6 +177,91 @@ export function MCPManager() {
           )}
         </div>
       </div>
+
+      {/* Live Status Section */}
+      {currentSessionId && (
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Live Status</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => loadLiveStatus(currentSessionId)}
+              disabled={isStatusLoading}
+              className="h-7 w-7 p-0"
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${isStatusLoading ? 'animate-spin' : ''}`}
+              />
+            </Button>
+          </div>
+
+          {liveStatuses.length === 0 && !isStatusLoading && (
+            <p className="text-xs text-gray-500">No MCP servers active in current session</p>
+          )}
+
+          {isStatusLoading && liveStatuses.length === 0 && (
+            <p className="text-xs text-gray-500">Loading status...</p>
+          )}
+
+          <div className="space-y-2">
+            {liveStatuses.map((server) => {
+              const dotColor =
+                server.status === 'connected'
+                  ? 'bg-green-500'
+                  : server.status === 'failed'
+                    ? 'bg-red-500'
+                    : server.status === 'disabled'
+                      ? 'bg-gray-400'
+                      : 'bg-yellow-500'
+
+              return (
+                <div
+                  key={server.name}
+                  className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 dark:border-gray-700"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`h-2 w-2 shrink-0 rounded-full ${dotColor}`} />
+                    <span className="truncate text-sm text-gray-900 dark:text-white">
+                      {server.name}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {server.tools.length} tool{server.tools.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    {server.status === 'failed' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs px-2"
+                        onClick={() => reconnectServer(currentSessionId, server.name)}
+                      >
+                        Reconnect
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-xs px-2"
+                      onClick={() =>
+                        toggleServer(
+                          currentSessionId,
+                          server.name,
+                          server.status === 'disabled'
+                        )
+                      }
+                    >
+                      {server.status === 'disabled' ? 'Enable' : 'Disable'}
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
