@@ -12,7 +12,8 @@ import type {
   PermissionMode,
   StreamEvent,
   IPCResponse,
-  FileAttachment
+  FileAttachment,
+  FileContentResponse
 } from '../shared/types'
 
 // Custom APIs for renderer
@@ -55,9 +56,7 @@ const api = {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_IN_EXPLORER),
     getFileTree: (): Promise<IPCResponse<FileNode[]>> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_FILE_TREE),
-    getFileContent: (
-      path: string
-    ): Promise<IPCResponse<{ content: string; size: number; type: string }>> =>
+    getFileContent: (path: string): Promise<IPCResponse<FileContentResponse>> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_FILE_CONTENT, path),
     onFileChange: (callback: (event: { path: string; type: string }) => void) => {
       const handler = (_event: Electron.IpcRendererEvent, data: { path: string; type: string }) =>
@@ -136,14 +135,12 @@ const api = {
 
   // SDK operations (requires active session)
   sdk: {
-    getMcpStatus: (sessionId: string) =>
-      ipcRenderer.invoke(IPC_CHANNELS.MCP_GET_STATUS, sessionId),
+    getMcpStatus: (sessionId: string) => ipcRenderer.invoke(IPC_CHANNELS.MCP_GET_STATUS, sessionId),
     reconnectMcpServer: (sessionId: string, serverName: string) =>
       ipcRenderer.invoke(IPC_CHANNELS.MCP_RECONNECT, sessionId, serverName),
     toggleMcpServer: (sessionId: string, serverName: string, enabled: boolean) =>
       ipcRenderer.invoke(IPC_CHANNELS.MCP_TOGGLE, sessionId, serverName, enabled),
-    getCommands: (sessionId: string) =>
-      ipcRenderer.invoke(IPC_CHANNELS.SDK_GET_COMMANDS, sessionId)
+    getCommands: (sessionId: string) => ipcRenderer.invoke(IPC_CHANNELS.SDK_GET_COMMANDS, sessionId)
   }
 }
 

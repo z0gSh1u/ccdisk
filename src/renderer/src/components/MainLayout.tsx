@@ -10,9 +10,10 @@ interface MainLayoutProps {
   children: ReactNode
   sidebar?: ReactNode
   toolbar?: ReactNode
+  preview?: ReactNode
 }
 
-export function MainLayout({ children, sidebar, toolbar }: MainLayoutProps) {
+export function MainLayout({ children, sidebar, toolbar, preview }: MainLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
   return (
@@ -57,7 +58,10 @@ export function MainLayout({ children, sidebar, toolbar }: MainLayoutProps) {
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-hidden">{children}</div>
+        <div className="flex-1 overflow-hidden flex">
+          <div className={cn('overflow-hidden', preview ? 'w-1/2' : 'flex-1')}>{children}</div>
+          {preview && <div className="w-1/2 overflow-hidden">{preview}</div>}
+        </div>
       </main>
     </div>
   )

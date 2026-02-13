@@ -6,6 +6,7 @@ import { useEffect } from 'react'
 import { MainLayout } from './components/MainLayout'
 import { Sidebar } from './components/Sidebar'
 import { ChatInterface } from './components/ChatInterface'
+import { FilePreview } from './components/workspace/FilePreview'
 import { useChatStore, setupChatStreamListener } from './stores/chat-store'
 import { useWorkspaceStore } from './stores/workspace-store'
 import { useSettingsStore } from './stores/settings-store'
@@ -22,6 +23,7 @@ function App() {
   const { loadSessions } = useChatStore()
   const { loadWorkspace, setupFileWatcher } = useWorkspaceStore()
   const { loadProviders } = useSettingsStore()
+  const selectedFile = useWorkspaceStore((s) => s.selectedFile)
 
   // Initialize app on mount
   useEffect(() => {
@@ -44,7 +46,11 @@ function App() {
   }, [loadSessions, loadProviders, loadWorkspace, setupFileWatcher])
 
   return (
-    <MainLayout sidebar={<Sidebar />} toolbar={<Toolbar />}>
+    <MainLayout
+      sidebar={<Sidebar />}
+      toolbar={<Toolbar />}
+      preview={selectedFile ? <FilePreview /> : undefined}
+    >
       <ChatInterface />
     </MainLayout>
   )

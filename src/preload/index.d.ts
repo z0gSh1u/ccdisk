@@ -12,7 +12,8 @@ import type {
   PermissionMode,
   StreamEvent,
   IPCResponse,
-  FileAttachment
+  FileAttachment,
+  FileContentResponse
 } from '../shared/types'
 
 interface API {
@@ -43,9 +44,7 @@ interface API {
     getCurrent: () => Promise<IPCResponse<string>>
     openInExplorer: () => Promise<IPCResponse<void>>
     getFileTree: () => Promise<IPCResponse<FileNode[]>>
-    getFileContent: (
-      path: string
-    ) => Promise<IPCResponse<{ content: string; size: number; type: string }>>
+    getFileContent: (path: string) => Promise<IPCResponse<FileContentResponse>>
     onFileChange: (callback: (event: { path: string; type: string }) => void) => () => void
   }
   settings: {
