@@ -2,11 +2,12 @@
  * App Component - Main application entry point
  */
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { MainLayout } from './components/MainLayout'
 import { Sidebar } from './components/Sidebar'
 import { ChatInterface } from './components/ChatInterface'
 import { FilePreview } from './components/workspace/FilePreview'
+import { SidePanel, type PanelType } from './components/SidePanel'
 import { useChatStore, setupChatStreamListener } from './stores/chat-store'
 import { useWorkspaceStore } from './stores/workspace-store'
 import { useSettingsStore } from './stores/settings-store'
@@ -24,6 +25,7 @@ function App() {
   const { loadWorkspace, setupFileWatcher } = useWorkspaceStore()
   const { loadProviders } = useSettingsStore()
   const selectedFile = useWorkspaceStore((s) => s.selectedFile)
+  const [activePanelType, setActivePanelType] = useState<PanelType | null>(null)
 
   // Initialize app on mount
   useEffect(() => {
@@ -47,11 +49,16 @@ function App() {
 
   return (
     <MainLayout
-      sidebar={<Sidebar />}
+      sidebar={<Sidebar activePanelType={activePanelType} onPanelTypeChange={setActivePanelType} />}
       toolbar={<Toolbar />}
       preview={selectedFile ? <FilePreview /> : undefined}
     >
       <ChatInterface />
+      <SidePanel
+        isOpen={activePanelType !== null}
+        panelType={activePanelType}
+        onClose={() => setActivePanelType(null)}
+      />
     </MainLayout>
   )
 }
