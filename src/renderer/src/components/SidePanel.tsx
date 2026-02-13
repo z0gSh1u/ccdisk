@@ -37,18 +37,33 @@ export function SidePanel({ isOpen, panelType, onClose }: SidePanelProps) {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, onClose])
 
-  if (!isOpen || !panelType) return null
-
   return (
-    <div className="fixed inset-0 z-50">
+    <div className={`fixed inset-0 z-50 ${isOpen ? 'block' : 'hidden'}`}>
       {/* Overlay - blocks all interactions with content below */}
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div
+        className={`
+          absolute inset-0 bg-black/30
+          transition-opacity duration-300
+          ${isOpen ? 'opacity-100' : 'opacity-0'}
+        `}
+        onClick={onClose}
+      />
 
       {/* Panel - slides in from right */}
-      <div className="absolute right-0 top-0 bottom-0 w-[480px] bg-white shadow-2xl flex flex-col">
+      <div
+        className={`
+          absolute right-0 top-0 bottom-0
+          w-[480px] max-[1200px]:w-[400px] max-[800px]:w-[calc(100vw-40px)]
+          bg-white shadow-2xl flex flex-col
+          transform transition-transform duration-300 ease-in-out
+          ${isOpen ? 'translate-x-0' : 'translate-x-full'}
+        `}
+      >
         {/* Header */}
         <div className="shrink-0 flex items-center justify-between p-4 border-b border-border-subtle">
-          <h2 className="text-lg font-semibold text-text-primary">{PANEL_TITLES[panelType]}</h2>
+          <h2 className="text-lg font-semibold text-text-primary">
+            {panelType ? PANEL_TITLES[panelType] : ''}
+          </h2>
           <button
             onClick={onClose}
             className="p-1 rounded hover:bg-bg-accent transition-colors"
