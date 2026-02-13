@@ -61,6 +61,23 @@ export function registerSessionsHandlers(dbService: DatabaseService) {
     }
   })
 
+  // Update session (rename)
+  ipcMain.handle(
+    IPC_CHANNELS.SESSIONS_UPDATE,
+    async (_event, id: string, updates: { name?: string }) => {
+      try {
+        const session = await dbService.updateSession(id, {
+          ...updates,
+          updatedAt: new Date()
+        })
+        return { success: true, data: session } as IPCResponse
+      } catch (error) {
+        console.error('SESSIONS_UPDATE error:', error)
+        return { success: false, error: (error as Error).message } as IPCResponse
+      }
+    }
+  )
+
   // Get messages for session
   ipcMain.handle(IPC_CHANNELS.SESSIONS_GET_MESSAGES, async (_event, sessionId: string) => {
     try {

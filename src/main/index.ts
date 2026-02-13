@@ -22,6 +22,7 @@ import { registerSkillsHandlers } from './ipc/skills-handler'
 import { registerCommandsHandlers } from './ipc/commands-handler'
 import { registerMcpHandlers } from './ipc/mcp-handler'
 import { registerChatHandlers, createStreamEventEmitter } from './ipc/chat-handler'
+import { registerSdkHandlers } from './ipc/sdk-handler'
 
 // Global services (initialized once)
 let dbService: DatabaseService
@@ -99,6 +100,7 @@ function createWindow(): void {
   registerCommandsHandlers(commandsService)
   registerMcpHandlers(mcpService)
   registerChatHandlers(mainWindow, claudeService, dbService)
+  registerSdkHandlers(claudeService)
 
   // Cleanup on window close
   mainWindow.on('close', async (event) => {

@@ -105,4 +105,29 @@ export function registerSettingsHandlers(
       return { success: false, error: (error as Error).message } as IPCResponse
     }
   })
+
+  // Get Claude env variables from settings.json
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_CLAUDE_ENV, async () => {
+    try {
+      const env = await configService.getClaudeEnv()
+      return { success: true, data: env } as IPCResponse
+    } catch (error) {
+      console.error('SETTINGS_GET_CLAUDE_ENV error:', error)
+      return { success: false, error: (error as Error).message } as IPCResponse
+    }
+  })
+
+  // Update Claude env variables in settings.json
+  ipcMain.handle(
+    IPC_CHANNELS.SETTINGS_UPDATE_CLAUDE_ENV,
+    async (_event, envUpdates: Record<string, string>) => {
+      try {
+        await configService.updateClaudeEnv(envUpdates)
+        return { success: true } as IPCResponse
+      } catch (error) {
+        console.error('SETTINGS_UPDATE_CLAUDE_ENV error:', error)
+        return { success: false, error: (error as Error).message } as IPCResponse
+      }
+    }
+  )
 }
