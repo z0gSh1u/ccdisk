@@ -163,3 +163,45 @@ export interface IPCResponse<T = unknown> {
   data?: T
   error?: string
 }
+
+/**
+ * Extended file content response with binary support
+ */
+export interface FileContentResponse {
+  content: string // text or base64-encoded
+  size: number
+  type: string // file extension
+  encoding: 'utf-8' | 'base64'
+  mimeType: string
+}
+
+/**
+ * Claude environment variables in ~/.claude/settings.json
+ */
+export interface ClaudeEnvConfig {
+  ANTHROPIC_AUTH_TOKEN?: string
+  ANTHROPIC_BASE_URL?: string
+  ANTHROPIC_MODEL?: string
+  ANTHROPIC_DEFAULT_SONNET_MODEL?: string
+  ANTHROPIC_DEFAULT_OPUS_MODEL?: string
+  ANTHROPIC_DEFAULT_HAIKU_MODEL?: string
+}
+
+/**
+ * MCP server live status (from SDK query.mcpServerStatus())
+ */
+export interface MCPServerStatus {
+  name: string
+  status: 'connected' | 'failed' | 'needs-auth' | 'pending' | 'disabled'
+  tools: string[]
+  error?: string
+}
+
+/**
+ * SDK slash command (from query.supportedCommands())
+ */
+export interface SlashCommand {
+  name: string
+  description: string
+  argumentHint?: string
+}
