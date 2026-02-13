@@ -75,9 +75,7 @@ export function SuggestionMenu({ items, selectedIndex, onSelect, position }: Sug
             <div className="flex-1 min-w-0">
               <div className="font-medium truncate">{item.label}</div>
               {item.description && (
-                <div className="text-xs text-text-tertiary truncate mt-0.5">
-                  {item.description}
-                </div>
+                <div className="text-xs text-text-tertiary truncate mt-0.5">{item.description}</div>
               )}
             </div>
           </button>

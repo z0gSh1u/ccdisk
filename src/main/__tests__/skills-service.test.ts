@@ -1,6 +1,6 @@
 /**
  * Tests for SkillsService
- * 
+ *
  * Run with: npx tsx --test src/main/__tests__/skills-service.test.ts
  */
 import { describe, it, beforeEach, afterEach } from 'node:test'
@@ -21,21 +21,21 @@ describe('SkillsService', () => {
     // Create temporary test directories
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'skills-test-'))
     originalHome = process.env.HOME || os.homedir()
-    
+
     // Override HOME for testing
     process.env.HOME = tempDir
-    
+
     globalSkillsDir = path.join(tempDir, '.claude', 'skills')
     const workspacePath = path.join(tempDir, 'workspace')
     workspaceSkillsDir = path.join(workspacePath, '.claude', 'skills')
-    
+
     skillsService = new SkillsService(workspacePath)
   })
 
   afterEach(async () => {
     // Restore original HOME
     process.env.HOME = originalHome
-    
+
     // Clean up test files
     try {
       await fs.rm(tempDir, { recursive: true, force: true })
@@ -103,7 +103,11 @@ describe('SkillsService', () => {
     it('should list workspace skills', async () => {
       // Create workspace skills
       await fs.mkdir(workspaceSkillsDir, { recursive: true })
-      await fs.writeFile(path.join(workspaceSkillsDir, 'workspace-skill.md'), '# Workspace Skill', 'utf-8')
+      await fs.writeFile(
+        path.join(workspaceSkillsDir, 'workspace-skill.md'),
+        '# Workspace Skill',
+        'utf-8'
+      )
 
       const skills = await skillsService.listSkills()
       assert.equal(skills.length, 1)
@@ -118,7 +122,11 @@ describe('SkillsService', () => {
       await fs.mkdir(globalSkillsDir, { recursive: true })
       await fs.mkdir(workspaceSkillsDir, { recursive: true })
       await fs.writeFile(path.join(globalSkillsDir, 'global-skill.md'), '# Global', 'utf-8')
-      await fs.writeFile(path.join(workspaceSkillsDir, 'workspace-skill.md'), '# Workspace', 'utf-8')
+      await fs.writeFile(
+        path.join(workspaceSkillsDir, 'workspace-skill.md'),
+        '# Workspace',
+        'utf-8'
+      )
 
       const skills = await skillsService.listSkills()
       assert.equal(skills.length, 2)
@@ -161,7 +169,7 @@ This is the skill body.`
     it('should not list workspace skills when no workspace path is set', async () => {
       // Create service without workspace
       const serviceWithoutWorkspace = new SkillsService(null)
-      
+
       await fs.mkdir(globalSkillsDir, { recursive: true })
       await fs.writeFile(path.join(globalSkillsDir, 'global.md'), '# Global', 'utf-8')
 
@@ -211,7 +219,7 @@ This is the skill body.`
 
     it('should throw when workspace scope is used without workspace path', async () => {
       const serviceWithoutWorkspace = new SkillsService(null)
-      
+
       await assert.rejects(
         async () => await serviceWithoutWorkspace.getSkill('test', 'workspace'),
         { message: 'No workspace path set' }
@@ -222,7 +230,7 @@ This is the skill body.`
   describe('createSkill', () => {
     it('should create global skill', async () => {
       const skill = await skillsService.createSkill('new-skill', '# New Skill', 'global')
-      
+
       assert.equal(skill.name, 'new-skill')
       assert.equal(skill.content, '# New Skill')
       assert.equal(skill.scope, 'global')
@@ -235,7 +243,7 @@ This is the skill body.`
 
     it('should create workspace skill', async () => {
       const skill = await skillsService.createSkill('ws-skill', '# Workspace', 'workspace')
-      
+
       assert.equal(skill.name, 'ws-skill')
       assert.equal(skill.scope, 'workspace')
 
@@ -246,9 +254,12 @@ This is the skill body.`
 
     it('should create directory if it does not exist', async () => {
       const skill = await skillsService.createSkill('test', '# Test', 'global')
-      
+
       assert.ok(skill)
-      const dirExists = await fs.access(globalSkillsDir).then(() => true).catch(() => false)
+      const dirExists = await fs
+        .access(globalSkillsDir)
+        .then(() => true)
+        .catch(() => false)
       assert.equal(dirExists, true)
     })
 
@@ -264,9 +275,9 @@ This is the skill body.`
 
     it('should handle name with .md extension', async () => {
       const skill = await skillsService.createSkill('skill.md', '# Skill', 'global')
-      
+
       assert.equal(skill.name, 'skill')
-      
+
       // Verify only one .md extension
       const files = await fs.readdir(globalSkillsDir)
       assert.deepEqual(files, ['skill.md'])
@@ -274,7 +285,7 @@ This is the skill body.`
 
     it('should throw when workspace scope is used without workspace path', async () => {
       const serviceWithoutWorkspace = new SkillsService(null)
-      
+
       await assert.rejects(
         async () => await serviceWithoutWorkspace.createSkill('test', '# Test', 'workspace'),
         { message: 'No workspace path set' }
@@ -290,7 +301,7 @@ title: Frontmatter Skill
 
       const skill = await skillsService.createSkill('frontmatter', content, 'global')
       assert.equal(skill.content, content)
-      
+
       const fileContent = await fs.readFile(path.join(globalSkillsDir, 'frontmatter.md'), 'utf-8')
       assert.equal(fileContent, content)
     })
@@ -303,7 +314,7 @@ title: Frontmatter Skill
       await fs.writeFile(path.join(globalSkillsDir, 'skill.md'), '# Old Content', 'utf-8')
 
       const skill = await skillsService.updateSkill('skill', '# New Content', 'global')
-      
+
       assert.equal(skill.name, 'skill')
       assert.equal(skill.content, '# New Content')
       assert.equal(skill.scope, 'global')
@@ -319,7 +330,7 @@ title: Frontmatter Skill
       await fs.writeFile(path.join(workspaceSkillsDir, 'skill.md'), '# Old', 'utf-8')
 
       const skill = await skillsService.updateSkill('skill', '# New', 'workspace')
-      
+
       assert.equal(skill.content, '# New')
       assert.equal(skill.scope, 'workspace')
     })
@@ -342,7 +353,7 @@ title: Frontmatter Skill
 
     it('should throw when workspace scope is used without workspace path', async () => {
       const serviceWithoutWorkspace = new SkillsService(null)
-      
+
       await assert.rejects(
         async () => await serviceWithoutWorkspace.updateSkill('test', '# New', 'workspace'),
         { message: 'No workspace path set' }
@@ -359,7 +370,8 @@ title: Frontmatter Skill
       await skillsService.deleteSkill('to-delete', 'global')
 
       // Verify file was deleted
-      const exists = await fs.access(path.join(globalSkillsDir, 'to-delete.md'))
+      const exists = await fs
+        .access(path.join(globalSkillsDir, 'to-delete.md'))
         .then(() => true)
         .catch(() => false)
       assert.equal(exists, false)
@@ -373,17 +385,17 @@ title: Frontmatter Skill
       await skillsService.deleteSkill('to-delete', 'workspace')
 
       // Verify file was deleted
-      const exists = await fs.access(path.join(workspaceSkillsDir, 'to-delete.md'))
+      const exists = await fs
+        .access(path.join(workspaceSkillsDir, 'to-delete.md'))
         .then(() => true)
         .catch(() => false)
       assert.equal(exists, false)
     })
 
     it('should throw when skill does not exist', async () => {
-      await assert.rejects(
-        async () => await skillsService.deleteSkill('nonexistent', 'global'),
-        { message: 'Skill "nonexistent" not found in global scope' }
-      )
+      await assert.rejects(async () => await skillsService.deleteSkill('nonexistent', 'global'), {
+        message: 'Skill "nonexistent" not found in global scope'
+      })
     })
 
     it('should handle name with .md extension', async () => {
@@ -392,7 +404,8 @@ title: Frontmatter Skill
 
       await skillsService.deleteSkill('skill.md', 'global')
 
-      const exists = await fs.access(path.join(globalSkillsDir, 'skill.md'))
+      const exists = await fs
+        .access(path.join(globalSkillsDir, 'skill.md'))
         .then(() => true)
         .catch(() => false)
       assert.equal(exists, false)
@@ -400,7 +413,7 @@ title: Frontmatter Skill
 
     it('should throw when workspace scope is used without workspace path', async () => {
       const serviceWithoutWorkspace = new SkillsService(null)
-      
+
       await assert.rejects(
         async () => await serviceWithoutWorkspace.deleteSkill('test', 'workspace'),
         { message: 'No workspace path set' }
@@ -412,9 +425,9 @@ title: Frontmatter Skill
     it('should handle skill names with special characters', async () => {
       const name = 'my-skill_v2.0'
       const skill = await skillsService.createSkill(name, '# Skill', 'global')
-      
+
       assert.equal(skill.name, name)
-      
+
       const retrieved = await skillsService.getSkill(name, 'global')
       assert.ok(retrieved)
       assert.equal(retrieved.name, name)
@@ -423,7 +436,7 @@ title: Frontmatter Skill
     it('should handle empty skill content', async () => {
       const skill = await skillsService.createSkill('empty', '', 'global')
       assert.equal(skill.content, '')
-      
+
       const content = await fs.readFile(path.join(globalSkillsDir, 'empty.md'), 'utf-8')
       assert.equal(content, '')
     })
@@ -431,9 +444,9 @@ title: Frontmatter Skill
     it('should handle large skill content', async () => {
       const largeContent = '# Large Skill\n\n' + 'x'.repeat(10000)
       const skill = await skillsService.createSkill('large', largeContent, 'global')
-      
+
       assert.equal(skill.content, largeContent)
-      
+
       const retrieved = await skillsService.getSkill('large', 'global')
       assert.ok(retrieved)
       assert.equal(retrieved.content, largeContent)
@@ -442,9 +455,9 @@ title: Frontmatter Skill
     it('should handle Unicode content', async () => {
       const unicodeContent = '# 技能 Skill 🚀\n\nこんにちは 世界'
       const skill = await skillsService.createSkill('unicode', unicodeContent, 'global')
-      
+
       assert.equal(skill.content, unicodeContent)
-      
+
       const retrieved = await skillsService.getSkill('unicode', 'global')
       assert.ok(retrieved)
       assert.equal(retrieved.content, unicodeContent)
@@ -453,7 +466,7 @@ title: Frontmatter Skill
     it('should handle newlines in content', async () => {
       const content = 'Line 1\n\nLine 2\n\n\nLine 3'
       const skill = await skillsService.createSkill('newlines', content, 'global')
-      
+
       assert.equal(skill.content, content)
     })
   })

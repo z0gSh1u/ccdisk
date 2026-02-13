@@ -1,6 +1,6 @@
 /**
  * Tests for CommandsService
- * 
+ *
  * Run with: npx tsx --test src/main/__tests__/commands-service.test.ts
  */
 import { describe, it, beforeEach, afterEach } from 'node:test'
@@ -21,21 +21,21 @@ describe('CommandsService', () => {
     // Create temporary test directories
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'commands-test-'))
     originalHome = process.env.HOME || os.homedir()
-    
+
     // Override HOME for testing
     process.env.HOME = tempDir
-    
+
     globalCommandsDir = path.join(tempDir, '.claude', 'commands')
     const workspacePath = path.join(tempDir, 'workspace')
     workspaceCommandsDir = path.join(workspacePath, '.claude', 'commands')
-    
+
     commandsService = new CommandsService(workspacePath)
   })
 
   afterEach(async () => {
     // Restore original HOME
     process.env.HOME = originalHome
-    
+
     // Clean up test files
     try {
       await fs.rm(tempDir, { recursive: true, force: true })
@@ -86,9 +86,17 @@ describe('CommandsService', () => {
     it('should list global commands', async () => {
       // Create global commands
       await fs.mkdir(globalCommandsDir, { recursive: true })
-      await fs.writeFile(path.join(globalCommandsDir, 'deploy.sh'), '#!/bin/bash\necho "deploying"', 'utf-8')
+      await fs.writeFile(
+        path.join(globalCommandsDir, 'deploy.sh'),
+        '#!/bin/bash\necho "deploying"',
+        'utf-8'
+      )
       await fs.chmod(path.join(globalCommandsDir, 'deploy.sh'), 0o755)
-      await fs.writeFile(path.join(globalCommandsDir, 'test.py'), '#!/usr/bin/env python3\nprint("testing")', 'utf-8')
+      await fs.writeFile(
+        path.join(globalCommandsDir, 'test.py'),
+        '#!/usr/bin/env python3\nprint("testing")',
+        'utf-8'
+      )
       await fs.chmod(path.join(globalCommandsDir, 'test.py'), 0o755)
 
       const commands = await commandsService.listCommands()
@@ -105,7 +113,11 @@ describe('CommandsService', () => {
     it('should list workspace commands', async () => {
       // Create workspace commands
       await fs.mkdir(workspaceCommandsDir, { recursive: true })
-      await fs.writeFile(path.join(workspaceCommandsDir, 'build.sh'), '#!/bin/bash\necho "building"', 'utf-8')
+      await fs.writeFile(
+        path.join(workspaceCommandsDir, 'build.sh'),
+        '#!/bin/bash\necho "building"',
+        'utf-8'
+      )
       await fs.chmod(path.join(workspaceCommandsDir, 'build.sh'), 0o755)
 
       const commands = await commandsService.listCommands()
@@ -120,9 +132,17 @@ describe('CommandsService', () => {
       // Create both global and workspace commands
       await fs.mkdir(globalCommandsDir, { recursive: true })
       await fs.mkdir(workspaceCommandsDir, { recursive: true })
-      await fs.writeFile(path.join(globalCommandsDir, 'global.sh'), '#!/bin/bash\necho "global"', 'utf-8')
+      await fs.writeFile(
+        path.join(globalCommandsDir, 'global.sh'),
+        '#!/bin/bash\necho "global"',
+        'utf-8'
+      )
       await fs.chmod(path.join(globalCommandsDir, 'global.sh'), 0o755)
-      await fs.writeFile(path.join(workspaceCommandsDir, 'workspace.sh'), '#!/bin/bash\necho "workspace"', 'utf-8')
+      await fs.writeFile(
+        path.join(workspaceCommandsDir, 'workspace.sh'),
+        '#!/bin/bash\necho "workspace"',
+        'utf-8'
+      )
       await fs.chmod(path.join(workspaceCommandsDir, 'workspace.sh'), 0o755)
 
       const commands = await commandsService.listCommands()
@@ -143,10 +163,10 @@ describe('CommandsService', () => {
 
       const commands = await commandsService.listCommands()
       assert.equal(commands.length, 2)
-      
-      const executable = commands.find(c => c.name === 'executable.sh')
-      const notExecutable = commands.find(c => c.name === 'not-executable.sh')
-      
+
+      const executable = commands.find((c) => c.name === 'executable.sh')
+      const notExecutable = commands.find((c) => c.name === 'not-executable.sh')
+
       assert.ok(executable)
       assert.equal(executable.isExecutable, true)
       assert.ok(notExecutable)
@@ -194,7 +214,11 @@ describe('CommandsService', () => {
     it('should preserve file extensions in command names', async () => {
       await fs.mkdir(globalCommandsDir, { recursive: true })
       await fs.writeFile(path.join(globalCommandsDir, 'script.sh'), '#!/bin/bash', 'utf-8')
-      await fs.writeFile(path.join(globalCommandsDir, 'script.py'), '#!/usr/bin/env python3', 'utf-8')
+      await fs.writeFile(
+        path.join(globalCommandsDir, 'script.py'),
+        '#!/usr/bin/env python3',
+        'utf-8'
+      )
       await fs.writeFile(path.join(globalCommandsDir, 'script.js'), '#!/usr/bin/env node', 'utf-8')
       await fs.chmod(path.join(globalCommandsDir, 'script.sh'), 0o755)
       await fs.chmod(path.join(globalCommandsDir, 'script.py'), 0o755)
@@ -202,15 +226,15 @@ describe('CommandsService', () => {
 
       const commands = await commandsService.listCommands()
       assert.equal(commands.length, 3)
-      
-      const names = commands.map(c => c.name).sort()
+
+      const names = commands.map((c) => c.name).sort()
       assert.deepEqual(names, ['script.js', 'script.py', 'script.sh'])
     })
 
     it('should not list workspace commands when no workspace path is set', async () => {
       // Create service without workspace
       const serviceWithoutWorkspace = new CommandsService(null)
-      
+
       await fs.mkdir(globalCommandsDir, { recursive: true })
       await fs.writeFile(path.join(globalCommandsDir, 'global.sh'), '#!/bin/bash', 'utf-8')
       await fs.chmod(path.join(globalCommandsDir, 'global.sh'), 0o755)
@@ -225,7 +249,7 @@ describe('CommandsService', () => {
     it('should create global command', async () => {
       const content = '#!/bin/bash\necho "Hello World"'
       const command = await commandsService.createCommand('hello.sh', content, 'global')
-      
+
       assert.equal(command.name, 'hello.sh')
       assert.equal(command.scope, 'global')
       assert.equal(command.path, path.join(globalCommandsDir, 'hello.sh'))
@@ -234,7 +258,7 @@ describe('CommandsService', () => {
       // Verify file was created
       const fileContent = await fs.readFile(path.join(globalCommandsDir, 'hello.sh'), 'utf-8')
       assert.equal(fileContent, content)
-      
+
       // Verify executable permissions
       const stats = await fs.stat(path.join(globalCommandsDir, 'hello.sh'))
       assert.equal((stats.mode & 0o111) !== 0, true)
@@ -243,7 +267,7 @@ describe('CommandsService', () => {
     it('should create workspace command', async () => {
       const content = '#!/usr/bin/env python3\nprint("Hello")'
       const command = await commandsService.createCommand('hello.py', content, 'workspace')
-      
+
       assert.equal(command.name, 'hello.py')
       assert.equal(command.scope, 'workspace')
       assert.equal(command.isExecutable, true)
@@ -251,7 +275,7 @@ describe('CommandsService', () => {
       // Verify file was created
       const fileContent = await fs.readFile(path.join(workspaceCommandsDir, 'hello.py'), 'utf-8')
       assert.equal(fileContent, content)
-      
+
       // Verify executable permissions
       const stats = await fs.stat(path.join(workspaceCommandsDir, 'hello.py'))
       assert.equal((stats.mode & 0o111) !== 0, true)
@@ -259,9 +283,12 @@ describe('CommandsService', () => {
 
     it('should create directory if it does not exist', async () => {
       const command = await commandsService.createCommand('test.sh', '#!/bin/bash', 'global')
-      
+
       assert.ok(command)
-      const dirExists = await fs.access(globalCommandsDir).then(() => true).catch(() => false)
+      const dirExists = await fs
+        .access(globalCommandsDir)
+        .then(() => true)
+        .catch(() => false)
       assert.equal(dirExists, true)
     })
 
@@ -270,16 +297,18 @@ describe('CommandsService', () => {
       await fs.writeFile(path.join(globalCommandsDir, 'existing.sh'), '#!/bin/bash', 'utf-8')
 
       await assert.rejects(
-        async () => await commandsService.createCommand('existing.sh', '#!/bin/bash\necho "new"', 'global'),
+        async () =>
+          await commandsService.createCommand('existing.sh', '#!/bin/bash\necho "new"', 'global'),
         { message: 'Command "existing.sh" already exists in global scope' }
       )
     })
 
     it('should throw when workspace scope is used without workspace path', async () => {
       const serviceWithoutWorkspace = new CommandsService(null)
-      
+
       await assert.rejects(
-        async () => await serviceWithoutWorkspace.createCommand('test.sh', '#!/bin/bash', 'workspace'),
+        async () =>
+          await serviceWithoutWorkspace.createCommand('test.sh', '#!/bin/bash', 'workspace'),
         { message: 'No workspace path set' }
       )
     })
@@ -298,7 +327,7 @@ describe('CommandsService', () => {
 
     it('should set correct executable permissions (0o755)', async () => {
       await commandsService.createCommand('check-perms.sh', '#!/bin/bash', 'global')
-      
+
       const stats = await fs.stat(path.join(globalCommandsDir, 'check-perms.sh'))
       // Check that the file has 0o755 permissions
       const perms = stats.mode & 0o777
@@ -306,10 +335,17 @@ describe('CommandsService', () => {
     })
 
     it('should handle command names without extensions', async () => {
-      const command = await commandsService.createCommand('deploy', '#!/bin/bash\necho "deploying"', 'global')
-      
+      const command = await commandsService.createCommand(
+        'deploy',
+        '#!/bin/bash\necho "deploying"',
+        'global'
+      )
+
       assert.equal(command.name, 'deploy')
-      const exists = await fs.access(path.join(globalCommandsDir, 'deploy')).then(() => true).catch(() => false)
+      const exists = await fs
+        .access(path.join(globalCommandsDir, 'deploy'))
+        .then(() => true)
+        .catch(() => false)
       assert.equal(exists, true)
     })
   })
@@ -323,7 +359,8 @@ describe('CommandsService', () => {
       await commandsService.deleteCommand('to-delete.sh', 'global')
 
       // Verify file was deleted
-      const exists = await fs.access(path.join(globalCommandsDir, 'to-delete.sh'))
+      const exists = await fs
+        .access(path.join(globalCommandsDir, 'to-delete.sh'))
         .then(() => true)
         .catch(() => false)
       assert.equal(exists, false)
@@ -337,7 +374,8 @@ describe('CommandsService', () => {
       await commandsService.deleteCommand('to-delete.sh', 'workspace')
 
       // Verify file was deleted
-      const exists = await fs.access(path.join(workspaceCommandsDir, 'to-delete.sh'))
+      const exists = await fs
+        .access(path.join(workspaceCommandsDir, 'to-delete.sh'))
         .then(() => true)
         .catch(() => false)
       assert.equal(exists, false)
@@ -352,7 +390,7 @@ describe('CommandsService', () => {
 
     it('should throw when workspace scope is used without workspace path', async () => {
       const serviceWithoutWorkspace = new CommandsService(null)
-      
+
       await assert.rejects(
         async () => await serviceWithoutWorkspace.deleteCommand('test.sh', 'workspace'),
         { message: 'No workspace path set' }
@@ -362,7 +400,11 @@ describe('CommandsService', () => {
     it('should handle command names with various extensions', async () => {
       await fs.mkdir(globalCommandsDir, { recursive: true })
       await fs.writeFile(path.join(globalCommandsDir, 'script.sh'), '#!/bin/bash', 'utf-8')
-      await fs.writeFile(path.join(globalCommandsDir, 'script.py'), '#!/usr/bin/env python3', 'utf-8')
+      await fs.writeFile(
+        path.join(globalCommandsDir, 'script.py'),
+        '#!/usr/bin/env python3',
+        'utf-8'
+      )
 
       await commandsService.deleteCommand('script.sh', 'global')
       await commandsService.deleteCommand('script.py', 'global')
@@ -376,11 +418,11 @@ describe('CommandsService', () => {
     it('should handle command names with special characters', async () => {
       const name = 'my-command_v2.0.sh'
       const command = await commandsService.createCommand(name, '#!/bin/bash', 'global')
-      
+
       assert.equal(command.name, name)
-      
+
       const commands = await commandsService.listCommands()
-      const found = commands.find(c => c.name === name)
+      const found = commands.find((c) => c.name === name)
       assert.ok(found)
       assert.equal(found.name, name)
     })
@@ -388,7 +430,7 @@ describe('CommandsService', () => {
     it('should handle empty command content', async () => {
       const command = await commandsService.createCommand('empty.sh', '', 'global')
       assert.equal(command.name, 'empty.sh')
-      
+
       const content = await fs.readFile(path.join(globalCommandsDir, 'empty.sh'), 'utf-8')
       assert.equal(content, '')
     })
@@ -396,9 +438,9 @@ describe('CommandsService', () => {
     it('should handle large command content', async () => {
       const largeContent = '#!/bin/bash\n\n' + '# Comment\n'.repeat(1000)
       const command = await commandsService.createCommand('large.sh', largeContent, 'global')
-      
+
       assert.equal(command.name, 'large.sh')
-      
+
       const content = await fs.readFile(path.join(globalCommandsDir, 'large.sh'), 'utf-8')
       assert.equal(content, largeContent)
     })
@@ -406,9 +448,9 @@ describe('CommandsService', () => {
     it('should handle Unicode content', async () => {
       const unicodeContent = '#!/bin/bash\n# 部署脚本 Deployment Script 🚀\necho "こんにちは 世界"'
       const command = await commandsService.createCommand('unicode.sh', unicodeContent, 'global')
-      
+
       assert.equal(command.name, 'unicode.sh')
-      
+
       const content = await fs.readFile(path.join(globalCommandsDir, 'unicode.sh'), 'utf-8')
       assert.equal(content, unicodeContent)
     })
@@ -416,7 +458,7 @@ describe('CommandsService', () => {
     it('should handle newlines in content', async () => {
       const content = '#!/bin/bash\n\necho "Line 1"\n\necho "Line 2"\n\n\necho "Line 3"'
       await commandsService.createCommand('newlines.sh', content, 'global')
-      
+
       const fileContent = await fs.readFile(path.join(globalCommandsDir, 'newlines.sh'), 'utf-8')
       assert.equal(fileContent, content)
     })
@@ -424,23 +466,23 @@ describe('CommandsService', () => {
     it('should handle switching workspace paths', async () => {
       // Create command in first workspace
       await commandsService.createCommand('ws1.sh', '#!/bin/bash', 'workspace')
-      
+
       let commands = await commandsService.listCommands()
-      assert.equal(commands.filter(c => c.scope === 'workspace').length, 1)
-      
+      assert.equal(commands.filter((c) => c.scope === 'workspace').length, 1)
+
       // Switch to new workspace
       const newWorkspacePath = path.join(tempDir, 'workspace2')
       commandsService.setWorkspacePath(newWorkspacePath)
-      
+
       // Old workspace commands should not appear
       commands = await commandsService.listCommands()
-      assert.equal(commands.filter(c => c.scope === 'workspace').length, 0)
-      
+      assert.equal(commands.filter((c) => c.scope === 'workspace').length, 0)
+
       // Create command in new workspace
       await commandsService.createCommand('ws2.sh', '#!/bin/bash', 'workspace')
-      
+
       commands = await commandsService.listCommands()
-      const workspaceCommands = commands.filter(c => c.scope === 'workspace')
+      const workspaceCommands = commands.filter((c) => c.scope === 'workspace')
       assert.equal(workspaceCommands.length, 1)
       assert.equal(workspaceCommands[0].name, 'ws2.sh')
     })
@@ -448,9 +490,9 @@ describe('CommandsService', () => {
     it('should handle files with multiple dots in name', async () => {
       const name = 'deploy.v2.0.sh'
       await commandsService.createCommand(name, '#!/bin/bash', 'global')
-      
+
       const commands = await commandsService.listCommands()
-      const found = commands.find(c => c.name === name)
+      const found = commands.find((c) => c.name === name)
       assert.ok(found)
       assert.equal(found.name, name)
     })

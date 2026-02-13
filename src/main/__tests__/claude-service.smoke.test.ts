@@ -1,6 +1,6 @@
 /**
  * Simple smoke tests for ClaudeService
- * 
+ *
  * Run with: npx tsx --test src/main/__tests__/claude-service.smoke.test.ts
  */
 import { describe, it } from 'node:test'
@@ -26,7 +26,7 @@ describe('ClaudeService - Smoke Tests', () => {
     const onStreamEvent = (_sessionId: string, _event: StreamEvent): void => {}
 
     const service = new ClaudeService(mockConfigService, mockMCPService, onStreamEvent)
-    
+
     // Type check - will fail compilation if wrong
     const _check: (
       sessionId: string,
@@ -34,7 +34,7 @@ describe('ClaudeService - Smoke Tests', () => {
       files?: Array<{ path: string; content: string }>,
       sdkSessionId?: string
     ) => Promise<void> = service.sendMessage.bind(service)
-    
+
     assert.ok(_check)
   })
 
@@ -44,11 +44,11 @@ describe('ClaudeService - Smoke Tests', () => {
     const onStreamEvent = (_sessionId: string, _event: StreamEvent): void => {}
 
     const service = new ClaudeService(mockConfigService, mockMCPService, onStreamEvent)
-    
+
     service.setPermissionMode('prompt')
     service.setPermissionMode('acceptEdits')
     service.setPermissionMode('bypassPermissions')
-    
+
     assert.ok(true)
   })
 
@@ -58,11 +58,11 @@ describe('ClaudeService - Smoke Tests', () => {
     const onStreamEvent = (_sessionId: string, _event: StreamEvent): void => {}
 
     const service = new ClaudeService(mockConfigService, mockMCPService, onStreamEvent)
-    
+
     // Should not throw even with unknown ID
     service.respondToPermission('unknown-id', true)
     service.respondToPermission('unknown-id', false)
-    
+
     assert.ok(true)
   })
 
@@ -72,10 +72,10 @@ describe('ClaudeService - Smoke Tests', () => {
     const onStreamEvent = (_sessionId: string, _event: StreamEvent): void => {}
 
     const service = new ClaudeService(mockConfigService, mockMCPService, onStreamEvent)
-    
+
     // Should not throw even with unknown session
     service.abortSession('unknown-session')
-    
+
     assert.ok(true)
   })
 
@@ -85,10 +85,10 @@ describe('ClaudeService - Smoke Tests', () => {
     const onStreamEvent = (_sessionId: string, _event: StreamEvent): void => {}
 
     const service = new ClaudeService(mockConfigService, mockMCPService, onStreamEvent)
-    
+
     service.cleanup()
     service.cleanup() // Should be safe to call multiple times
-    
+
     assert.ok(true)
   })
 })

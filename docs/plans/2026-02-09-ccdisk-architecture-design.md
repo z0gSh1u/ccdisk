@@ -161,21 +161,21 @@ export const IPC_CHANNELS = {
   CHAT_STREAM: 'chat:stream',
   CHAT_PERMISSION_RESPONSE: 'chat:permission-response',
   CHAT_SET_PERMISSION_MODE: 'chat:set-permission-mode',
-  
+
   // Session management
   SESSIONS_CREATE: 'sessions:create',
   SESSIONS_LIST: 'sessions:list',
   SESSIONS_GET: 'sessions:get',
   SESSIONS_DELETE: 'sessions:delete',
   SESSIONS_GET_MESSAGES: 'sessions:messages',
-  
+
   // Workspace operations
   WORKSPACE_SELECT: 'workspace:select',
   WORKSPACE_GET_CURRENT: 'workspace:get-current',
   WORKSPACE_GET_FILE_TREE: 'workspace:file-tree',
   WORKSPACE_GET_FILE_CONTENT: 'workspace:file-content',
   WORKSPACE_FILE_CHANGED: 'workspace:file-changed',
-  
+
   // Settings & Providers
   SETTINGS_PROVIDERS_LIST: 'settings:providers:list',
   SETTINGS_PROVIDERS_CREATE: 'settings:providers:create',
@@ -183,7 +183,7 @@ export const IPC_CHANNELS = {
   SETTINGS_PROVIDERS_DELETE: 'settings:providers:delete',
   SETTINGS_PROVIDERS_ACTIVATE: 'settings:providers:activate',
   SETTINGS_SYNC_TO_FILE: 'settings:sync-to-file',
-  
+
   // Skills management
   SKILLS_LIST: 'skills:list',
   SKILLS_GET: 'skills:get',
@@ -191,15 +191,15 @@ export const IPC_CHANNELS = {
   SKILLS_UPDATE: 'skills:update',
   SKILLS_DELETE: 'skills:delete',
   SKILLS_CHANGED: 'skills:changed',
-  
+
   // Commands management
   COMMANDS_LIST: 'commands:list',
   COMMANDS_CREATE: 'commands:create',
   COMMANDS_DELETE: 'commands:delete',
-  
+
   // MCP servers
   MCP_GET_CONFIG: 'mcp:get-config',
-  MCP_UPDATE_CONFIG: 'mcp:update-config',
+  MCP_UPDATE_CONFIG: 'mcp:update-config'
 } as const
 ```
 
@@ -224,16 +224,18 @@ export const sessions = sqliteTable('sessions', {
   sdkSessionId: text('sdk_session_id'),
   model: text('model'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
 })
 
 export const messages = sqliteTable('messages', {
   id: text('id').primaryKey(),
-  sessionId: text('session_id').notNull().references(() => sessions.id, { onDelete: 'cascade' }),
+  sessionId: text('session_id')
+    .notNull()
+    .references(() => sessions.id, { onDelete: 'cascade' }),
   role: text('role', { enum: ['user', 'assistant', 'system'] }).notNull(),
   content: text('content').notNull(), // JSON serialized
   tokenUsage: text('token_usage'), // JSON serialized
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
 })
 
 export const providers = sqliteTable('providers', {
@@ -244,12 +246,12 @@ export const providers = sqliteTable('providers', {
   extraEnv: text('extra_env'), // JSON object
   isActive: integer('is_active', { mode: 'boolean' }).default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
 })
 
 export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
-  value: text('value').notNull(),
+  value: text('value').notNull()
 })
 ```
 
@@ -258,18 +260,18 @@ export const settings = sqliteTable('settings', {
 ```typescript
 class DatabaseService {
   private db: ReturnType<typeof drizzle>
-  
+
   // Sessions CRUD
   async createSession(session: typeof schema.sessions.$inferInsert)
   async getSession(id: string)
   async listSessions()
   async updateSession(id: string, data: Partial<...>)
   async deleteSession(id: string)
-  
+
   // Messages CRUD
   async createMessage(message: typeof schema.messages.$inferInsert)
   async getMessages(sessionId: string)
-  
+
   // Providers CRUD
   async createProvider(provider: typeof schema.providers.$inferInsert)
   async listProviders()
@@ -277,7 +279,7 @@ class DatabaseService {
   async activateProvider(id: string)
   async updateProvider(id: string, data: Partial<...>)
   async deleteProvider(id: string)
-  
+
   // Settings CRUD
   async getSetting(key: string)
   async setSetting(key: string, value: string)
@@ -296,13 +298,13 @@ class DatabaseService {
 class ClaudeService {
   // Send message and stream responses via IPC
   async sendMessage(sessionId: string, message: string, files?: File[])
-  
+
   // Resume existing SDK session
   async resumeSession(sdkSessionId: string, message: string)
-  
+
   // Handle permission requests (canUseTool hook)
   async requestPermission(toolName: string, input: any, suggestions: string[])
-  
+
   // Abort ongoing operation
   abortSession(sessionId: string)
 }
@@ -336,7 +338,7 @@ Renderer                Main Process              Claude SDK
 ### Stream Event Types
 
 ```typescript
-export type StreamEvent = 
+export type StreamEvent =
   | { type: 'text'; data: string }
   | { type: 'tool_use'; data: { id: string; name: string; input: any } }
   | { type: 'tool_result'; data: { tool_use_id: string; content: string; is_error: boolean } }
@@ -350,6 +352,7 @@ export type StreamEvent =
 ### Permission Handling
 
 **Flow:**
+
 1. Claude SDK calls `canUseTool` hook
 2. Main process generates `permissionRequestId`
 3. Sends `permission_request` stream event to renderer
@@ -361,6 +364,7 @@ export type StreamEvent =
 9. SDK continues execution
 
 **Permission Modes:**
+
 - `prompt`: Ask for every tool use
 - `acceptEdits`: Auto-approve most tools, prompt for destructive ones
 - `bypassPermissions`: Skip all prompts (dangerous)
@@ -372,6 +376,7 @@ export type StreamEvent =
 ### Directory Structure
 
 **Global Configuration** (`~/.claude/`):
+
 ```
 ~/.claude/
 ├── settings.json           # Synced by active provider
@@ -385,6 +390,7 @@ export type StreamEvent =
 ```
 
 **Workspace Configuration** (`<workspace>/`):
+
 ```
 <workspace>/
 ├── .claude/
@@ -395,6 +401,7 @@ export type StreamEvent =
 ```
 
 **App Data** (`~/.ccdisk/`):
+
 ```
 ~/.ccdisk/
 └── sessions.db           # SQLite database
@@ -405,6 +412,7 @@ export type StreamEvent =
 **Files:** Markdown files with frontmatter in `~/.claude/skills/` or `<workspace>/.claude/skills/`
 
 **Operations:**
+
 - List: Read both directories, merge results
 - Get: Read specific `.md` file
 - Create: Write new `.md` file
@@ -417,6 +425,7 @@ export type StreamEvent =
 **Files:** Executable scripts in `~/.claude/commands/` or `<workspace>/.claude/commands/`
 
 **Operations:**
+
 - List: Read executable files from both scopes
 - Create: Write file with executable permissions (`chmod +x`)
 - Delete: Remove file
@@ -427,12 +436,14 @@ export type StreamEvent =
 **Files:** JSON config in `~/.claude/mcp.json` or `<workspace>/.claude/mcp.json`
 
 **Operations:**
+
 - Get config: Parse JSON from both files
 - Update config: Validate and write JSON
 - Merge: Workspace config overrides global
 - Pass to SDK: Via `mcpServers` option in `query()`
 
 **Config Format:**
+
 ```json
 {
   "mcpServers": {
@@ -453,6 +464,7 @@ export type StreamEvent =
 ### Settings.json Management
 
 **Provider Sync Flow:**
+
 1. User creates/edits provider in GUI
 2. Saves to SQLite database
 3. User clicks "Activate" button
@@ -470,6 +482,7 @@ export type StreamEvent =
 6. Preserves other settings when writing
 
 **Environment Variables Mapped:**
+
 - `ANTHROPIC_AUTH_TOKEN`
 - `ANTHROPIC_BASE_URL`
 - `ANTHROPIC_DEFAULT_HAIKU_MODEL`
@@ -558,7 +571,7 @@ interface ChatStore {
   isStreaming: boolean
   permissionMode: PermissionMode
   pendingPermissions: PermissionRequest[]
-  
+
   // Actions
   loadSessions: () => Promise<void>
   createSession: (name: string) => Promise<void>
@@ -578,7 +591,7 @@ interface WorkspaceStore {
   fileTree: FileNode[]
   selectedFile: string | null
   fileContent: string | null
-  
+
   // Actions
   selectWorkspace: (path: string) => Promise<void>
   refreshFileTree: () => Promise<void>
@@ -592,7 +605,7 @@ interface WorkspaceStore {
 interface SettingsStore {
   providers: Provider[]
   activeProviderId: string | null
-  
+
   // Actions
   loadProviders: () => Promise<void>
   createProvider: (provider: Omit<Provider, 'id'>) => Promise<void>
@@ -609,17 +622,20 @@ interface SettingsStore {
 ### File Tree Implementation
 
 **Ignore Patterns:**
+
 - `.git/`, `node_modules/`, `.ccdisk/`, `.codepilot-uploads/`
 - Support `.gitignore` parsing (optional enhancement)
 - Limit depth: 5 levels (configurable)
 
 **File Watcher:**
+
 - Watch workspace root with chokidar
 - Debounce: 300ms
 - Emit `WORKSPACE_FILE_CHANGED` IPC events
 - Renderer refreshes tree on event
 
 **Display:**
+
 - Tree structure with expand/collapse
 - Icons for file types
 - Click to select file for preview
@@ -628,6 +644,7 @@ interface SettingsStore {
 ### File Preview
 
 **Features:**
+
 - Syntax highlighting with Shiki
 - Support text files up to 1MB
 - Image preview (encode as base64)
@@ -635,6 +652,7 @@ interface SettingsStore {
 - Copy content button
 
 **Implementation:**
+
 - Renderer calls `WORKSPACE_GET_FILE_CONTENT` IPC
 - Main process reads file from disk
 - Returns content + metadata (size, type)

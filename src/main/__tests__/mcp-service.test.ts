@@ -1,6 +1,6 @@
 /**
  * Tests for MCPService
- * 
+ *
  * Run with: npx tsx --test src/main/__tests__/mcp-service.test.ts
  */
 import { describe, it, beforeEach, afterEach } from 'node:test'
@@ -22,24 +22,24 @@ describe('MCPService', () => {
     // Create a temporary test directory
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mcp-test-'))
     originalHome = process.env.HOME || os.homedir()
-    
+
     // Override HOME for testing global config
     process.env.HOME = tempDir
-    
+
     // Create workspace directory
     const workspaceDir = path.join(tempDir, 'workspace')
     await fs.mkdir(workspaceDir, { recursive: true })
-    
+
     globalConfigPath = path.join(tempDir, '.claude', 'mcp.json')
     workspaceConfigPath = path.join(workspaceDir, '.claude', 'mcp.json')
-    
+
     mcpService = new MCPService(workspaceDir)
   })
 
   afterEach(async () => {
     // Restore original HOME
     process.env.HOME = originalHome
-    
+
     // Clean up test files
     try {
       await fs.rm(tempDir, { recursive: true, force: true })
@@ -70,9 +70,9 @@ describe('MCPService', () => {
     it('should update workspace path', async () => {
       const newWorkspacePath = path.join(tempDir, 'new-workspace')
       await fs.mkdir(newWorkspacePath, { recursive: true })
-      
+
       mcpService.setWorkspacePath(newWorkspacePath)
-      
+
       // Write config to new workspace
       const config: MCPConfig = {
         mcpServers: {
@@ -80,7 +80,7 @@ describe('MCPService', () => {
         }
       }
       await mcpService.updateConfig(config, 'workspace')
-      
+
       // Verify file was written to new workspace
       const newConfigPath = path.join(newWorkspacePath, '.claude', 'mcp.json')
       const content = await fs.readFile(newConfigPath, 'utf-8')
@@ -90,7 +90,7 @@ describe('MCPService', () => {
 
     it('should set workspace path to null', () => {
       mcpService.setWorkspacePath(null)
-      
+
       // Should throw when trying to update workspace config
       assert.rejects(
         () => mcpService.updateConfig({ mcpServers: {} }, 'workspace'),
@@ -115,10 +115,10 @@ describe('MCPService', () => {
           }
         }
       }
-      
+
       await fs.mkdir(path.dirname(globalConfigPath), { recursive: true })
       await fs.writeFile(globalConfigPath, JSON.stringify(globalConfig), 'utf-8')
-      
+
       const config = await mcpService.getConfig()
       assert.deepEqual(config, globalConfig)
     })
@@ -132,10 +132,10 @@ describe('MCPService', () => {
           }
         }
       }
-      
+
       await fs.mkdir(path.dirname(workspaceConfigPath), { recursive: true })
       await fs.writeFile(workspaceConfigPath, JSON.stringify(workspaceConfig), 'utf-8')
-      
+
       const config = await mcpService.getConfig()
       assert.deepEqual(config, workspaceConfig)
     })
@@ -154,7 +154,7 @@ describe('MCPService', () => {
           }
         }
       }
-      
+
       const workspaceConfig: MCPConfig = {
         mcpServers: {
           slack: {
@@ -163,12 +163,12 @@ describe('MCPService', () => {
           }
         }
       }
-      
+
       await fs.mkdir(path.dirname(globalConfigPath), { recursive: true })
       await fs.writeFile(globalConfigPath, JSON.stringify(globalConfig), 'utf-8')
       await fs.mkdir(path.dirname(workspaceConfigPath), { recursive: true })
       await fs.writeFile(workspaceConfigPath, JSON.stringify(workspaceConfig), 'utf-8')
-      
+
       const config = await mcpService.getConfig()
       assert.deepEqual(config, {
         mcpServers: {
@@ -199,7 +199,7 @@ describe('MCPService', () => {
           }
         }
       }
-      
+
       const workspaceConfig: MCPConfig = {
         mcpServers: {
           filesystem: {
@@ -209,12 +209,12 @@ describe('MCPService', () => {
           }
         }
       }
-      
+
       await fs.mkdir(path.dirname(globalConfigPath), { recursive: true })
       await fs.writeFile(globalConfigPath, JSON.stringify(globalConfig), 'utf-8')
       await fs.mkdir(path.dirname(workspaceConfigPath), { recursive: true })
       await fs.writeFile(workspaceConfigPath, JSON.stringify(workspaceConfig), 'utf-8')
-      
+
       const config = await mcpService.getConfig()
       assert.deepEqual(config, {
         mcpServers: {
@@ -236,12 +236,12 @@ describe('MCPService', () => {
           }
         }
       }
-      
+
       await fs.mkdir(path.dirname(globalConfigPath), { recursive: true })
       await fs.writeFile(globalConfigPath, 'invalid json{', 'utf-8')
       await fs.mkdir(path.dirname(workspaceConfigPath), { recursive: true })
       await fs.writeFile(workspaceConfigPath, JSON.stringify(workspaceConfig), 'utf-8')
-      
+
       const config = await mcpService.getConfig()
       assert.deepEqual(config, workspaceConfig)
     })
@@ -255,12 +255,12 @@ describe('MCPService', () => {
           }
         }
       }
-      
+
       await fs.mkdir(path.dirname(globalConfigPath), { recursive: true })
       await fs.writeFile(globalConfigPath, JSON.stringify(globalConfig), 'utf-8')
       await fs.mkdir(path.dirname(workspaceConfigPath), { recursive: true })
       await fs.writeFile(workspaceConfigPath, 'invalid json{', 'utf-8')
-      
+
       const config = await mcpService.getConfig()
       assert.deepEqual(config, globalConfig)
     })
@@ -268,7 +268,7 @@ describe('MCPService', () => {
     it('should skip config file with invalid structure', async () => {
       await fs.mkdir(path.dirname(globalConfigPath), { recursive: true })
       await fs.writeFile(globalConfigPath, JSON.stringify({ wrongKey: {} }), 'utf-8')
-      
+
       const config = await mcpService.getConfig()
       assert.deepEqual(config, { mcpServers: {} })
     })
@@ -280,10 +280,10 @@ describe('MCPService', () => {
           test: { type: 'stdio', command: 'test' }
         }
       }
-      
+
       await fs.mkdir(path.dirname(globalConfigPath), { recursive: true })
       await fs.writeFile(globalConfigPath, JSON.stringify(globalConfig), 'utf-8')
-      
+
       const config = await service.getConfig()
       assert.deepEqual(config, globalConfig)
     })
@@ -301,9 +301,9 @@ describe('MCPService', () => {
             }
           }
         }
-        
+
         await mcpService.updateConfig(config, 'global')
-        
+
         const content = await fs.readFile(globalConfigPath, 'utf-8')
         const parsed = JSON.parse(content)
         assert.deepEqual(parsed, config)
@@ -315,9 +315,9 @@ describe('MCPService', () => {
             test: { type: 'stdio', command: 'test' }
           }
         }
-        
+
         await mcpService.updateConfig(config, 'global')
-        
+
         const exists = await fs
           .access(path.dirname(globalConfigPath))
           .then(() => true)
@@ -331,9 +331,9 @@ describe('MCPService', () => {
             test: { type: 'stdio', command: 'test' }
           }
         }
-        
+
         await mcpService.updateConfig(config, 'global')
-        
+
         const content = await fs.readFile(globalConfigPath, 'utf-8')
         assert.ok(content.includes('\n'))
         assert.ok(content.includes('  '))
@@ -360,9 +360,9 @@ describe('MCPService', () => {
             }
           }
         }
-        
+
         await mcpService.updateConfig(config, 'global')
-        
+
         const saved = await mcpService.getConfig()
         assert.deepEqual(saved, config)
       })
@@ -378,9 +378,9 @@ describe('MCPService', () => {
             }
           }
         }
-        
+
         await mcpService.updateConfig(config, 'workspace')
-        
+
         const content = await fs.readFile(workspaceConfigPath, 'utf-8')
         const parsed = JSON.parse(content)
         assert.deepEqual(parsed, config)
@@ -393,7 +393,7 @@ describe('MCPService', () => {
             test: { type: 'stdio', command: 'test' }
           }
         }
-        
+
         await assert.rejects(
           () => service.updateConfig(config, 'workspace'),
           /no workspace path set/
@@ -406,9 +406,9 @@ describe('MCPService', () => {
             test: { type: 'stdio', command: 'test' }
           }
         }
-        
+
         await mcpService.updateConfig(config, 'workspace')
-        
+
         const exists = await fs
           .access(path.dirname(workspaceConfigPath))
           .then(() => true)
@@ -420,7 +420,7 @@ describe('MCPService', () => {
     describe('validation', () => {
       it('should reject config without mcpServers property', async () => {
         const config = { wrongKey: {} } as unknown as MCPConfig
-        
+
         await assert.rejects(
           () => mcpService.updateConfig(config, 'global'),
           /must have mcpServers property/
@@ -429,29 +429,20 @@ describe('MCPService', () => {
 
       it('should reject config where mcpServers is not an object', async () => {
         const config = { mcpServers: 'string' } as unknown as MCPConfig
-        
-        await assert.rejects(
-          () => mcpService.updateConfig(config, 'global'),
-          /must be an object/
-        )
+
+        await assert.rejects(() => mcpService.updateConfig(config, 'global'), /must be an object/)
       })
 
       it('should reject config where mcpServers is null', async () => {
         const config = { mcpServers: null } as unknown as MCPConfig
-        
-        await assert.rejects(
-          () => mcpService.updateConfig(config, 'global'),
-          /must be an object/
-        )
+
+        await assert.rejects(() => mcpService.updateConfig(config, 'global'), /must be an object/)
       })
 
       it('should reject config where mcpServers is an array', async () => {
         const config = { mcpServers: [] } as unknown as MCPConfig
-        
-        await assert.rejects(
-          () => mcpService.updateConfig(config, 'global'),
-          /must be an object/
-        )
+
+        await assert.rejects(() => mcpService.updateConfig(config, 'global'), /must be an object/)
       })
 
       it('should reject server config without type field', async () => {
@@ -460,7 +451,7 @@ describe('MCPService', () => {
             test: { command: 'test' }
           }
         } as unknown as MCPConfig
-        
+
         await assert.rejects(
           () => mcpService.updateConfig(config, 'global'),
           /must have a type field/
@@ -473,7 +464,7 @@ describe('MCPService', () => {
             test: { type: 'invalid', command: 'test' }
           }
         } as unknown as MCPConfig
-        
+
         await assert.rejects(
           () => mcpService.updateConfig(config, 'global'),
           /invalid type "invalid"/
@@ -486,7 +477,7 @@ describe('MCPService', () => {
             test: { type: 'stdio' }
           }
         } as unknown as MCPConfig
-        
+
         await assert.rejects(
           () => mcpService.updateConfig(config, 'global'),
           /must have a command field/
@@ -499,7 +490,7 @@ describe('MCPService', () => {
             test: { type: 'sse' }
           }
         } as unknown as MCPConfig
-        
+
         await assert.rejects(
           () => mcpService.updateConfig(config, 'global'),
           /must have a url field/
@@ -512,7 +503,7 @@ describe('MCPService', () => {
             test: { type: 'http' }
           }
         } as unknown as MCPConfig
-        
+
         await assert.rejects(
           () => mcpService.updateConfig(config, 'global'),
           /must have a url field/
@@ -523,10 +514,10 @@ describe('MCPService', () => {
         const config: MCPConfig = {
           mcpServers: {}
         }
-        
+
         // Should not throw
         await mcpService.updateConfig(config, 'global')
-        
+
         const saved = await mcpService.getConfig()
         assert.deepEqual(saved, config)
       })
@@ -542,7 +533,7 @@ describe('MCPService', () => {
             }
           }
         }
-        
+
         await mcpService.updateConfig(config, 'global')
         const saved = await mcpService.getConfig()
         assert.deepEqual(saved, config)
@@ -558,7 +549,7 @@ describe('MCPService', () => {
             }
           }
         }
-        
+
         await mcpService.updateConfig(config, 'global')
         const saved = await mcpService.getConfig()
         assert.deepEqual(saved, config)
@@ -574,7 +565,7 @@ describe('MCPService', () => {
             }
           }
         }
-        
+
         await mcpService.updateConfig(config, 'global')
         const saved = await mcpService.getConfig()
         assert.deepEqual(saved, config)
@@ -586,7 +577,7 @@ describe('MCPService', () => {
             test: { type: 'stdio', command: 123 }
           }
         } as unknown as MCPConfig
-        
+
         await assert.rejects(
           () => mcpService.updateConfig(config, 'global'),
           /must have a command field/
@@ -599,7 +590,7 @@ describe('MCPService', () => {
             test: { type: 'sse', url: 123 }
           }
         } as unknown as MCPConfig
-        
+
         await assert.rejects(
           () => mcpService.updateConfig(config, 'global'),
           /must have a url field/
@@ -625,7 +616,7 @@ describe('MCPService', () => {
         }
       }
       await mcpService.updateConfig(globalConfig, 'global')
-      
+
       // Write workspace config
       const workspaceConfig: MCPConfig = {
         mcpServers: {
@@ -641,7 +632,7 @@ describe('MCPService', () => {
         }
       }
       await mcpService.updateConfig(workspaceConfig, 'workspace')
-      
+
       // Read merged config
       const merged = await mcpService.getConfig()
       assert.deepEqual(merged, {
@@ -668,38 +659,32 @@ describe('MCPService', () => {
       const workspace1 = path.join(tempDir, 'workspace1')
       await fs.mkdir(workspace1, { recursive: true })
       mcpService.setWorkspacePath(workspace1)
-      
+
       const config1: MCPConfig = {
         mcpServers: {
           test1: { type: 'stdio', command: 'test1' }
         }
       }
       await mcpService.updateConfig(config1, 'workspace')
-      
+
       // Change to second workspace
       const workspace2 = path.join(tempDir, 'workspace2')
       await fs.mkdir(workspace2, { recursive: true })
       mcpService.setWorkspacePath(workspace2)
-      
+
       const config2: MCPConfig = {
         mcpServers: {
           test2: { type: 'stdio', command: 'test2' }
         }
       }
       await mcpService.updateConfig(config2, 'workspace')
-      
+
       // Verify first workspace config unchanged
-      const content1 = await fs.readFile(
-        path.join(workspace1, '.claude', 'mcp.json'),
-        'utf-8'
-      )
+      const content1 = await fs.readFile(path.join(workspace1, '.claude', 'mcp.json'), 'utf-8')
       assert.deepEqual(JSON.parse(content1), config1)
-      
+
       // Verify second workspace config written
-      const content2 = await fs.readFile(
-        path.join(workspace2, '.claude', 'mcp.json'),
-        'utf-8'
-      )
+      const content2 = await fs.readFile(path.join(workspace2, '.claude', 'mcp.json'), 'utf-8')
       assert.deepEqual(JSON.parse(content2), config2)
     })
   })

@@ -1,6 +1,6 @@
 /**
  * Tests for ConfigService
- * 
+ *
  * Run with: npx tsx --test src/main/__tests__/config-service.test.ts
  */
 import { describe, it, beforeEach, afterEach } from 'node:test'
@@ -20,10 +20,10 @@ describe('ConfigService', () => {
     // Create a temporary test directory
     const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'config-test-'))
     originalHome = process.env.HOME || os.homedir()
-    
+
     // Override HOME for testing
     process.env.HOME = tempDir
-    
+
     testSettingsPath = path.join(tempDir, '.claude', 'settings.json')
     configService = new ConfigService()
   })
@@ -31,7 +31,7 @@ describe('ConfigService', () => {
   afterEach(async () => {
     // Restore original HOME
     process.env.HOME = originalHome
-    
+
     // Clean up test files
     try {
       const tempDir = path.dirname(path.dirname(testSettingsPath))
@@ -50,11 +50,7 @@ describe('ConfigService', () => {
     it('should return parsed settings when file exists', async () => {
       // Create settings file
       await fs.mkdir(path.dirname(testSettingsPath), { recursive: true })
-      await fs.writeFile(
-        testSettingsPath,
-        JSON.stringify({ env: { TEST_VAR: 'test' } }),
-        'utf-8'
-      )
+      await fs.writeFile(testSettingsPath, JSON.stringify({ env: { TEST_VAR: 'test' } }), 'utf-8')
 
       const settings = await configService.getSettings()
       assert.deepEqual(settings, { env: { TEST_VAR: 'test' } })
@@ -137,11 +133,7 @@ describe('ConfigService', () => {
 
     it('should overwrite arrays instead of merging', async () => {
       await fs.mkdir(path.dirname(testSettingsPath), { recursive: true })
-      await fs.writeFile(
-        testSettingsPath,
-        JSON.stringify({ list: [1, 2, 3] }),
-        'utf-8'
-      )
+      await fs.writeFile(testSettingsPath, JSON.stringify({ list: [1, 2, 3] }), 'utf-8')
 
       await configService.updateSettings({ list: [4, 5] })
 

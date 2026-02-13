@@ -15,20 +15,16 @@ export class SkillsService {
   constructor(workspacePath?: string | null) {
     // Global skills directory
     this.globalSkillsDir = path.join(os.homedir(), '.claude', 'skills')
-    
+
     // Workspace skills directory (if workspace is set)
-    this.workspaceSkillsDir = workspacePath 
-      ? path.join(workspacePath, '.claude', 'skills')
-      : null
+    this.workspaceSkillsDir = workspacePath ? path.join(workspacePath, '.claude', 'skills') : null
   }
 
   /**
    * Update workspace path (when user changes workspace)
    */
   setWorkspacePath(workspacePath: string | null): void {
-    this.workspaceSkillsDir = workspacePath
-      ? path.join(workspacePath, '.claude', 'skills')
-      : null
+    this.workspaceSkillsDir = workspacePath ? path.join(workspacePath, '.claude', 'skills') : null
   }
 
   /**

@@ -112,7 +112,7 @@ describe('ClaudeService', () => {
       // Verify sendMessage signature - returns Promise<void>
       // We can't actually call it without a real SDK, but we can verify the type
       assert.ok(typeof claudeService.sendMessage === 'function', 'sendMessage is a function')
-      
+
       // Type assertion - this will fail compilation if return type is wrong
       const _typeCheck: (
         sessionId: string,
@@ -120,7 +120,7 @@ describe('ClaudeService', () => {
         files?: Array<{ path: string; content: string }>,
         sdkSessionId?: string
       ) => Promise<void> = claudeService.sendMessage.bind(claudeService)
-      
+
       assert.ok(_typeCheck, 'sendMessage has correct type signature')
     })
   })

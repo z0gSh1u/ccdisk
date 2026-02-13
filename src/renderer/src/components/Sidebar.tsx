@@ -86,9 +86,9 @@ export function Sidebar() {
 
   return (
     <>
-      <div className="flex h-full flex-col bg-bg-secondary border-r border-border-subtle">
+      <div className="flex flex-col h-full bg-bg-secondary border-r border-border-subtle">
         {/* Header / Brand */}
-        <div className="p-4 flex items-center gap-2">
+        <div className="shrink-0 p-4 flex items-center gap-2">
           <div className="h-6 w-6 rounded bg-accent flex items-center justify-center text-white font-serif font-bold text-xs">
             C
           </div>
@@ -220,7 +220,7 @@ export function Sidebar() {
           </div>
         </div>
 
-        {/* Footer profile/settings area could go here */}
+        {/* Footer profile/settings area */}
         <div className="p-4 border-t border-border-subtle">
           <button
             onClick={() => setIsSettingsOpen(true)}

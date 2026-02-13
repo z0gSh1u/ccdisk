@@ -128,9 +128,7 @@ export function ProvidersManager() {
             <div
               key={provider.id}
               className={`flex items-center justify-between p-4 rounded-lg border ${
-                provider.isActive
-                  ? 'border-accent bg-accent/5'
-                  : 'border-border-subtle bg-white'
+                provider.isActive ? 'border-accent bg-accent/5' : 'border-border-subtle bg-white'
               }`}
             >
               <div className="flex-1">
