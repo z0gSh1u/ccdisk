@@ -11,19 +11,25 @@ import {
   Folder,
   MessageSquare,
   ExternalLink,
-  Settings,
   ChevronDown,
   ChevronRight,
-  Trash2
+  Trash2,
+  Terminal,
+  Puzzle,
+  Activity
 } from 'lucide-react'
-import { SettingsDialog } from './settings/SettingsDialog'
 import { FileTree } from './workspace/FileTree'
+import type { PanelType } from './SidePanel'
 
-export function Sidebar() {
+interface SidebarProps {
+  activePanelType: PanelType | null
+  onPanelTypeChange: (type: PanelType | null) => void
+}
+
+export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
   const { sessions, currentSessionId, selectSession, createSession, deleteSession, renameSession } =
     useChatStore()
   const { currentWorkspace, openWorkspaceInExplorer } = useWorkspaceStore()
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isFileTreeExpanded, setIsFileTreeExpanded] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
@@ -220,14 +226,54 @@ export function Sidebar() {
           </div>
         </div>
 
-        {/* Footer profile/settings area */}
-        <div className="p-4 border-t border-border-subtle">
+        {/* Footer - Settings Panels */}
+        <div className="shrink-0 p-2 border-t border-border-subtle space-y-1">
           <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:bg-bg-accent transition-colors"
+            onClick={() => onPanelTypeChange(activePanelType === 'skills' ? null : 'skills')}
+            className={`
+              flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-colors
+              ${
+                activePanelType === 'skills'
+                  ? 'bg-bg-accent text-text-primary border-l-2 border-accent'
+                  : 'text-text-secondary hover:bg-bg-accent'
+              }
+            `}
+            title="Skills & Commands"
           >
-            <Settings className="h-5 w-5 text-text-tertiary" />
-            <div className="text-sm font-medium text-text-secondary">Settings</div>
+            <Terminal className="h-5 w-5 text-text-tertiary" />
+            <div className="text-sm font-medium">Skills & Commands</div>
+          </button>
+
+          <button
+            onClick={() => onPanelTypeChange(activePanelType === 'mcp' ? null : 'mcp')}
+            className={`
+              flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-colors
+              ${
+                activePanelType === 'mcp'
+                  ? 'bg-bg-accent text-text-primary border-l-2 border-accent'
+                  : 'text-text-secondary hover:bg-bg-accent'
+              }
+            `}
+            title="MCP Servers"
+          >
+            <Puzzle className="h-5 w-5 text-text-tertiary" />
+            <div className="text-sm font-medium">MCP Servers</div>
+          </button>
+
+          <button
+            onClick={() => onPanelTypeChange(activePanelType === 'claude' ? null : 'claude')}
+            className={`
+              flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-colors
+              ${
+                activePanelType === 'claude'
+                  ? 'bg-bg-accent text-text-primary border-l-2 border-accent'
+                  : 'text-text-secondary hover:bg-bg-accent'
+              }
+            `}
+            title="Claude Configuration"
+          >
+            <Activity className="h-5 w-5 text-text-tertiary" />
+            <div className="text-sm font-medium">Claude Config</div>
           </button>
         </div>
       </div>
@@ -254,9 +300,6 @@ export function Sidebar() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Settings Dialog */}
-      <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </>
   )
 }
