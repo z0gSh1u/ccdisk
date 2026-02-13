@@ -1,3 +1,6 @@
+/* File icons font and styles from file-icons-js */
+@import 'file-icons-js/css/style.css';
+
 /* FileTree component styles */
 
 .file-tree-container {
@@ -19,4 +22,13 @@
 
 .react-arborist-node-content {
   width: 100%;
+}
+
+/* Fallback icon for unrecognized file types */
+.default-icon:before {
+  font-family: octicons;
+  font-size: 16px;
+  top: 1px;
+  content: '\f011';
+  color: #6a9fb5;
 }

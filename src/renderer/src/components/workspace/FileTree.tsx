@@ -3,8 +3,11 @@
  */
 
 import { Tree } from 'react-arborist'
-import { FileIcon, FolderIcon, ChevronRight, ChevronDown } from 'lucide-react'
+import { FolderIcon, ChevronRight, ChevronDown } from 'lucide-react'
+import { getClassWithColor } from 'file-icons-js'
+
 import { useWorkspaceStore } from '../../stores/workspace-store'
+
 import type { FileNode } from '../../../../shared/types'
 import './FileTree.css'
 
@@ -27,6 +30,11 @@ function convertToTreeNodes(nodes: FileNode[]): TreeNode[] {
   }))
 }
 
+// Get file icon CSS class from file-icons-js (returns e.g. "js-icon medium-yellow")
+function getFileIconClass(filename: string): string {
+  return getClassWithColor(filename) || 'default-icon'
+}
+
 function NodeRenderer({ node, style, dragHandle }: any) {
   const data = node.data as TreeNode
   const isSelected = node.isSelected
@@ -35,25 +43,30 @@ function NodeRenderer({ node, style, dragHandle }: any) {
     <div
       ref={dragHandle}
       style={style}
-      className={`tree-node flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-gray-100 transition-colors ${
-        isSelected
-          ? 'bg-accent bg-opacity-10 text-accent'
-          : 'text-text-primary'
+      className={`tree-node flex items-center gap-2 px-4 py-1.5 cursor-pointer hover:bg-gray-100 transition-colors ${
+        isSelected ? 'bg-accent bg-opacity-10 text-accent' : 'text-text-primary'
       }`}
       onClick={() => node.toggle()}
     >
       {/* Expand/Collapse arrow for directories */}
       {data.type === 'directory' && (
         <span className="flex-shrink-0">
-          {node.isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          {node.isOpen ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
         </span>
       )}
 
-      {/* Icon */}
+      {/* File/Folder Icon */}
       {data.type === 'directory' ? (
         <FolderIcon className="h-4 w-4 flex-shrink-0 text-yellow-500" />
       ) : (
-        <FileIcon className="h-4 w-4 flex-shrink-0 text-blue-500" />
+        <span
+          className={`icon ${getFileIconClass(data.name)}`}
+          style={{ fontSize: '16px', width: '16px', height: '16px', flexShrink: 0 }}
+        />
       )}
 
       {/* Name */}
