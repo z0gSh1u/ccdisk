@@ -2,10 +2,10 @@
  * Sidebar Component - Navigation sidebar with sessions and workspace
  */
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useChatStore } from '../stores/chat-store'
 import { useWorkspaceStore } from '../stores/workspace-store'
-import { Button, Input, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui'
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui'
 import {
   Plus,
   Folder,
@@ -13,34 +13,38 @@ import {
   ExternalLink,
   Settings,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from 'lucide-react'
 import { SettingsDialog } from './settings/SettingsDialog'
 import { FileTree } from './workspace/FileTree'
 
 export function Sidebar() {
-  const { sessions, currentSessionId, selectSession, createSession } = useChatStore()
+  const { sessions, currentSessionId, selectSession, createSession, deleteSession, renameSession } =
+    useChatStore()
   const { currentWorkspace, openWorkspaceInExplorer } = useWorkspaceStore()
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [sessionName, setSessionName] = useState('')
   const [isFileTreeExpanded, setIsFileTreeExpanded] = useState(false)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+
+  // Inline rename state
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null)
+  const [editingName, setEditingName] = useState('')
+  const renameInputRef = useRef<HTMLInputElement>(null)
+
+  // Focus and select input text when editing starts
+  useEffect(() => {
+    if (editingSessionId && renameInputRef.current) {
+      renameInputRef.current.focus()
+      renameInputRef.current.select()
+    }
+  }, [editingSessionId])
 
   const handleNewSession = async () => {
-    setIsDialogOpen(true)
-  }
-
-  const handleCreateSession = async () => {
-    if (!sessionName.trim()) {
-      return
-    }
     try {
-      await createSession(sessionName.trim())
-      setIsDialogOpen(false)
-      setSessionName('')
+      await createSession()
     } catch (error) {
       console.error('Failed to create session:', error)
-      alert('Failed to create session')
     }
   }
 
@@ -50,6 +54,34 @@ export function Sidebar() {
     } catch (error) {
       console.error('Failed to open workspace:', error)
     }
+  }
+
+  const handleStartRename = (sessionId: string, currentName: string) => {
+    setEditingSessionId(sessionId)
+    setEditingName(currentName)
+  }
+
+  const handleSaveRename = async () => {
+    if (editingSessionId && editingName.trim()) {
+      await renameSession(editingSessionId, editingName)
+    }
+    setEditingSessionId(null)
+    setEditingName('')
+  }
+
+  const handleCancelRename = () => {
+    setEditingSessionId(null)
+    setEditingName('')
+  }
+
+  const handleDeleteSession = async () => {
+    if (!deleteConfirmId) return
+    try {
+      await deleteSession(deleteConfirmId)
+    } catch (error) {
+      console.error('Failed to delete session:', error)
+    }
+    setDeleteConfirmId(null)
   }
 
   return (
@@ -112,29 +144,72 @@ export function Sidebar() {
             </div>
             <button
               onClick={handleNewSession}
-              className="rounded p-1 text-text-tertiary hover:bg-bg-accent hover:text-text-primary transition-colors"
+              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-text-tertiary hover:bg-bg-accent hover:text-text-primary transition-colors text-xs"
               title="New Chat"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" />
+              <span>New Chat</span>
             </button>
           </div>
 
           <div className="space-y-0.5">
             {sessions.map((session) => (
-              <button
+              <div
                 key={session.id}
-                onClick={() => selectSession(session.id)}
                 className={`group flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-all ${
                   currentSessionId === session.id
                     ? 'bg-bg-accent text-text-primary font-medium shadow-sm'
                     : 'text-text-secondary hover:bg-bg-accent hover:text-text-primary'
                 }`}
               >
-                <MessageSquare
-                  className={`h-4 w-4 shrink-0 ${currentSessionId === session.id ? 'text-accent' : 'text-text-tertiary group-hover:text-text-secondary'}`}
-                />
-                <div className="truncate flex-1">{session.name}</div>
-              </button>
+                <button
+                  onClick={() => selectSession(session.id)}
+                  className="flex items-center gap-2 flex-1 min-w-0"
+                >
+                  <MessageSquare
+                    className={`h-4 w-4 shrink-0 ${currentSessionId === session.id ? 'text-accent' : 'text-text-tertiary group-hover:text-text-secondary'}`}
+                  />
+                  {editingSessionId === session.id ? (
+                    <input
+                      ref={renameInputRef}
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleSaveRename()
+                        } else if (e.key === 'Escape') {
+                          handleCancelRename()
+                        }
+                      }}
+                      onBlur={handleSaveRename}
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex-1 min-w-0 bg-white border border-border-subtle rounded px-1.5 py-0.5 text-sm outline-none focus:border-accent"
+                    />
+                  ) : (
+                    <div
+                      className="truncate flex-1"
+                      onDoubleClick={(e) => {
+                        e.stopPropagation()
+                        handleStartRename(session.id, session.name)
+                      }}
+                    >
+                      {session.name}
+                    </div>
+                  )}
+                </button>
+                {editingSessionId !== session.id && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setDeleteConfirmId(session.id)
+                    }}
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-100 hover:text-red-600 transition-all shrink-0"
+                    title="Delete session"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
             ))}
 
             {sessions.length === 0 && (
@@ -157,36 +232,24 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* New Session Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
         <DialogContent className="bg-white">
           <DialogHeader>
-            <DialogTitle className="font-serif text-xl">New Chat</DialogTitle>
+            <DialogTitle className="font-serif text-xl">Delete Chat</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-            <Input
-              placeholder="Name your session..."
-              value={sessionName}
-              onChange={(e) => setSessionName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleCreateSession()
-                }
-              }}
-              autoFocus
-              className="text-lg py-6"
-            />
+          <div className="py-4 text-sm text-text-secondary">
+            Are you sure you want to delete this chat? This action cannot be undone.
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>
               Cancel
             </Button>
             <Button
-              className="bg-accent text-white hover:bg-accent-hover"
-              onClick={handleCreateSession}
-              disabled={!sessionName.trim()}
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={handleDeleteSession}
             >
-              Start Chat
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>

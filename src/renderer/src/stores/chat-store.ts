@@ -32,7 +32,8 @@ interface ChatStore {
 
   // Actions - Session management
   loadSessions: () => Promise<void>
-  createSession: (name: string) => Promise<string>
+  createSession: (name?: string) => Promise<string>
+  renameSession: (sessionId: string, name: string) => Promise<void>
   selectSession: (sessionId: string) => void
   deleteSession: (sessionId: string) => Promise<void>
 
@@ -80,9 +81,20 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }
   },
 
-  // Create new session
-  createSession: async (name: string) => {
-    const response = await window.api.sessions.create(name)
+  // Create new session with auto-incrementing name
+  createSession: async (name?: string) => {
+    const { sessions } = get()
+
+    // Auto-generate name if not provided
+    let sessionName = name || 'New Chat'
+    if (!name) {
+      const existingNewChats = sessions.filter((s) => /^New Chat(\s\(\d+\))?$/.test(s.name))
+      if (existingNewChats.length > 0) {
+        sessionName = `New Chat (${existingNewChats.length + 1})`
+      }
+    }
+
+    const response = await window.api.sessions.create(sessionName)
     if (response.success && response.data) {
       const newSession: ChatSession = {
         ...response.data,
@@ -95,6 +107,19 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       return newSession.id
     }
     throw new Error(response.error || 'Failed to create session')
+  },
+
+  // Rename session
+  renameSession: async (sessionId: string, name: string) => {
+    if (!name.trim()) return
+    const response = await window.api.sessions.update(sessionId, { name: name.trim() })
+    if (response.success) {
+      set((state) => ({
+        sessions: state.sessions.map((s) =>
+          s.id === sessionId ? { ...s, name: name.trim() } : s
+        )
+      }))
+    }
   },
 
   // Select active session
