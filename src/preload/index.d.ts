@@ -7,6 +7,8 @@ import type {
   Skill,
   Command,
   MCPConfig,
+  MCPServerStatus,
+  SlashCommand,
   PermissionMode,
   StreamEvent,
   IPCResponse,
@@ -56,6 +58,8 @@ interface API {
     activateProvider: (id: string) => Promise<IPCResponse<void>>
     getActiveProvider: () => Promise<IPCResponse<Provider>>
     syncToFile: (providerId: string) => Promise<IPCResponse<void>>
+    getClaudeEnv: () => Promise<IPCResponse<Record<string, string>>>
+    updateClaudeEnv: (envUpdates: Record<string, string>) => Promise<IPCResponse<void>>
   }
   skills: {
     list: () => Promise<IPCResponse<Skill[]>>
@@ -91,6 +95,16 @@ interface API {
     getConfig: () => Promise<IPCResponse<MCPConfig>>
     getConfigByScope: (scope: 'global' | 'workspace') => Promise<IPCResponse<MCPConfig>>
     updateConfig: (config: MCPConfig, scope: 'global' | 'workspace') => Promise<IPCResponse<void>>
+  }
+  sdk: {
+    getMcpStatus: (sessionId: string) => Promise<IPCResponse<MCPServerStatus[] | null>>
+    reconnectMcpServer: (sessionId: string, serverName: string) => Promise<IPCResponse<boolean>>
+    toggleMcpServer: (
+      sessionId: string,
+      serverName: string,
+      enabled: boolean
+    ) => Promise<IPCResponse<boolean>>
+    getCommands: (sessionId: string) => Promise<IPCResponse<SlashCommand[] | null>>
   }
 }
 

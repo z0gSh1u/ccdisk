@@ -81,7 +81,10 @@ const api = {
     getActiveProvider: (): Promise<IPCResponse<Provider>> =>
       ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_PROVIDERS_GET_ACTIVE),
     syncToFile: (providerId: string) =>
-      ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SYNC_TO_FILE, providerId)
+      ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SYNC_TO_FILE, providerId),
+    getClaudeEnv: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_CLAUDE_ENV),
+    updateClaudeEnv: (envUpdates: Record<string, string>) =>
+      ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_UPDATE_CLAUDE_ENV, envUpdates)
   },
 
   // Skills management
@@ -129,6 +132,18 @@ const api = {
       ipcRenderer.invoke(IPC_CHANNELS.MCP_GET_CONFIG_BY_SCOPE, scope),
     updateConfig: (config: MCPConfig, scope: 'global' | 'workspace') =>
       ipcRenderer.invoke(IPC_CHANNELS.MCP_UPDATE_CONFIG, config, scope)
+  },
+
+  // SDK operations (requires active session)
+  sdk: {
+    getMcpStatus: (sessionId: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.MCP_GET_STATUS, sessionId),
+    reconnectMcpServer: (sessionId: string, serverName: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.MCP_RECONNECT, sessionId, serverName),
+    toggleMcpServer: (sessionId: string, serverName: string, enabled: boolean) =>
+      ipcRenderer.invoke(IPC_CHANNELS.MCP_TOGGLE, sessionId, serverName, enabled),
+    getCommands: (sessionId: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.SDK_GET_COMMANDS, sessionId)
   }
 }
 
