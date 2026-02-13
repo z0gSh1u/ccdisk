@@ -190,9 +190,7 @@ export function MCPManager() {
               disabled={isStatusLoading}
               className="h-7 w-7 p-0"
             >
-              <RefreshCw
-                className={`h-3.5 w-3.5 ${isStatusLoading ? 'animate-spin' : ''}`}
-              />
+              <RefreshCw className={`h-3.5 w-3.5 ${isStatusLoading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
 
@@ -246,11 +244,7 @@ export function MCPManager() {
                       size="sm"
                       className="h-6 text-xs px-2"
                       onClick={() =>
-                        toggleServer(
-                          currentSessionId,
-                          server.name,
-                          server.status === 'disabled'
-                        )
+                        toggleServer(currentSessionId, server.name, server.status === 'disabled')
                       }
                     >
                       {server.status === 'disabled' ? 'Enable' : 'Disable'}

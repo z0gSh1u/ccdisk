@@ -145,10 +145,7 @@ export class DatabaseService {
   /**
    * Update session by ID
    */
-  async updateSession(
-    id: string,
-    data: Partial<SessionInsert>
-  ): Promise<SessionSelect | null> {
+  async updateSession(id: string, data: Partial<SessionInsert>): Promise<SessionSelect | null> {
     try {
       const result = await this.db
         .update(schema.sessions)

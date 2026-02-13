@@ -492,11 +492,7 @@ export class ClaudeService {
   /**
    * Toggle an MCP server for an active session
    */
-  async toggleMcpServer(
-    sessionId: string,
-    serverName: string,
-    enabled: boolean
-  ): Promise<boolean> {
+  async toggleMcpServer(sessionId: string, serverName: string, enabled: boolean): Promise<boolean> {
     const q = this.getActiveQuery(sessionId)
     if (!q) return false
     try {

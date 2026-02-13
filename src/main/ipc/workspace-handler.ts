@@ -197,13 +197,10 @@ export function registerWorkspaceHandlers(win: BrowserWindow, fileWatcher: FileW
           '.bmp': 'image/bmp',
           '.ico': 'image/x-icon',
           '.pdf': 'application/pdf',
-          '.docx':
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          '.xlsx':
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           '.xls': 'application/vnd.ms-excel',
-          '.pptx':
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
           '.csv': 'text/csv',
           '.json': 'application/json',
           '.html': 'text/html',
@@ -224,8 +221,7 @@ export function registerWorkspaceHandlers(win: BrowserWindow, fileWatcher: FileW
           '.xml': 'text/xml',
           '.toml': 'text/toml'
         }
-        const mimeType =
-          mimeMap[ext] || (isBinary ? 'application/octet-stream' : 'text/plain')
+        const mimeType = mimeMap[ext] || (isBinary ? 'application/octet-stream' : 'text/plain')
 
         // Read file
         if (isBinary) {

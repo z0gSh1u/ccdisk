@@ -51,11 +51,7 @@ function NodeRenderer({ node, style, dragHandle }: any) {
       {/* Expand/Collapse arrow for directories */}
       {data.type === 'directory' && (
         <span className="flex-shrink-0">
-          {node.isOpen ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
+          {node.isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </span>
       )}
 

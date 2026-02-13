@@ -115,9 +115,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     const response = await window.api.sessions.update(sessionId, { name: name.trim() })
     if (response.success) {
       set((state) => ({
-        sessions: state.sessions.map((s) =>
-          s.id === sessionId ? { ...s, name: name.trim() } : s
-        )
+        sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, name: name.trim() } : s))
       }))
     }
   },

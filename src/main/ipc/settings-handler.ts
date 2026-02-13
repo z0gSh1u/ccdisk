@@ -1,5 +1,5 @@
 /**
- * Settings IPC Handlers  
+ * Settings IPC Handlers
  * Wires settings and provider management to database and config services
  */
 
@@ -10,10 +10,7 @@ import type { IPCResponse, Provider } from '../../shared/types'
 import { DatabaseService } from '../services/db-service'
 import { ConfigService } from '../services/config-service'
 
-export function registerSettingsHandlers(
-  dbService: DatabaseService,
-  configService: ConfigService
-) {
+export function registerSettingsHandlers(dbService: DatabaseService, configService: ConfigService) {
   // Get active provider
   ipcMain.handle(IPC_CHANNELS.SETTINGS_PROVIDERS_GET_ACTIVE, async () => {
     try {
@@ -37,34 +34,40 @@ export function registerSettingsHandlers(
   })
 
   // Create provider
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_PROVIDERS_CREATE, async (_event, provider: Omit<Provider, 'id' | 'createdAt' | 'updatedAt'>) => {
-    try {
-      const newProvider = await dbService.createProvider({
-        id: nanoid(),
-        ...provider,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-      return { success: true, data: newProvider } as IPCResponse
-    } catch (error) {
-      console.error('SETTINGS_PROVIDERS_CREATE error:', error)
-      return { success: false, error: (error as Error).message } as IPCResponse
+  ipcMain.handle(
+    IPC_CHANNELS.SETTINGS_PROVIDERS_CREATE,
+    async (_event, provider: Omit<Provider, 'id' | 'createdAt' | 'updatedAt'>) => {
+      try {
+        const newProvider = await dbService.createProvider({
+          id: nanoid(),
+          ...provider,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        return { success: true, data: newProvider } as IPCResponse
+      } catch (error) {
+        console.error('SETTINGS_PROVIDERS_CREATE error:', error)
+        return { success: false, error: (error as Error).message } as IPCResponse
+      }
     }
-  })
+  )
 
   // Update provider
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_PROVIDERS_UPDATE, async (_event, id: string, updates: Partial<Provider>) => {
-    try {
-      const provider = await dbService.updateProvider(id, {
-        ...updates,
-        updatedAt: new Date()
-      })
-      return { success: true, data: provider } as IPCResponse
-    } catch (error) {
-      console.error('SETTINGS_PROVIDERS_UPDATE error:', error)
-      return { success: false, error: (error as Error).message } as IPCResponse
+  ipcMain.handle(
+    IPC_CHANNELS.SETTINGS_PROVIDERS_UPDATE,
+    async (_event, id: string, updates: Partial<Provider>) => {
+      try {
+        const provider = await dbService.updateProvider(id, {
+          ...updates,
+          updatedAt: new Date()
+        })
+        return { success: true, data: provider } as IPCResponse
+      } catch (error) {
+        console.error('SETTINGS_PROVIDERS_UPDATE error:', error)
+        return { success: false, error: (error as Error).message } as IPCResponse
+      }
     }
-  })
+  )
 
   // Delete provider
   ipcMain.handle(IPC_CHANNELS.SETTINGS_PROVIDERS_DELETE, async (_event, id: string) => {
