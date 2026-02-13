@@ -11,6 +11,9 @@ interface SettingsStore {
   providers: Provider[]
   activeProvider: Provider | null
 
+  // State - Claude Env
+  claudeEnv: Record<string, string>
+
   // State - Skills
   skills: Skill[]
 
@@ -26,6 +29,10 @@ interface SettingsStore {
   updateProvider: (id: string, provider: Partial<Provider>) => Promise<void>
   deleteProvider: (id: string) => Promise<void>
   activateProvider: (id: string) => Promise<void>
+
+  // Actions - Claude Env
+  loadClaudeEnv: () => Promise<Record<string, string>>
+  updateClaudeEnv: (envUpdates: Record<string, string>) => Promise<void>
 
   // Actions - Skills
   loadSkills: () => Promise<void>
@@ -47,6 +54,7 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
   // Initial state
   providers: [],
   activeProvider: null,
+  claudeEnv: {},
   skills: [],
   commands: [],
   mcpConfig: null,
@@ -131,6 +139,34 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
       }
     } catch (error) {
       console.error('Failed to activate provider:', error)
+      throw error
+    }
+  },
+
+  // Load Claude env
+  loadClaudeEnv: async () => {
+    try {
+      const response = await window.api.settings.getClaudeEnv()
+      if (response.success && response.data) {
+        set({ claudeEnv: response.data })
+        return response.data
+      }
+      return {}
+    } catch (error) {
+      console.error('Failed to load Claude env:', error)
+      return {}
+    }
+  },
+
+  // Update Claude env
+  updateClaudeEnv: async (envUpdates) => {
+    try {
+      const response = await window.api.settings.updateClaudeEnv(envUpdates)
+      if (response.success) {
+        set({ claudeEnv: envUpdates })
+      }
+    } catch (error) {
+      console.error('Failed to update Claude env:', error)
       throw error
     }
   },
