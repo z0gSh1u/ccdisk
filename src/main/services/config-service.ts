@@ -100,6 +100,51 @@ export class ConfigService {
   }
 
   /**
+   * Read Claude env variables from settings.json
+   * Returns only the 6 known ANTHROPIC_ keys
+   */
+  async getClaudeEnv(): Promise<Record<string, string>> {
+    const settings = await this.getSettings()
+    const env = (settings.env as Record<string, string>) || {}
+    const knownKeys = [
+      'ANTHROPIC_AUTH_TOKEN',
+      'ANTHROPIC_BASE_URL',
+      'ANTHROPIC_MODEL',
+      'ANTHROPIC_DEFAULT_SONNET_MODEL',
+      'ANTHROPIC_DEFAULT_OPUS_MODEL',
+      'ANTHROPIC_DEFAULT_HAIKU_MODEL'
+    ]
+    const result: Record<string, string> = {}
+    for (const key of knownKeys) {
+      if (env[key]) {
+        result[key] = env[key]
+      }
+    }
+    return result
+  }
+
+  /**
+   * Update Claude env variables in settings.json
+   * Merges with existing env, removes keys with empty string values
+   */
+  async updateClaudeEnv(envUpdates: Record<string, string>): Promise<void> {
+    const settings = await this.getSettings()
+    const existingEnv = (settings.env as Record<string, string>) || {}
+
+    // Merge updates, remove empty values
+    const newEnv = { ...existingEnv }
+    for (const [key, value] of Object.entries(envUpdates)) {
+      if (value && value.trim()) {
+        newEnv[key] = value.trim()
+      } else {
+        delete newEnv[key]
+      }
+    }
+
+    await this.updateSettings({ env: newEnv })
+  }
+
+  /**
    * Deep merge two settings objects
    * Second object takes precedence for conflicts
    */
