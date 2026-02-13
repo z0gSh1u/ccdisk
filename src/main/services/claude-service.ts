@@ -29,7 +29,9 @@ import {
   query,
   type Query,
   type CanUseTool,
-  type PermissionResult
+  type PermissionResult,
+  type McpServerStatus,
+  type SlashCommand
 } from '@anthropic-ai/claude-agent-sdk'
 import type {
   StreamEvent,
@@ -446,6 +448,85 @@ export class ClaudeService {
       // (We don't have a direct mapping, so we'll let them timeout or be cleaned up)
       console.log('Aborted session:', sessionId)
     }
+  }
+
+  /**
+   * Get active Query instance for a session (for MCP operations, commands, etc.)
+   * Returns null if no active session
+   */
+  getActiveQuery(sessionId: string): Query | null {
+    const session = this.activeSessions.get(sessionId)
+    return session?.query || null
+  }
+
+  /**
+   * Get MCP server status for an active session
+   * Returns null if no active session or SDK doesn't support it
+   */
+  async getMcpServerStatus(sessionId: string): Promise<McpServerStatus[] | null> {
+    const q = this.getActiveQuery(sessionId)
+    if (!q) return null
+    try {
+      return await q.mcpServerStatus()
+    } catch (error) {
+      console.error('Failed to get MCP server status:', error)
+      return null
+    }
+  }
+
+  /**
+   * Reconnect an MCP server for an active session
+   */
+  async reconnectMcpServer(sessionId: string, serverName: string): Promise<boolean> {
+    const q = this.getActiveQuery(sessionId)
+    if (!q) return false
+    try {
+      await q.reconnectMcpServer(serverName)
+      return true
+    } catch (error) {
+      console.error('Failed to reconnect MCP server:', error)
+      return false
+    }
+  }
+
+  /**
+   * Toggle an MCP server for an active session
+   */
+  async toggleMcpServer(
+    sessionId: string,
+    serverName: string,
+    enabled: boolean
+  ): Promise<boolean> {
+    const q = this.getActiveQuery(sessionId)
+    if (!q) return false
+    try {
+      await q.toggleMcpServer(serverName, enabled)
+      return true
+    } catch (error) {
+      console.error('Failed to toggle MCP server:', error)
+      return false
+    }
+  }
+
+  /**
+   * Get supported slash commands from SDK for an active session
+   */
+  async getSupportedCommands(sessionId: string): Promise<SlashCommand[] | null> {
+    const q = this.getActiveQuery(sessionId)
+    if (!q) return null
+    try {
+      return await q.supportedCommands()
+    } catch (error) {
+      console.error('Failed to get supported commands:', error)
+      return null
+    }
+  }
+
+  /**
+   * Check if a session is active
+   */
+  hasActiveSession(sessionId: string): boolean {
+    return this.activeSessions.has(sessionId)
   }
 
   /**
