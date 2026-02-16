@@ -2,20 +2,20 @@
  * File Watcher Service for monitoring workspace file changes
  * Uses chokidar to watch for file system events and debounce notifications
  */
-import chokidar from 'chokidar'
-import type { FSWatcher } from 'chokidar'
+import chokidar from 'chokidar';
+import type { FSWatcher } from 'chokidar';
 
 export class FileWatcherService {
-  private workspacePath: string | null
-  private watcher: FSWatcher | null
-  private debounceTimers: Map<string, NodeJS.Timeout>
-  private onChange: ((filePath: string) => void) | null
+  private workspacePath: string | null;
+  private watcher: FSWatcher | null;
+  private debounceTimers: Map<string, NodeJS.Timeout>;
+  private onChange: ((filePath: string) => void) | null;
 
   constructor(workspacePath?: string | null, onChange?: (filePath: string) => void) {
-    this.workspacePath = workspacePath ?? null
-    this.watcher = null
-    this.debounceTimers = new Map()
-    this.onChange = onChange ?? null
+    this.workspacePath = workspacePath ?? null;
+    this.watcher = null;
+    this.debounceTimers = new Map();
+    this.onChange = onChange ?? null;
   }
 
   /**
@@ -24,23 +24,23 @@ export class FileWatcherService {
   setWorkspacePath(workspacePath: string | null): void {
     // Stop watching old workspace if any
     if (this.watcher) {
-      this.stopWatching()
+      this.stopWatching();
     }
-    this.workspacePath = workspacePath
+    this.workspacePath = workspacePath;
   }
 
   /**
    * Get current workspace path
    */
   getWorkspacePath(): string | null {
-    return this.workspacePath
+    return this.workspacePath;
   }
 
   /**
    * Set change callback
    */
   setOnChange(onChange: (filePath: string) => void): void {
-    this.onChange = onChange
+    this.onChange = onChange;
   }
 
   /**
@@ -49,12 +49,12 @@ export class FileWatcherService {
    */
   async startWatching(): Promise<void> {
     if (!this.workspacePath) {
-      throw new Error('Cannot start watching: no workspace path set')
+      throw new Error('Cannot start watching: no workspace path set');
     }
 
     // If already watching, stop first
     if (this.watcher) {
-      await this.stopWatching()
+      await this.stopWatching();
     }
 
     // Initialize chokidar watcher
@@ -72,7 +72,7 @@ export class FileWatcherService {
         stabilityThreshold: 100,
         pollInterval: 100
       }
-    })
+    });
 
     // Set up event handlers
     this.watcher
@@ -80,17 +80,17 @@ export class FileWatcherService {
       .on('change', (path) => this.handleChange(path))
       .on('unlink', (path) => this.handleChange(path))
       .on('error', (error) => {
-        console.error('File watcher error:', error)
-      })
+        console.error('File watcher error:', error);
+      });
 
     // Wait for watcher to be ready
     return new Promise((resolve) => {
       if (this.watcher) {
-        this.watcher.on('ready', () => resolve())
+        this.watcher.on('ready', () => resolve());
       } else {
-        resolve()
+        resolve();
       }
-    })
+    });
   }
 
   /**
@@ -100,36 +100,36 @@ export class FileWatcherService {
   async stopWatching(timeoutMs = 0): Promise<void> {
     // Clear all pending debounce timers
     for (const timer of this.debounceTimers.values()) {
-      clearTimeout(timer)
+      clearTimeout(timer);
     }
-    this.debounceTimers.clear()
+    this.debounceTimers.clear();
 
     // Close watcher if it exists
     if (this.watcher) {
       try {
-        const watcher = this.watcher
-        const closePromise = watcher.close()
+        const watcher = this.watcher;
+        const closePromise = watcher.close();
         if (timeoutMs > 0) {
-          let timedOut = false
+          let timedOut = false;
           await Promise.race([
             closePromise,
             new Promise<void>((resolve) => {
               setTimeout(() => {
-                timedOut = true
-                resolve()
-              }, timeoutMs)
+                timedOut = true;
+                resolve();
+              }, timeoutMs);
             })
-          ])
+          ]);
           if (timedOut) {
-            console.warn('File watcher close timed out, continuing shutdown')
+            console.warn('File watcher close timed out, continuing shutdown');
           }
         } else {
-          await closePromise
+          await closePromise;
         }
       } catch (error) {
-        console.error('Error closing file watcher:', error)
+        console.error('Error closing file watcher:', error);
       }
-      this.watcher = null
+      this.watcher = null;
     }
   }
 
@@ -139,21 +139,21 @@ export class FileWatcherService {
    */
   private handleChange(filePath: string): void {
     // Clear existing timer for this file
-    const existingTimer = this.debounceTimers.get(filePath)
+    const existingTimer = this.debounceTimers.get(filePath);
     if (existingTimer) {
-      clearTimeout(existingTimer)
+      clearTimeout(existingTimer);
     }
 
     // Start new timer
     const timer = setTimeout(() => {
-      this.debounceTimers.delete(filePath)
+      this.debounceTimers.delete(filePath);
 
       // Call onChange callback if set
       if (this.onChange) {
-        this.onChange(filePath)
+        this.onChange(filePath);
       }
-    }, 300)
+    }, 300);
 
-    this.debounceTimers.set(filePath, timer)
+    this.debounceTimers.set(filePath, timer);
   }
 }

@@ -3,23 +3,23 @@
  * Uses PlainTextPlugin for simple text editing with Enter to send
  */
 
-import { useCallback, useEffect, useRef } from 'react'
-import { LexicalComposer } from '@lexical/react/LexicalComposer'
-import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin'
-import { ContentEditable } from '@lexical/react/LexicalContentEditable'
-import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
-import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { $getRoot, $createParagraphNode, KEY_ENTER_COMMAND, COMMAND_PRIORITY_HIGH } from 'lexical'
-import { mergeRegister } from '@lexical/utils'
-import { Button } from '../ui'
-import { ArrowUp, Paperclip } from 'lucide-react'
-import { TypeaheadPlugin } from './TypeaheadPlugin'
+import { useCallback, useEffect, useRef } from 'react';
+import { LexicalComposer } from '@lexical/react/LexicalComposer';
+import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin';
+import { ContentEditable } from '@lexical/react/LexicalContentEditable';
+import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
+import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { $getRoot, $createParagraphNode, KEY_ENTER_COMMAND, COMMAND_PRIORITY_HIGH } from 'lexical';
+import { mergeRegister } from '@lexical/utils';
+import { Button } from '../ui';
+import { ArrowUp, Paperclip } from 'lucide-react';
+import { TypeaheadPlugin } from './TypeaheadPlugin';
 
 interface LexicalMessageInputProps {
-  onSend: (message: string) => void
-  disabled?: boolean
-  placeholder?: string
+  onSend: (message: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
 }
 
 // Theme configuration for Lexical
@@ -28,16 +28,16 @@ const theme = {
   text: {
     base: 'text-text-primary'
   }
-}
+};
 
 // Initial editor configuration
 const initialConfig = {
   namespace: 'ChatInput',
   theme,
   onError: (error: Error) => {
-    console.error('Lexical error:', error)
+    console.error('Lexical error:', error);
   }
-}
+};
 
 // Custom plugin to handle Enter key and extract content
 function EnterKeyPlugin({
@@ -45,76 +45,72 @@ function EnterKeyPlugin({
   disabled,
   onTextChange
 }: {
-  onSend: (message: string) => void
-  disabled: boolean
-  onTextChange: (text: string) => void
+  onSend: (message: string) => void;
+  disabled: boolean;
+  onTextChange: (text: string) => void;
 }) {
-  const [editor] = useLexicalComposerContext()
+  const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
     return mergeRegister(
       editor.registerCommand(
         KEY_ENTER_COMMAND,
         (event: KeyboardEvent) => {
-          if (disabled) return true
+          if (disabled) return true;
 
           // Shift+Enter = new line (let default behavior happen)
           if (event.shiftKey) {
-            return false
+            return false;
           }
 
           // Enter = send message
-          event.preventDefault()
+          event.preventDefault();
 
           editor.getEditorState().read(() => {
-            const root = $getRoot()
-            const text = root.getTextContent().trim()
+            const root = $getRoot();
+            const text = root.getTextContent().trim();
 
             if (text) {
-              onSend(text)
+              onSend(text);
               // Clear editor after sending
               editor.update(() => {
-                const root = $getRoot()
-                root.clear()
-                const paragraph = $createParagraphNode()
-                root.append(paragraph)
-                paragraph.select()
-              })
-              onTextChange('')
+                const root = $getRoot();
+                root.clear();
+                const paragraph = $createParagraphNode();
+                root.append(paragraph);
+                paragraph.select();
+              });
+              onTextChange('');
             }
-          })
+          });
 
-          return true
+          return true;
         },
         COMMAND_PRIORITY_HIGH
       )
-    )
-  }, [editor, onSend, disabled, onTextChange])
+    );
+  }, [editor, onSend, disabled, onTextChange]);
 
-  return null
+  return null;
 }
 
 // Clear editor plugin (expose method to parent)
-function ClearEditorPlugin({
-  clearRef
-}: {
-  clearRef: React.MutableRefObject<(() => void) | null>
-}) {
-  const [editor] = useLexicalComposerContext()
+function ClearEditorPlugin({ clearRef }: { clearRef: React.MutableRefObject<(() => void) | null> }) {
+  const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
     clearRef.current = () => {
       editor.update(() => {
-        const root = $getRoot()
-        root.clear()
-        const paragraph = $createParagraphNode()
-        root.append(paragraph)
-        paragraph.select()
-      })
-    }
-  }, [editor, clearRef])
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        paragraph.select();
+      });
+    };
+  }, [editor, clearRef]);
 
-  return null
+  return null;
 }
 
 export function LexicalMessageInput({
@@ -122,11 +118,11 @@ export function LexicalMessageInput({
   disabled = false,
   placeholder = 'Ask Claude...'
 }: LexicalMessageInputProps) {
-  const hasText = useRef(false)
-  const clearEditorRef = useRef<(() => void) | null>(null)
+  const hasText = useRef(false);
+  const clearEditorRef = useRef<(() => void) | null>(null);
 
   const handleSend = useCallback(() => {
-    if (disabled || !hasText.current) return
+    if (disabled || !hasText.current) return;
 
     // Get current text and send
     // Note: The actual sending is handled by EnterKeyPlugin
@@ -138,18 +134,18 @@ export function LexicalMessageInput({
       which: 13,
       bubbles: true,
       cancelable: true
-    })
-    document.querySelector('[contenteditable="true"]')?.dispatchEvent(event)
-  }, [disabled])
+    });
+    document.querySelector('[contenteditable="true"]')?.dispatchEvent(event);
+  }, [disabled]);
 
   const handleTextChange = useCallback((text: string) => {
-    hasText.current = text.trim().length > 0
-  }, [])
+    hasText.current = text.trim().length > 0;
+  }, []);
 
   const handleFileUpload = useCallback(() => {
     // TODO: Implement file upload functionality
-    console.log('File upload clicked')
-  }, [])
+    console.log('File upload clicked');
+  }, []);
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
@@ -205,10 +201,10 @@ export function LexicalMessageInput({
         <OnChangePlugin
           onChange={(editorState) => {
             editorState.read(() => {
-              const root = $getRoot()
-              const text = root.getTextContent()
-              handleTextChange(text)
-            })
+              const root = $getRoot();
+              const text = root.getTextContent();
+              handleTextChange(text);
+            });
           }}
         />
         <EnterKeyPlugin onSend={onSend} disabled={disabled} onTextChange={handleTextChange} />
@@ -216,5 +212,5 @@ export function LexicalMessageInput({
         <TypeaheadPlugin />
       </div>
     </LexicalComposer>
-  )
+  );
 }

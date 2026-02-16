@@ -48,7 +48,7 @@ App.tsx
 在 `App.tsx` 添加本地 state：
 
 ```typescript
-const [activePanelType, setActivePanelType] = useState<'skills' | 'mcp' | 'claude' | null>(null)
+const [activePanelType, setActivePanelType] = useState<'skills' | 'mcp' | 'claude' | null>(null);
 ```
 
 传递给 `Sidebar` 和 `SidePanel` 组件。
@@ -94,12 +94,12 @@ const [activePanelType, setActivePanelType] = useState<'skills' | 'mcp' | 'claud
 
 ```tsx
 interface SidePanelProps {
-  isOpen: boolean
-  panelType: 'skills' | 'mcp' | 'claude' | null
-  onClose: () => void
+  isOpen: boolean;
+  panelType: 'skills' | 'mcp' | 'claude' | null;
+  onClose: () => void;
 }
 
-export function SidePanel({ isOpen, panelType, onClose }: SidePanelProps)
+export function SidePanel({ isOpen, panelType, onClose }: SidePanelProps);
 ```
 
 **结构：**
@@ -192,7 +192,7 @@ export function SidePanel({ isOpen, panelType, onClose }: SidePanelProps)
 
 ```tsx
 // App.tsx
-const [activePanelType, setActivePanelType] = useState<'skills' | 'mcp' | 'claude' | null>(null)
+const [activePanelType, setActivePanelType] = useState<'skills' | 'mcp' | 'claude' | null>(null);
 
 return (
   <div>
@@ -201,21 +201,17 @@ return (
       <ChatInterface />
       <FilePreview />
     </MainLayout>
-    <SidePanel
-      isOpen={activePanelType !== null}
-      panelType={activePanelType}
-      onClose={() => setActivePanelType(null)}
-    />
+    <SidePanel isOpen={activePanelType !== null} panelType={activePanelType} onClose={() => setActivePanelType(null)} />
   </div>
-)
+);
 ```
 
 **Sidebar 接收 props：**
 
 ```tsx
 interface SidebarProps {
-  activePanelType: 'skills' | 'mcp' | 'claude' | null
-  onPanelTypeChange: (type: 'skills' | 'mcp' | 'claude' | null) => void
+  activePanelType: 'skills' | 'mcp' | 'claude' | null;
+  onPanelTypeChange: (type: 'skills' | 'mcp' | 'claude' | null) => void;
 }
 ```
 

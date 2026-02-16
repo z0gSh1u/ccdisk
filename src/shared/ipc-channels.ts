@@ -65,6 +65,6 @@ export const IPC_CHANNELS = {
 
   // SDK commands (requires active session)
   SDK_GET_COMMANDS: 'sdk:get-commands'
-} as const
+} as const;
 
-export type IPCChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]
+export type IPCChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];

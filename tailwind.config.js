@@ -20,15 +20,7 @@ module.exports = {
           'sans-serif'
         ],
         serif: ['Newsreader', 'Merriweather', 'Georgia', 'serif'],
-        mono: [
-          'ui-monospace',
-          'SFMono-Regular',
-          'SF Mono',
-          'Menlo',
-          'Consolas',
-          'Liberation Mono',
-          'monospace'
-        ]
+        mono: ['ui-monospace', 'SFMono-Regular', 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', 'monospace']
       },
       // Colors migrated from CSS variables
       colors: {
@@ -50,4 +42,4 @@ module.exports = {
     }
   },
   plugins: []
-}
+};

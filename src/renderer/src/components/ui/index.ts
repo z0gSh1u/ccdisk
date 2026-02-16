@@ -3,30 +3,23 @@
  * Export all reusable UI components
  */
 
-export { Button } from './Button'
-export type { ButtonProps } from './Button'
+export { Button } from './Button';
+export type { ButtonProps } from './Button';
 
-export { Input } from './Input'
-export type { InputProps } from './Input'
+export { Input } from './Input';
+export type { InputProps } from './Input';
 
-export { Textarea } from './Textarea'
-export type { TextareaProps } from './Textarea'
+export { Textarea } from './Textarea';
+export type { TextareaProps } from './Textarea';
 
-export { Label } from './Label'
+export { Label } from './Label';
 
-export {
-  Select,
-  SelectGroup,
-  SelectValue,
-  SelectTrigger,
-  SelectContent,
-  SelectItem
-} from './Select'
+export { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectItem } from './Select';
 
-export { Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs'
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs';
 
-export { ScrollArea } from './ScrollArea'
-export type { ScrollAreaProps } from './ScrollArea'
+export { ScrollArea } from './ScrollArea';
+export type { ScrollAreaProps } from './ScrollArea';
 
 export {
   Dialog,
@@ -37,4 +30,4 @@ export {
   DialogTitle,
   DialogDescription,
   DialogClose
-} from './Dialog'
+} from './Dialog';

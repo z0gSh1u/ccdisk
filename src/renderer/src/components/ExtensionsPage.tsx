@@ -27,14 +27,14 @@
  * ```
  */
 
-import { useState } from 'react'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/Tabs'
-import { SkillsManager } from './extensions/SkillsManager'
-import { CommandsManager } from './extensions/CommandsManager'
-import { MCPManager } from './extensions/MCPManager'
+import { useState } from 'react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/Tabs';
+import { SkillsManager } from './extensions/SkillsManager';
+import { CommandsManager } from './extensions/CommandsManager';
+import { MCPManager } from './extensions/MCPManager';
 
 export function ExtensionsPage() {
-  const [activeTab, setActiveTab] = useState('skills')
+  const [activeTab, setActiveTab] = useState('skills');
 
   return (
     <div className="h-full flex flex-col bg-white">
@@ -62,5 +62,5 @@ export function ExtensionsPage() {
         </div>
       </Tabs>
     </div>
-  )
+  );
 }

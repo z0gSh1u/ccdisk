@@ -2,8 +2,8 @@
  * Textarea Component - Styled textarea
  */
 
-import { forwardRef, type TextareaHTMLAttributes } from 'react'
-import { cn } from '../../lib/utils'
+import { forwardRef, type TextareaHTMLAttributes } from 'react';
+import { cn } from '../../lib/utils';
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {}
 
@@ -21,9 +21,9 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(({ className, ..
       ref={ref}
       {...props}
     />
-  )
-})
+  );
+});
 
-Textarea.displayName = 'Textarea'
+Textarea.displayName = 'Textarea';
 
-export { Textarea }
+export { Textarea };

@@ -2,14 +2,14 @@
  * Dialog Component - Modal dialog using Radix UI
  */
 
-import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { forwardRef } from 'react'
-import { cn } from '../../lib/utils'
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { forwardRef } from 'react';
+import { cn } from '../../lib/utils';
 
-const Dialog = DialogPrimitive.Root
-const DialogTrigger = DialogPrimitive.Trigger
-const DialogPortal = DialogPrimitive.Portal
-const DialogClose = DialogPrimitive.Close
+const Dialog = DialogPrimitive.Root;
+const DialogTrigger = DialogPrimitive.Trigger;
+const DialogPortal = DialogPrimitive.Portal;
+const DialogClose = DialogPrimitive.Close;
 
 const DialogOverlay = forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
@@ -25,8 +25,8 @@ const DialogOverlay = forwardRef<
     )}
     {...props}
   />
-))
-DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
+));
+DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
@@ -53,21 +53,18 @@ const DialogContent = forwardRef<
       {children}
     </DialogPrimitive.Content>
   </DialogPortal>
-))
-DialogContent.displayName = DialogPrimitive.Content.displayName
+));
+DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={cn('flex flex-col space-y-1.5 text-center sm:text-left', className)} {...props} />
-)
-DialogHeader.displayName = 'DialogHeader'
+);
+DialogHeader.displayName = 'DialogHeader';
 
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2', className)}
-    {...props}
-  />
-)
-DialogFooter.displayName = 'DialogFooter'
+  <div className={cn('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2', className)} {...props} />
+);
+DialogFooter.displayName = 'DialogFooter';
 
 const DialogTitle = forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
@@ -78,8 +75,8 @@ const DialogTitle = forwardRef<
     className={cn('text-lg font-semibold leading-none tracking-tight', className)}
     {...props}
   />
-))
-DialogTitle.displayName = DialogPrimitive.Title.displayName
+));
+DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
 const DialogDescription = forwardRef<
   React.ElementRef<typeof DialogPrimitive.Description>,
@@ -90,8 +87,8 @@ const DialogDescription = forwardRef<
     className={cn('text-sm text-gray-500 dark:text-gray-400', className)}
     {...props}
   />
-))
-DialogDescription.displayName = DialogPrimitive.Description.displayName
+));
+DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
 export {
   Dialog,
@@ -102,4 +99,4 @@ export {
   DialogTitle,
   DialogDescription,
   DialogClose
-}
+};

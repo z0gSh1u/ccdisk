@@ -4,7 +4,7 @@
  * Three sections: Skills, Commands, SDK Commands (read-only, when session active)
  */
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react';
 import {
   FileCode,
   Trash2,
@@ -18,40 +18,33 @@ import {
   Pencil,
   Save,
   X
-} from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+} from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
-import { useSkillsStore } from '../../stores/skills-store'
-import { useCommandsStore } from '../../stores/commands-store'
-import { useChatStore } from '../../stores/chat-store'
-import { cn } from '../../lib/utils'
-import { Button } from '../ui/Button'
-import { Input } from '../ui/Input'
-import { Label } from '../ui/Label'
-import { ScrollArea } from '../ui/ScrollArea'
-import { Tabs, TabsList, TabsTrigger } from '../ui/Tabs'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription
-} from '../ui/Dialog'
+import { useSkillsStore } from '../../stores/skills-store';
+import { useCommandsStore } from '../../stores/commands-store';
+import { useChatStore } from '../../stores/chat-store';
+import { cn } from '../../lib/utils';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Label } from '../ui/Label';
+import { ScrollArea } from '../ui/ScrollArea';
+import { Tabs, TabsList, TabsTrigger } from '../ui/Tabs';
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from '../ui/Dialog';
 
-import type { Skill, Command, SlashCommand } from '../../../../shared/types'
-import type { SkillScope } from '../../stores/skills-store'
-import type { CommandScope } from '../../stores/commands-store'
+import type { Skill, Command, SlashCommand } from '../../../../shared/types';
+import type { SkillScope } from '../../stores/skills-store';
+import type { CommandScope } from '../../stores/commands-store';
 
-type ItemType = 'skill' | 'command' | 'sdk-command'
-type Scope = 'global' | 'workspace'
+type ItemType = 'skill' | 'command' | 'sdk-command';
+type Scope = 'global' | 'workspace';
 
 interface SelectedItem {
-  type: ItemType
-  skill?: Skill
-  command?: Command
-  sdkCommand?: SlashCommand
+  type: ItemType;
+  skill?: Skill;
+  command?: Command;
+  sdkCommand?: SlashCommand;
 }
 
 /**
@@ -72,7 +65,7 @@ export function SkillsCommandsManager() {
     deleteSkill,
     getSkillsByScope,
     setupSkillsWatcher
-  } = useSkillsStore()
+  } = useSkillsStore();
 
   const {
     currentScope: commandsScope,
@@ -86,223 +79,216 @@ export function SkillsCommandsManager() {
     deleteCommand,
     getCommandsByScope,
     setupCommandsWatcher
-  } = useCommandsStore()
+  } = useCommandsStore();
 
-  const { sessions, currentSessionId } = useChatStore()
+  const { sessions, currentSessionId } = useChatStore();
 
   // Local state
-  const [scope, setScope] = useState<Scope>('global')
-  const [selected, setSelected] = useState<SelectedItem | null>(null)
-  const [sdkCommands, setSdkCommands] = useState<SlashCommand[]>([])
-  const [sdkLoading, setSdkLoading] = useState(false)
+  const [scope, setScope] = useState<Scope>('global');
+  const [selected, setSelected] = useState<SelectedItem | null>(null);
+  const [sdkCommands, setSdkCommands] = useState<SlashCommand[]>([]);
+  const [sdkLoading, setSdkLoading] = useState(false);
 
   // Edit state for skills
-  const [isEditing, setIsEditing] = useState(false)
-  const [editContent, setEditContent] = useState('')
-  const [showPreview, setShowPreview] = useState(false)
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
 
   // Create dialog state
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [createType, setCreateType] = useState<'skill' | 'command'>('skill')
-  const [newName, setNewName] = useState('')
-  const [newCommandContent, setNewCommandContent] = useState('#!/bin/bash\n\n')
-  const [newCommandExtension, setNewCommandExtension] = useState('.sh')
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createType, setCreateType] = useState<'skill' | 'command'>('skill');
+  const [newName, setNewName] = useState('');
+  const [newCommandContent, setNewCommandContent] = useState('#!/bin/bash\n\n');
+  const [newCommandExtension, setNewCommandExtension] = useState('.sh');
 
   // Derived state
-  const currentSession = sessions.find((s) => s.id === currentSessionId) || null
-  const sdkSessionId = currentSession?.sdkSessionId
-  const isLoading = skillsLoading || commandsLoading
-  const error = skillsError || commandsError
+  const currentSession = sessions.find((s) => s.id === currentSessionId) || null;
+  const sdkSessionId = currentSession?.sdkSessionId;
+  const isLoading = skillsLoading || commandsLoading;
+  const error = skillsError || commandsError;
 
-  const currentSkills = getSkillsByScope(scope)
-  const currentCommands = getCommandsByScope(scope)
+  const currentSkills = getSkillsByScope(scope);
+  const currentCommands = getCommandsByScope(scope);
 
   // Scope change handler - sync both stores
   const handleScopeChange = useCallback(
     (newScope: Scope) => {
-      setScope(newScope)
-      setSelected(null)
-      setIsEditing(false)
-      setEditContent('')
+      setScope(newScope);
+      setSelected(null);
+      setIsEditing(false);
+      setEditContent('');
       // Only update stores if scope actually changed
-      if (newScope !== skillsScope) setSkillsScope(newScope as SkillScope)
-      if (newScope !== commandsScope) setCommandsScope(newScope as CommandScope)
+      if (newScope !== skillsScope) setSkillsScope(newScope as SkillScope);
+      if (newScope !== commandsScope) setCommandsScope(newScope as CommandScope);
     },
     [skillsScope, commandsScope, setSkillsScope, setCommandsScope]
-  )
+  );
 
   // Load data on mount
   useEffect(() => {
-    loadSkills()
-    loadCommands()
-    const cleanupSkills = setupSkillsWatcher()
-    const cleanupCommands = setupCommandsWatcher()
+    loadSkills();
+    loadCommands();
+    const cleanupSkills = setupSkillsWatcher();
+    const cleanupCommands = setupCommandsWatcher();
     return () => {
-      cleanupSkills()
-      cleanupCommands()
-    }
-  }, [loadSkills, loadCommands, setupSkillsWatcher, setupCommandsWatcher])
+      cleanupSkills();
+      cleanupCommands();
+    };
+  }, [loadSkills, loadCommands, setupSkillsWatcher, setupCommandsWatcher]);
 
   // Load SDK commands when session is active
   useEffect(() => {
     if (!sdkSessionId) {
-      setSdkCommands([])
-      return
+      setSdkCommands([]);
+      return;
     }
 
     const loadSdkCommands = async () => {
-      setSdkLoading(true)
+      setSdkLoading(true);
       try {
-        const response = await window.api.sdk.getCommands(sdkSessionId)
+        const response = await window.api.sdk.getCommands(sdkSessionId);
         if (response.success && response.data) {
-          setSdkCommands(response.data)
+          setSdkCommands(response.data);
         }
       } catch (err) {
-        console.error('Failed to load SDK commands:', err)
+        console.error('Failed to load SDK commands:', err);
       } finally {
-        setSdkLoading(false)
+        setSdkLoading(false);
       }
-    }
+    };
 
-    loadSdkCommands()
-  }, [sdkSessionId])
+    loadSdkCommands();
+  }, [sdkSessionId]);
 
   // Selection handlers
   const handleSelectSkill = (skill: Skill) => {
-    setSelected({ type: 'skill', skill })
-    setIsEditing(false)
-    setEditContent('')
-    setShowPreview(false)
-    selectSkill(skill)
-  }
+    setSelected({ type: 'skill', skill });
+    setIsEditing(false);
+    setEditContent('');
+    setShowPreview(false);
+    selectSkill(skill);
+  };
 
   const handleSelectCommand = async (command: Command) => {
-    setSelected({ type: 'command', command })
-    setIsEditing(false)
-    await selectCommand(command)
-  }
+    setSelected({ type: 'command', command });
+    setIsEditing(false);
+    await selectCommand(command);
+  };
 
   const handleSelectSdkCommand = (sdkCommand: SlashCommand) => {
-    setSelected({ type: 'sdk-command', sdkCommand })
-    setIsEditing(false)
-  }
+    setSelected({ type: 'sdk-command', sdkCommand });
+    setIsEditing(false);
+  };
 
   // Skill editing
   const handleEditSkill = (skill: Skill) => {
-    setSelected({ type: 'skill', skill })
-    setEditContent(skill.content)
-    setIsEditing(true)
-    setShowPreview(false)
-    selectSkill(skill)
-  }
+    setSelected({ type: 'skill', skill });
+    setEditContent(skill.content);
+    setIsEditing(true);
+    setShowPreview(false);
+    selectSkill(skill);
+  };
 
   const handleSaveSkill = async () => {
-    if (!selected?.skill) return
+    if (!selected?.skill) return;
     try {
-      await updateSkill(selected.skill.name, editContent)
-      setIsEditing(false)
+      await updateSkill(selected.skill.name, editContent);
+      setIsEditing(false);
     } catch (err) {
-      console.error('Failed to save skill:', err)
-      alert(`Failed to save skill: ${(err as Error).message}`)
+      console.error('Failed to save skill:', err);
+      alert(`Failed to save skill: ${(err as Error).message}`);
     }
-  }
+  };
 
   const handleCancelEdit = () => {
-    setIsEditing(false)
-    setEditContent('')
-    setShowPreview(false)
-  }
+    setIsEditing(false);
+    setEditContent('');
+    setShowPreview(false);
+  };
 
   // Delete handlers
   const handleDeleteSkill = async (skill: Skill) => {
-    if (!confirm(`Are you sure you want to delete skill "${skill.name}"?`)) return
+    if (!confirm(`Are you sure you want to delete skill "${skill.name}"?`)) return;
     try {
-      await deleteSkill(skill.name, skill.scope as SkillScope)
+      await deleteSkill(skill.name, skill.scope as SkillScope);
       if (selected?.skill?.name === skill.name) {
-        setSelected(null)
-        setIsEditing(false)
+        setSelected(null);
+        setIsEditing(false);
       }
     } catch (err) {
-      console.error('Failed to delete skill:', err)
-      alert(`Failed to delete skill: ${(err as Error).message}`)
+      console.error('Failed to delete skill:', err);
+      alert(`Failed to delete skill: ${(err as Error).message}`);
     }
-  }
+  };
 
   const handleDeleteCommand = async (command: Command) => {
-    if (!confirm(`Are you sure you want to delete command "${command.name}"?`)) return
+    if (!confirm(`Are you sure you want to delete command "${command.name}"?`)) return;
     try {
-      await deleteCommand(command.name, command.scope as CommandScope)
+      await deleteCommand(command.name, command.scope as CommandScope);
       if (selected?.command?.name === command.name) {
-        setSelected(null)
+        setSelected(null);
       }
     } catch (err) {
-      console.error('Failed to delete command:', err)
-      alert(`Failed to delete command: ${(err as Error).message}`)
+      console.error('Failed to delete command:', err);
+      alert(`Failed to delete command: ${(err as Error).message}`);
     }
-  }
+  };
 
   // Create handlers
   const handleExtensionChange = (ext: string) => {
-    setNewCommandExtension(ext)
-    if (ext === '.sh') setNewCommandContent('#!/bin/bash\n\n')
-    else if (ext === '.js') setNewCommandContent('#!/usr/bin/env node\n\n')
-    else if (ext === '.py') setNewCommandContent('#!/usr/bin/env python3\n\n')
-    else if (ext === '.rb') setNewCommandContent('#!/usr/bin/env ruby\n\n')
-    else setNewCommandContent('')
-  }
+    setNewCommandExtension(ext);
+    if (ext === '.sh') setNewCommandContent('#!/bin/bash\n\n');
+    else if (ext === '.js') setNewCommandContent('#!/usr/bin/env node\n\n');
+    else if (ext === '.py') setNewCommandContent('#!/usr/bin/env python3\n\n');
+    else if (ext === '.rb') setNewCommandContent('#!/usr/bin/env ruby\n\n');
+    else setNewCommandContent('');
+  };
 
   const handleCreate = async () => {
-    if (!newName.trim()) return
+    if (!newName.trim()) return;
 
     try {
       if (createType === 'skill') {
-        await createSkill(newName.trim(), '# New Skill\n\nAdd your skill content here...')
+        await createSkill(newName.trim(), '# New Skill\n\nAdd your skill content here...');
         // Try to select the newly created skill
-        const created = skills.find((s) => s.name === newName.trim() && s.scope === scope)
+        const created = skills.find((s) => s.name === newName.trim() && s.scope === scope);
         if (created) {
-          handleEditSkill(created)
+          handleEditSkill(created);
         }
       } else {
-        const fullName = newName.trim() + newCommandExtension
-        await createCommand(fullName, newCommandContent)
+        const fullName = newName.trim() + newCommandExtension;
+        await createCommand(fullName, newCommandContent);
       }
 
-      resetCreateDialog()
+      resetCreateDialog();
     } catch (err) {
-      console.error(`Failed to create ${createType}:`, err)
-      alert(`Failed to create ${createType}: ${(err as Error).message}`)
+      console.error(`Failed to create ${createType}:`, err);
+      alert(`Failed to create ${createType}: ${(err as Error).message}`);
     }
-  }
+  };
 
   const resetCreateDialog = () => {
-    setCreateDialogOpen(false)
-    setNewName('')
-    setNewCommandContent('#!/bin/bash\n\n')
-    setNewCommandExtension('.sh')
-  }
+    setCreateDialogOpen(false);
+    setNewName('');
+    setNewCommandContent('#!/bin/bash\n\n');
+    setNewCommandExtension('.sh');
+  };
 
   const openCreateDialog = (type: 'skill' | 'command') => {
-    setCreateType(type)
-    setNewName('')
-    setNewCommandContent('#!/bin/bash\n\n')
-    setNewCommandExtension('.sh')
-    setCreateDialogOpen(true)
-  }
+    setCreateType(type);
+    setNewName('');
+    setNewCommandContent('#!/bin/bash\n\n');
+    setNewCommandExtension('.sh');
+    setCreateDialogOpen(true);
+  };
 
   // Render sidebar section
-  const renderSectionHeader = (
-    title: string,
-    icon: React.ReactNode,
-    count: number,
-    onAdd?: () => void
-  ) => (
+  const renderSectionHeader = (title: string, icon: React.ReactNode, count: number, onAdd?: () => void) => (
     <div className="flex items-center justify-between px-3 py-2 mt-2 first:mt-0">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
         {icon}
         <span>{title}</span>
-        <span className="rounded-full bg-gray-200 px-1.5 py-0.5 text-[10px] dark:bg-gray-700">
-          {count}
-        </span>
+        <span className="rounded-full bg-gray-200 px-1.5 py-0.5 text-[10px] dark:bg-gray-700">{count}</span>
       </div>
       {onAdd && (
         <button
@@ -313,14 +299,12 @@ export function SkillsCommandsManager() {
         </button>
       )}
     </div>
-  )
+  );
 
   // Render skill list item
   const renderSkillItem = (skill: Skill) => {
     const isSelected =
-      selected?.type === 'skill' &&
-      selected.skill?.name === skill.name &&
-      selected.skill?.scope === skill.scope
+      selected?.type === 'skill' && selected.skill?.name === skill.name && selected.skill?.scope === skill.scope;
 
     return (
       <div
@@ -339,8 +323,8 @@ export function SkillsCommandsManager() {
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 flex-shrink-0">
           <button
             onClick={(e) => {
-              e.stopPropagation()
-              handleEditSkill(skill)
+              e.stopPropagation();
+              handleEditSkill(skill);
             }}
             className="rounded p-1 hover:bg-gray-200 dark:hover:bg-gray-700"
           >
@@ -348,8 +332,8 @@ export function SkillsCommandsManager() {
           </button>
           <button
             onClick={(e) => {
-              e.stopPropagation()
-              handleDeleteSkill(skill)
+              e.stopPropagation();
+              handleDeleteSkill(skill);
             }}
             className="rounded p-1 hover:bg-red-100 dark:hover:bg-red-900/20"
           >
@@ -357,15 +341,15 @@ export function SkillsCommandsManager() {
           </button>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   // Render command list item
   const renderCommandItem = (command: Command) => {
     const isSelected =
       selected?.type === 'command' &&
       selected.command?.name === command.name &&
-      selected.command?.scope === command.scope
+      selected.command?.scope === command.scope;
 
     return (
       <div
@@ -389,8 +373,8 @@ export function SkillsCommandsManager() {
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 flex-shrink-0">
           <button
             onClick={(e) => {
-              e.stopPropagation()
-              handleDeleteCommand(command)
+              e.stopPropagation();
+              handleDeleteCommand(command);
             }}
             className="rounded p-1 hover:bg-red-100 dark:hover:bg-red-900/20"
           >
@@ -398,12 +382,12 @@ export function SkillsCommandsManager() {
           </button>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   // Render SDK command list item
   const renderSdkCommandItem = (cmd: SlashCommand) => {
-    const isSelected = selected?.type === 'sdk-command' && selected.sdkCommand?.name === cmd.name
+    const isSelected = selected?.type === 'sdk-command' && selected.sdkCommand?.name === cmd.name;
 
     return (
       <div
@@ -418,8 +402,8 @@ export function SkillsCommandsManager() {
         <Zap className="h-3.5 w-3.5 flex-shrink-0 text-amber-500" />
         <span className="truncate font-medium">/{cmd.name}</span>
       </div>
-    )
-  }
+    );
+  };
 
   // Render detail panel content
   const renderDetailPanel = () => {
@@ -432,23 +416,23 @@ export function SkillsCommandsManager() {
             <p className="mt-1 text-xs">Select a skill, command, or SDK command from the list</p>
           </div>
         </div>
-      )
+      );
     }
 
     if (selected.type === 'skill' && selected.skill) {
-      return renderSkillDetail(selected.skill)
+      return renderSkillDetail(selected.skill);
     }
 
     if (selected.type === 'command' && selected.command) {
-      return renderCommandDetail(selected.command)
+      return renderCommandDetail(selected.command);
     }
 
     if (selected.type === 'sdk-command' && selected.sdkCommand) {
-      return renderSdkCommandDetail(selected.sdkCommand)
+      return renderSdkCommandDetail(selected.sdkCommand);
     }
 
-    return null
-  }
+    return null;
+  };
 
   // Skill detail panel
   const renderSkillDetail = (skill: Skill) => (
@@ -514,14 +498,12 @@ export function SkillsCommandsManager() {
           />
         ) : (
           <div className="prose prose-sm max-w-none dark:prose-invert">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {isEditing ? editContent : skill.content}
-            </ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{isEditing ? editContent : skill.content}</ReactMarkdown>
           </div>
         )}
       </ScrollArea>
     </div>
-  )
+  );
 
   // Command detail panel
   const renderCommandDetail = (command: Command) => (
@@ -542,11 +524,7 @@ export function SkillsCommandsManager() {
                 : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
             )}
           >
-            {command.isExecutable ? (
-              <CheckCircle2 className="h-3 w-3" />
-            ) : (
-              <AlertCircle className="h-3 w-3" />
-            )}
+            {command.isExecutable ? <CheckCircle2 className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
             {command.isExecutable ? 'Executable' : 'Not Executable'}
           </span>
         </div>
@@ -556,23 +534,19 @@ export function SkillsCommandsManager() {
       <ScrollArea className="flex-1 p-4">
         <div className="rounded-md border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
           <pre className="overflow-x-auto p-4 text-sm font-mono">
-            <code className="text-gray-900 dark:text-gray-100">
-              {commandContent || 'Loading...'}
-            </code>
+            <code className="text-gray-900 dark:text-gray-100">{commandContent || 'Loading...'}</code>
           </pre>
         </div>
 
         {!command.isExecutable && (
           <div className="mt-4 flex items-start gap-2 rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200">
             <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-            <span>
-              This file is not executable. Commands must have executable permissions to run.
-            </span>
+            <span>This file is not executable. Commands must have executable permissions to run.</span>
           </div>
         )}
       </ScrollArea>
     </div>
-  )
+  );
 
   // SDK command detail panel
   const renderSdkCommandDetail = (cmd: SlashCommand) => (
@@ -609,13 +583,13 @@ export function SkillsCommandsManager() {
           )}
 
           <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-200">
-            SDK commands are provided by the Claude SDK and cannot be modified. They are available
-            when a chat session is active.
+            SDK commands are provided by the Claude SDK and cannot be modified. They are available when a chat session
+            is active.
           </div>
         </div>
       </ScrollArea>
     </div>
-  )
+  );
 
   return (
     <div className="flex h-[500px] flex-col">
@@ -629,21 +603,11 @@ export function SkillsCommandsManager() {
         </Tabs>
 
         <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => openCreateDialog('skill')}
-            disabled={isLoading}
-          >
+          <Button variant="ghost" size="sm" onClick={() => openCreateDialog('skill')} disabled={isLoading}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             Skill
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => openCreateDialog('command')}
-            disabled={isLoading}
-          >
+          <Button variant="ghost" size="sm" onClick={() => openCreateDialog('command')} disabled={isLoading}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             Command
           </Button>
@@ -664,11 +628,8 @@ export function SkillsCommandsManager() {
         <ScrollArea className="w-64 border-r border-gray-200 dark:border-gray-700">
           <div className="py-1">
             {/* Skills section */}
-            {renderSectionHeader(
-              'Skills',
-              <BookOpen className="h-3 w-3" />,
-              currentSkills.length,
-              () => openCreateDialog('skill')
+            {renderSectionHeader('Skills', <BookOpen className="h-3 w-3" />, currentSkills.length, () =>
+              openCreateDialog('skill')
             )}
             {currentSkills.length === 0 ? (
               <p className="px-3 py-2 text-xs text-gray-400">No skills in {scope} scope</p>
@@ -677,11 +638,8 @@ export function SkillsCommandsManager() {
             )}
 
             {/* Commands section */}
-            {renderSectionHeader(
-              'Commands',
-              <Terminal className="h-3 w-3" />,
-              currentCommands.length,
-              () => openCreateDialog('command')
+            {renderSectionHeader('Commands', <Terminal className="h-3 w-3" />, currentCommands.length, () =>
+              openCreateDialog('command')
             )}
             {currentCommands.length === 0 ? (
               <p className="px-3 py-2 text-xs text-gray-400">No commands in {scope} scope</p>
@@ -692,11 +650,7 @@ export function SkillsCommandsManager() {
             {/* SDK Commands section (only when session active) */}
             {sdkSessionId && (
               <>
-                {renderSectionHeader(
-                  'SDK Commands',
-                  <Zap className="h-3 w-3" />,
-                  sdkCommands.length
-                )}
+                {renderSectionHeader('SDK Commands', <Zap className="h-3 w-3" />, sdkCommands.length)}
                 {sdkLoading ? (
                   <p className="px-3 py-2 text-xs text-gray-400">Loading...</p>
                 ) : sdkCommands.length === 0 ? (
@@ -727,10 +681,7 @@ export function SkillsCommandsManager() {
             {/* Type selector */}
             <div>
               <Label className="mb-2 block">Type</Label>
-              <Tabs
-                value={createType}
-                onValueChange={(v) => setCreateType(v as 'skill' | 'command')}
-              >
+              <Tabs value={createType} onValueChange={(v) => setCreateType(v as 'skill' | 'command')}>
                 <TabsList className="w-full">
                   <TabsTrigger value="skill" className="flex-1">
                     <BookOpen className="mr-1.5 h-3.5 w-3.5" />
@@ -755,7 +706,7 @@ export function SkillsCommandsManager() {
                     onChange={(e) => setNewName(e.target.value)}
                     className="flex-1"
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleCreate()
+                      if (e.key === 'Enter') handleCreate();
                     }}
                   />
                   <select
@@ -779,7 +730,7 @@ export function SkillsCommandsManager() {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleCreate()
+                    if (e.key === 'Enter') handleCreate();
                   }}
                 />
               )}
@@ -804,8 +755,8 @@ export function SkillsCommandsManager() {
                   placeholder="#!/bin/bash"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  The command will be created with executable permissions in the{' '}
-                  <strong>{scope}</strong> commands directory.
+                  The command will be created with executable permissions in the <strong>{scope}</strong> commands
+                  directory.
                 </p>
               </div>
             )}
@@ -822,5 +773,5 @@ export function SkillsCommandsManager() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

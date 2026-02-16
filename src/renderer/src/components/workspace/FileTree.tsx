@@ -2,21 +2,21 @@
  * FileTree - Displays workspace file structure using react-arborist
  */
 
-import { Tree } from 'react-arborist'
-import { FolderIcon, ChevronRight, ChevronDown } from 'lucide-react'
-import { getClassWithColor } from 'file-icons-js'
+import { Tree } from 'react-arborist';
+import { FolderIcon, ChevronRight, ChevronDown } from 'lucide-react';
+import { getClassWithColor } from 'file-icons-js';
 
-import { useWorkspaceStore } from '../../stores/workspace-store'
+import { useWorkspaceStore } from '../../stores/workspace-store';
 
-import type { FileNode } from '../../../../shared/types'
-import './FileTree.css'
+import type { FileNode } from '../../../../shared/types';
+import './FileTree.css';
 
 interface TreeNode {
-  id: string
-  name: string
-  children?: TreeNode[]
-  type: 'file' | 'directory'
-  path: string
+  id: string;
+  name: string;
+  children?: TreeNode[];
+  type: 'file' | 'directory';
+  path: string;
 }
 
 // Convert FileNode[] to TreeNode[] format for react-arborist
@@ -27,17 +27,17 @@ function convertToTreeNodes(nodes: FileNode[]): TreeNode[] {
     type: node.type,
     path: node.path,
     children: node.children ? convertToTreeNodes(node.children) : undefined
-  }))
+  }));
 }
 
 // Get file icon CSS class from file-icons-js (returns e.g. "js-icon medium-yellow")
 function getFileIconClass(filename: string): string {
-  return getClassWithColor(filename) || 'default-icon'
+  return getClassWithColor(filename) || 'default-icon';
 }
 
 function NodeRenderer({ node, style, dragHandle }: any) {
-  const data = node.data as TreeNode
-  const isSelected = node.isSelected
+  const data = node.data as TreeNode;
+  const isSelected = node.isSelected;
 
   return (
     <div
@@ -68,36 +68,36 @@ function NodeRenderer({ node, style, dragHandle }: any) {
       {/* Name */}
       <span className="truncate flex-1 text-sm">{data.name}</span>
     </div>
-  )
+  );
 }
 
 interface FileTreeProps {
-  onFileSelect?: (path: string) => void
+  onFileSelect?: (path: string) => void;
 }
 
 export function FileTree({ onFileSelect }: FileTreeProps) {
-  const fileTree = useWorkspaceStore((state) => state.fileTree)
-  const isLoading = useWorkspaceStore((state) => state.isLoading)
-  const selectFile = useWorkspaceStore((state) => state.selectFile)
+  const fileTree = useWorkspaceStore((state) => state.fileTree);
+  const isLoading = useWorkspaceStore((state) => state.isLoading);
+  const selectFile = useWorkspaceStore((state) => state.selectFile);
 
-  const treeData = convertToTreeNodes(fileTree)
+  const treeData = convertToTreeNodes(fileTree);
 
   const handleSelect = (nodes: any[]) => {
     if (nodes.length > 0) {
-      const selectedNode = nodes[0].data as TreeNode
+      const selectedNode = nodes[0].data as TreeNode;
       if (selectedNode.type === 'file') {
-        selectFile(selectedNode.path)
-        onFileSelect?.(selectedNode.path)
+        selectFile(selectedNode.path);
+        onFileSelect?.(selectedNode.path);
       }
     }
-  }
+  };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-4 text-text-tertiary">
         <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full" />
       </div>
-    )
+    );
   }
 
   if (treeData.length === 0) {
@@ -106,7 +106,7 @@ export function FileTree({ onFileSelect }: FileTreeProps) {
         <FolderIcon className="h-12 w-12 mb-2 opacity-50" />
         <p className="text-sm">No files in workspace</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -123,5 +123,5 @@ export function FileTree({ onFileSelect }: FileTreeProps) {
         {NodeRenderer}
       </Tree>
     </div>
-  )
+  );
 }

@@ -3,35 +3,35 @@
  * Wires settings and provider management to database and config services
  */
 
-import { ipcMain } from 'electron'
-import { nanoid } from 'nanoid'
-import { IPC_CHANNELS } from '../../shared/ipc-channels'
-import type { IPCResponse, Provider } from '../../shared/types'
-import { DatabaseService } from '../services/db-service'
-import { ConfigService } from '../services/config-service'
+import { ipcMain } from 'electron';
+import { nanoid } from 'nanoid';
+import { IPC_CHANNELS } from '../../shared/ipc-channels';
+import type { IPCResponse, Provider } from '../../shared/types';
+import { DatabaseService } from '../services/db-service';
+import { ConfigService } from '../services/config-service';
 
 export function registerSettingsHandlers(dbService: DatabaseService, configService: ConfigService) {
   // Get active provider
   ipcMain.handle(IPC_CHANNELS.SETTINGS_PROVIDERS_GET_ACTIVE, async () => {
     try {
-      const provider = await dbService.getActiveProvider()
-      return { success: true, data: provider } as IPCResponse
+      const provider = await dbService.getActiveProvider();
+      return { success: true, data: provider } as IPCResponse;
     } catch (error) {
-      console.error('SETTINGS_PROVIDERS_GET_ACTIVE error:', error)
-      return { success: false, error: (error as Error).message } as IPCResponse
+      console.error('SETTINGS_PROVIDERS_GET_ACTIVE error:', error);
+      return { success: false, error: (error as Error).message } as IPCResponse;
     }
-  })
+  });
 
   // List providers
   ipcMain.handle(IPC_CHANNELS.SETTINGS_PROVIDERS_LIST, async () => {
     try {
-      const providers = await dbService.listProviders()
-      return { success: true, data: providers } as IPCResponse
+      const providers = await dbService.listProviders();
+      return { success: true, data: providers } as IPCResponse;
     } catch (error) {
-      console.error('SETTINGS_PROVIDERS_LIST error:', error)
-      return { success: false, error: (error as Error).message } as IPCResponse
+      console.error('SETTINGS_PROVIDERS_LIST error:', error);
+      return { success: false, error: (error as Error).message } as IPCResponse;
     }
-  })
+  });
 
   // Create provider
   ipcMain.handle(
@@ -43,94 +43,88 @@ export function registerSettingsHandlers(dbService: DatabaseService, configServi
           ...provider,
           createdAt: new Date(),
           updatedAt: new Date()
-        })
-        return { success: true, data: newProvider } as IPCResponse
+        });
+        return { success: true, data: newProvider } as IPCResponse;
       } catch (error) {
-        console.error('SETTINGS_PROVIDERS_CREATE error:', error)
-        return { success: false, error: (error as Error).message } as IPCResponse
+        console.error('SETTINGS_PROVIDERS_CREATE error:', error);
+        return { success: false, error: (error as Error).message } as IPCResponse;
       }
     }
-  )
+  );
 
   // Update provider
-  ipcMain.handle(
-    IPC_CHANNELS.SETTINGS_PROVIDERS_UPDATE,
-    async (_event, id: string, updates: Partial<Provider>) => {
-      try {
-        const provider = await dbService.updateProvider(id, {
-          ...updates,
-          updatedAt: new Date()
-        })
-        return { success: true, data: provider } as IPCResponse
-      } catch (error) {
-        console.error('SETTINGS_PROVIDERS_UPDATE error:', error)
-        return { success: false, error: (error as Error).message } as IPCResponse
-      }
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_PROVIDERS_UPDATE, async (_event, id: string, updates: Partial<Provider>) => {
+    try {
+      const provider = await dbService.updateProvider(id, {
+        ...updates,
+        updatedAt: new Date()
+      });
+      return { success: true, data: provider } as IPCResponse;
+    } catch (error) {
+      console.error('SETTINGS_PROVIDERS_UPDATE error:', error);
+      return { success: false, error: (error as Error).message } as IPCResponse;
     }
-  )
+  });
 
   // Delete provider
   ipcMain.handle(IPC_CHANNELS.SETTINGS_PROVIDERS_DELETE, async (_event, id: string) => {
     try {
-      await dbService.deleteProvider(id)
-      return { success: true } as IPCResponse
+      await dbService.deleteProvider(id);
+      return { success: true } as IPCResponse;
     } catch (error) {
-      console.error('SETTINGS_PROVIDERS_DELETE error:', error)
-      return { success: false, error: (error as Error).message } as IPCResponse
+      console.error('SETTINGS_PROVIDERS_DELETE error:', error);
+      return { success: false, error: (error as Error).message } as IPCResponse;
     }
-  })
+  });
 
   // Activate provider
   ipcMain.handle(IPC_CHANNELS.SETTINGS_PROVIDERS_ACTIVATE, async (_event, id: string) => {
     try {
-      await dbService.activateProvider(id)
-      const provider = await dbService.getActiveProvider()
+      await dbService.activateProvider(id);
+      const provider = await dbService.getActiveProvider();
       if (provider) {
-        await configService.syncProviderToFile(provider)
+        await configService.syncProviderToFile(provider);
       }
-      return { success: true, data: provider } as IPCResponse
+      return { success: true, data: provider } as IPCResponse;
     } catch (error) {
-      console.error('SETTINGS_PROVIDERS_ACTIVATE error:', error)
-      return { success: false, error: (error as Error).message } as IPCResponse
+      console.error('SETTINGS_PROVIDERS_ACTIVATE error:', error);
+      return { success: false, error: (error as Error).message } as IPCResponse;
     }
-  })
+  });
 
   // Sync settings to file
   ipcMain.handle(IPC_CHANNELS.SETTINGS_SYNC_TO_FILE, async () => {
     try {
-      const provider = await dbService.getActiveProvider()
+      const provider = await dbService.getActiveProvider();
       if (provider) {
-        await configService.syncProviderToFile(provider)
+        await configService.syncProviderToFile(provider);
       }
-      return { success: true } as IPCResponse
+      return { success: true } as IPCResponse;
     } catch (error) {
-      console.error('SETTINGS_SYNC_TO_FILE error:', error)
-      return { success: false, error: (error as Error).message } as IPCResponse
+      console.error('SETTINGS_SYNC_TO_FILE error:', error);
+      return { success: false, error: (error as Error).message } as IPCResponse;
     }
-  })
+  });
 
   // Get Claude env variables from settings.json
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_CLAUDE_ENV, async () => {
     try {
-      const env = await configService.getClaudeEnv()
-      return { success: true, data: env } as IPCResponse
+      const env = await configService.getClaudeEnv();
+      return { success: true, data: env } as IPCResponse;
     } catch (error) {
-      console.error('SETTINGS_GET_CLAUDE_ENV error:', error)
-      return { success: false, error: (error as Error).message } as IPCResponse
+      console.error('SETTINGS_GET_CLAUDE_ENV error:', error);
+      return { success: false, error: (error as Error).message } as IPCResponse;
     }
-  })
+  });
 
   // Update Claude env variables in settings.json
-  ipcMain.handle(
-    IPC_CHANNELS.SETTINGS_UPDATE_CLAUDE_ENV,
-    async (_event, envUpdates: Record<string, string>) => {
-      try {
-        await configService.updateClaudeEnv(envUpdates)
-        return { success: true } as IPCResponse
-      } catch (error) {
-        console.error('SETTINGS_UPDATE_CLAUDE_ENV error:', error)
-        return { success: false, error: (error as Error).message } as IPCResponse
-      }
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_UPDATE_CLAUDE_ENV, async (_event, envUpdates: Record<string, string>) => {
+    try {
+      await configService.updateClaudeEnv(envUpdates);
+      return { success: true } as IPCResponse;
+    } catch (error) {
+      console.error('SETTINGS_UPDATE_CLAUDE_ENV error:', error);
+      return { success: false, error: (error as Error).message } as IPCResponse;
     }
-  )
+  });
 }

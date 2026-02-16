@@ -2,39 +2,38 @@
  * ChatInterface Component - Main chat interface with message list and input
  */
 
-import { useState, useEffect, useRef } from 'react'
-import { useChatStore } from '../stores/chat-store'
-import { Button, ScrollArea } from './ui'
-import type { ChatMessage } from '../stores/chat-store'
-import { User, Sparkles } from 'lucide-react'
-import { MarkdownRenderer } from './chat/MarkdownRenderer'
-import { LexicalMessageInput } from './chat/LexicalMessageInput'
+import { useState, useEffect, useRef } from 'react';
+import { useChatStore } from '../stores/chat-store';
+import { Button, ScrollArea } from './ui';
+import type { ChatMessage } from '../stores/chat-store';
+import { User, Sparkles } from 'lucide-react';
+import { MarkdownRenderer } from './chat/MarkdownRenderer';
+import { LexicalMessageInput } from './chat/LexicalMessageInput';
 
 export function ChatInterface() {
-  const { sessions, currentSessionId, sendMessage, pendingPermissionRequest, respondToPermission } =
-    useChatStore()
-  const currentSession = sessions.find((session) => session.id === currentSessionId) || null
-  const [isLoading, setIsLoading] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { sessions, currentSessionId, sendMessage, pendingPermissionRequest, respondToPermission } = useChatStore();
+  const currentSession = sessions.find((session) => session.id === currentSessionId) || null;
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [currentSession?.messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [currentSession?.messages]);
 
   const handleSend = async (message: string) => {
-    if (!message.trim() || !currentSession) return
+    if (!message.trim() || !currentSession) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await sendMessage(message)
+      await sendMessage(message);
     } catch (error) {
-      console.error('Failed to send message:', error)
-      alert('Failed to send message')
+      console.error('Failed to send message:', error);
+      alert('Failed to send message');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   if (!currentSession) {
     return (
@@ -49,7 +48,7 @@ export function ChatInterface() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -73,9 +72,7 @@ export function ChatInterface() {
                 <Sparkles className="h-4 w-4" />
               </div>
               <div className="flex-1">
-                <div className="mb-1 font-semibold text-yellow-900 dark:text-yellow-100">
-                  Tool Permission Request
-                </div>
+                <div className="mb-1 font-semibold text-yellow-900 dark:text-yellow-100">Tool Permission Request</div>
                 <div className="mb-3 text-sm text-yellow-800 dark:text-yellow-200">
                   <span className="font-mono text-xs bg-yellow-100/50 px-1 py-0.5 rounded mr-1">
                     {pendingPermissionRequest.toolName}
@@ -86,9 +83,7 @@ export function ChatInterface() {
                   <Button
                     size="sm"
                     className="bg-yellow-600 hover:bg-yellow-700 text-white border-none shadow-sm"
-                    onClick={() =>
-                      respondToPermission(pendingPermissionRequest.permissionRequestId, true)
-                    }
+                    onClick={() => respondToPermission(pendingPermissionRequest.permissionRequestId, true)}
                   >
                     Allow Access
                   </Button>
@@ -96,9 +91,7 @@ export function ChatInterface() {
                     size="sm"
                     variant="ghost"
                     className="text-yellow-700 hover:bg-yellow-100 hover:text-yellow-900 dark:text-yellow-300 dark:hover:bg-yellow-900/50"
-                    onClick={() =>
-                      respondToPermission(pendingPermissionRequest.permissionRequestId, false)
-                    }
+                    onClick={() => respondToPermission(pendingPermissionRequest.permissionRequestId, false)}
                   >
                     Deny
                   </Button>
@@ -112,50 +105,46 @@ export function ChatInterface() {
       {/* Input area */}
       <div className="p-4 bg-bg-primary/80 backdrop-blur-md sticky bottom-0 z-10">
         <div className="mx-auto max-w-3xl relative">
-          <LexicalMessageInput
-            onSend={handleSend}
-            disabled={isLoading}
-            placeholder="Ask Claude..."
-          />
+          <LexicalMessageInput onSend={handleSend} disabled={isLoading} placeholder="Ask Claude..." />
           <div className="mt-2 text-center text-xs text-text-tertiary">
             Claude can make mistakes. Please use with caution.
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // MessageBubble sub-component
 function MessageBubble({ message }: { message: ChatMessage }) {
-  const isUser = message.role === 'user'
+  const isUser = message.role === 'user';
 
   // Parse content
-  let textContent = ''
+  let textContent = '';
   try {
     // Content might already be parsed or still be a string
-    let content = message.content
+    let content = message.content;
     if (typeof content === 'string') {
-      content = JSON.parse(content)
+      content = JSON.parse(content);
     }
 
     if (Array.isArray(content)) {
       textContent = content
         .filter((block) => block.type === 'text')
         .map((block) => block.text)
-        .join(' ')
+        .join(' ');
     } else if (typeof content === 'string') {
-      textContent = content
+      textContent = content;
     }
   } catch {
     // If parsing fails, try to use content as-is if it's a string
-    textContent = typeof message.content === 'string' ? message.content : ''
+    textContent = typeof message.content === 'string' ? message.content : '';
   }
 
   // Show streaming text if available
-  const isStreaming = message.isStreaming || false
+  const isStreaming = message.isStreaming || false;
   if (isStreaming && message.streamingText) {
-    textContent = message.streamingText
+    textContent = message.streamingText;
   }
 
   return (
@@ -168,19 +157,13 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 
       <div
         className={`relative max-w-[85%] ${
-          isUser
-            ? 'bg-bg-accent text-text-primary px-5 py-3 rounded-2xl rounded-tr-sm'
-            : 'text-text-primary py-1'
+          isUser ? 'bg-bg-accent text-text-primary px-5 py-3 rounded-2xl rounded-tr-sm' : 'text-text-primary py-1'
         }`}
       >
         {isUser ? (
           <div className="text-base leading-relaxed whitespace-pre-wrap">{textContent}</div>
         ) : (
-          <MarkdownRenderer
-            content={textContent}
-            isStreaming={isStreaming}
-            className="text-base leading-relaxed"
-          />
+          <MarkdownRenderer content={textContent} isStreaming={isStreaming} className="text-base leading-relaxed" />
         )}
 
         {isStreaming && (
@@ -200,5 +183,5 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         </div>
       )}
     </div>
-  )
+  );
 }

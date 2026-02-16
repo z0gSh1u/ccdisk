@@ -6,22 +6,22 @@
  * Note: These are basic unit tests with mocked SDK.
  * Full integration tests would require a real Claude API key and SDK setup.
  */
-import { describe, it, beforeEach, mock } from 'node:test'
-import assert from 'node:assert/strict'
-import { ClaudeService } from '../services/claude-service'
-import type { ConfigService } from '../services/config-service'
-import type { MCPService } from '../services/mcp-service'
-import type { StreamEvent } from '../../shared/types'
+import { describe, it, beforeEach, mock } from 'node:test';
+import assert from 'node:assert/strict';
+import { ClaudeService } from '../services/claude-service';
+import type { ConfigService } from '../services/config-service';
+import type { MCPService } from '../services/mcp-service';
+import type { StreamEvent } from '../../shared/types';
 
 describe('ClaudeService', () => {
-  let claudeService: ClaudeService
-  let mockConfigService: ConfigService
-  let mockMCPService: MCPService
-  let capturedEvents: Array<{ sessionId: string; event: StreamEvent }>
+  let claudeService: ClaudeService;
+  let mockConfigService: ConfigService;
+  let mockMCPService: MCPService;
+  let capturedEvents: Array<{ sessionId: string; event: StreamEvent }>;
 
   beforeEach(() => {
     // Reset captured events
-    capturedEvents = []
+    capturedEvents = [];
 
     // Create mock ConfigService
     mockConfigService = {
@@ -31,87 +31,87 @@ describe('ClaudeService', () => {
           ANTHROPIC_AUTH_TOKEN: 'test-token'
         }
       }))
-    } as unknown as ConfigService
+    } as unknown as ConfigService;
 
     // Create mock MCPService
     mockMCPService = {
       getConfig: mock.fn(async () => ({
         mcpServers: {}
       }))
-    } as unknown as MCPService
+    } as unknown as MCPService;
 
     // Create callback to capture stream events
     const onStreamEvent = (sessionId: string, event: StreamEvent): void => {
-      capturedEvents.push({ sessionId, event })
-    }
+      capturedEvents.push({ sessionId, event });
+    };
 
     // Create ClaudeService instance
-    claudeService = new ClaudeService(mockConfigService, mockMCPService, onStreamEvent)
-  })
+    claudeService = new ClaudeService(mockConfigService, mockMCPService, onStreamEvent);
+  });
 
   describe('constructor', () => {
     it('should create instance successfully', () => {
-      assert.ok(claudeService)
-      assert.ok(claudeService instanceof ClaudeService)
-    })
-  })
+      assert.ok(claudeService);
+      assert.ok(claudeService instanceof ClaudeService);
+    });
+  });
 
   describe('setPermissionMode', () => {
     it('should update permission mode', () => {
       // Test that it doesn't throw
-      claudeService.setPermissionMode('bypassPermissions')
-      claudeService.setPermissionMode('prompt')
-      claudeService.setPermissionMode('acceptEdits')
-      assert.ok(true, 'setPermissionMode executed without error')
-    })
-  })
+      claudeService.setPermissionMode('bypassPermissions');
+      claudeService.setPermissionMode('prompt');
+      claudeService.setPermissionMode('acceptEdits');
+      assert.ok(true, 'setPermissionMode executed without error');
+    });
+  });
 
   describe('respondToPermission', () => {
     it('should handle unknown permission request gracefully', () => {
       // Should not throw even if permission request doesn't exist
-      claudeService.respondToPermission('unknown-id', true)
-      assert.ok(true, 'respondToPermission handled unknown ID gracefully')
-    })
+      claudeService.respondToPermission('unknown-id', true);
+      assert.ok(true, 'respondToPermission handled unknown ID gracefully');
+    });
 
     it('should accept approved permission', () => {
       // This would normally be tested with a real permission flow
       // For now, just verify it doesn't throw
-      claudeService.respondToPermission('test-id', true, { test: 'input' })
-      assert.ok(true, 'respondToPermission handled approval')
-    })
+      claudeService.respondToPermission('test-id', true, { test: 'input' });
+      assert.ok(true, 'respondToPermission handled approval');
+    });
 
     it('should deny rejected permission', () => {
-      claudeService.respondToPermission('test-id', false)
-      assert.ok(true, 'respondToPermission handled denial')
-    })
-  })
+      claudeService.respondToPermission('test-id', false);
+      assert.ok(true, 'respondToPermission handled denial');
+    });
+  });
 
   describe('abortSession', () => {
     it('should handle aborting non-existent session gracefully', () => {
       // Should not throw even if session doesn't exist
-      claudeService.abortSession('non-existent-session')
-      assert.ok(true, 'abortSession handled non-existent session gracefully')
-    })
-  })
+      claudeService.abortSession('non-existent-session');
+      assert.ok(true, 'abortSession handled non-existent session gracefully');
+    });
+  });
 
   describe('cleanup', () => {
     it('should clean up without error', () => {
-      claudeService.cleanup()
-      assert.ok(true, 'cleanup executed without error')
-    })
+      claudeService.cleanup();
+      assert.ok(true, 'cleanup executed without error');
+    });
 
     it('should clean up multiple times safely', () => {
-      claudeService.cleanup()
-      claudeService.cleanup()
-      assert.ok(true, 'cleanup can be called multiple times')
-    })
-  })
+      claudeService.cleanup();
+      claudeService.cleanup();
+      assert.ok(true, 'cleanup can be called multiple times');
+    });
+  });
 
   describe('sendMessage - basic validation', () => {
     it('should have correct return type', () => {
       // Verify sendMessage signature - returns Promise<void>
       // We can't actually call it without a real SDK, but we can verify the type
-      assert.ok(typeof claudeService.sendMessage === 'function', 'sendMessage is a function')
+      assert.ok(typeof claudeService.sendMessage === 'function', 'sendMessage is a function');
 
       // Type assertion - this will fail compilation if return type is wrong
       const _typeCheck: (
@@ -119,11 +119,11 @@ describe('ClaudeService', () => {
         message: string,
         files?: Array<{ path: string; content: string }>,
         sdkSessionId?: string
-      ) => Promise<void> = claudeService.sendMessage.bind(claudeService)
+      ) => Promise<void> = claudeService.sendMessage.bind(claudeService);
 
-      assert.ok(_typeCheck, 'sendMessage has correct type signature')
-    })
-  })
+      assert.ok(_typeCheck, 'sendMessage has correct type signature');
+    });
+  });
 
   describe('type safety', () => {
     it('should accept valid permission modes', () => {
@@ -131,16 +131,16 @@ describe('ClaudeService', () => {
         'prompt',
         'acceptEdits',
         'bypassPermissions'
-      ]
+      ];
 
       for (const mode of validModes) {
-        claudeService.setPermissionMode(mode)
+        claudeService.setPermissionMode(mode);
       }
 
-      assert.ok(true, 'All valid permission modes accepted')
-    })
-  })
-})
+      assert.ok(true, 'All valid permission modes accepted');
+    });
+  });
+});
 
 /**
  * Integration test placeholder
@@ -157,21 +157,21 @@ describe('ClaudeService - Integration Tests (Skipped)', () => {
     // - Valid ANTHROPIC_AUTH_TOKEN
     // - Real Claude SDK setup
     // - Actual API calls
-    assert.ok(true, 'Integration test placeholder')
-  })
+    assert.ok(true, 'Integration test placeholder');
+  });
 
   it.skip('should handle permission requests', async () => {
     // Test permission flow with real SDK
-    assert.ok(true, 'Integration test placeholder')
-  })
+    assert.ok(true, 'Integration test placeholder');
+  });
 
   it.skip('should stream responses correctly', async () => {
     // Test streaming with real SDK
-    assert.ok(true, 'Integration test placeholder')
-  })
+    assert.ok(true, 'Integration test placeholder');
+  });
 
   it.skip('should resume sessions', async () => {
     // Test session resumption
-    assert.ok(true, 'Integration test placeholder')
-  })
-})
+    assert.ok(true, 'Integration test placeholder');
+  });
+});

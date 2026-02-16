@@ -39,42 +39,42 @@ After the existing `IPCResponse` type (line 165), add:
  * Extended file content response with binary support
  */
 export interface FileContentResponse {
-  content: string // text or base64-encoded
-  size: number
-  type: string // file extension
-  encoding: 'utf-8' | 'base64'
-  mimeType: string
+  content: string; // text or base64-encoded
+  size: number;
+  type: string; // file extension
+  encoding: 'utf-8' | 'base64';
+  mimeType: string;
 }
 
 /**
  * Claude environment variables in ~/.claude/settings.json
  */
 export interface ClaudeEnvConfig {
-  ANTHROPIC_AUTH_TOKEN?: string
-  ANTHROPIC_BASE_URL?: string
-  ANTHROPIC_MODEL?: string
-  ANTHROPIC_DEFAULT_SONNET_MODEL?: string
-  ANTHROPIC_DEFAULT_OPUS_MODEL?: string
-  ANTHROPIC_DEFAULT_HAIKU_MODEL?: string
+  ANTHROPIC_AUTH_TOKEN?: string;
+  ANTHROPIC_BASE_URL?: string;
+  ANTHROPIC_MODEL?: string;
+  ANTHROPIC_DEFAULT_SONNET_MODEL?: string;
+  ANTHROPIC_DEFAULT_OPUS_MODEL?: string;
+  ANTHROPIC_DEFAULT_HAIKU_MODEL?: string;
 }
 
 /**
  * MCP server live status (from SDK query.mcpServerStatus())
  */
 export interface MCPServerStatus {
-  name: string
-  status: 'connected' | 'failed' | 'needs-auth' | 'pending' | 'disabled'
-  tools: string[]
-  error?: string
+  name: string;
+  status: 'connected' | 'failed' | 'needs-auth' | 'pending' | 'disabled';
+  tools: string[];
+  error?: string;
 }
 
 /**
  * SDK slash command (from query.supportedCommands())
  */
 export interface SlashCommand {
-  name: string
-  description: string
-  argumentHint?: string
+  name: string;
+  description: string;
+  argumentHint?: string;
 }
 ```
 
@@ -288,27 +288,24 @@ After the existing `SETTINGS_SYNC_TO_FILE` handler (line 110), add:
 // Get Claude env variables from settings.json
 ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_CLAUDE_ENV, async () => {
   try {
-    const env = await configService.getClaudeEnv()
-    return { success: true, data: env } as IPCResponse
+    const env = await configService.getClaudeEnv();
+    return { success: true, data: env } as IPCResponse;
   } catch (error) {
-    console.error('SETTINGS_GET_CLAUDE_ENV error:', error)
-    return { success: false, error: (error as Error).message } as IPCResponse
+    console.error('SETTINGS_GET_CLAUDE_ENV error:', error);
+    return { success: false, error: (error as Error).message } as IPCResponse;
   }
-})
+});
 
 // Update Claude env variables in settings.json
-ipcMain.handle(
-  IPC_CHANNELS.SETTINGS_UPDATE_CLAUDE_ENV,
-  async (_event, envUpdates: Record<string, string>) => {
-    try {
-      await configService.updateClaudeEnv(envUpdates)
-      return { success: true } as IPCResponse
-    } catch (error) {
-      console.error('SETTINGS_UPDATE_CLAUDE_ENV error:', error)
-      return { success: false, error: (error as Error).message } as IPCResponse
-    }
+ipcMain.handle(IPC_CHANNELS.SETTINGS_UPDATE_CLAUDE_ENV, async (_event, envUpdates: Record<string, string>) => {
+  try {
+    await configService.updateClaudeEnv(envUpdates);
+    return { success: true } as IPCResponse;
+  } catch (error) {
+    console.error('SETTINGS_UPDATE_CLAUDE_ENV error:', error);
+    return { success: false, error: (error as Error).message } as IPCResponse;
   }
-)
+});
 ```
 
 ### Step 2: Add session rename handler to `sessions-handler.ts`
@@ -317,21 +314,18 @@ After the `SESSIONS_GET_MESSAGES` handler (line 73), add:
 
 ```typescript
 // Update session (rename)
-ipcMain.handle(
-  IPC_CHANNELS.SESSIONS_UPDATE,
-  async (_event, id: string, updates: { name?: string }) => {
-    try {
-      const session = await dbService.updateSession(id, {
-        ...updates,
-        updatedAt: new Date()
-      })
-      return { success: true, data: session } as IPCResponse
-    } catch (error) {
-      console.error('SESSIONS_UPDATE error:', error)
-      return { success: false, error: (error as Error).message } as IPCResponse
-    }
+ipcMain.handle(IPC_CHANNELS.SESSIONS_UPDATE, async (_event, id: string, updates: { name?: string }) => {
+  try {
+    const session = await dbService.updateSession(id, {
+      ...updates,
+      updatedAt: new Date()
+    });
+    return { success: true, data: session } as IPCResponse;
+  } catch (error) {
+    console.error('SESSIONS_UPDATE error:', error);
+    return { success: false, error: (error as Error).message } as IPCResponse;
   }
-)
+});
 ```
 
 > **Note:** Verify that `dbService.updateSession()` exists. If it doesn't, you'll need to add it to `DatabaseService`. Check `src/main/services/db-service.ts` for existing methods. It likely needs a method like:
@@ -353,25 +347,23 @@ ipcMain.handle(
   async (
     _event,
     filePath: string
-  ): Promise<
-    IPCResponse<{ content: string; size: number; type: string; encoding: string; mimeType: string }>
-  > => {
+  ): Promise<IPCResponse<{ content: string; size: number; type: string; encoding: string; mimeType: string }>> => {
     try {
-      const workspacePath = fileWatcher.getWorkspacePath()
+      const workspacePath = fileWatcher.getWorkspacePath();
 
       if (!workspacePath) {
-        return { success: false, error: 'No workspace selected' }
+        return { success: false, error: 'No workspace selected' };
       }
 
       // Resolve full path and ensure it's within workspace
-      const fullPath = path.resolve(workspacePath, filePath)
+      const fullPath = path.resolve(workspacePath, filePath);
       if (!fullPath.startsWith(workspacePath)) {
-        return { success: false, error: 'Invalid file path: outside workspace' }
+        return { success: false, error: 'Invalid file path: outside workspace' };
       }
 
       // Check file size (10MB for binary, 1MB for text)
-      const stats = await fs.stat(fullPath)
-      const ext = path.extname(fullPath).toLowerCase()
+      const stats = await fs.stat(fullPath);
+      const ext = path.extname(fullPath).toLowerCase();
       const binaryExtensions = new Set([
         '.png',
         '.jpg',
@@ -396,15 +388,15 @@ ipcMain.handle(
         '.wav',
         '.avi',
         '.mkv'
-      ])
-      const isBinary = binaryExtensions.has(ext)
-      const maxSize = isBinary ? 10 * 1024 * 1024 : MAX_FILE_SIZE
+      ]);
+      const isBinary = binaryExtensions.has(ext);
+      const maxSize = isBinary ? 10 * 1024 * 1024 : MAX_FILE_SIZE;
 
       if (stats.size > maxSize) {
         return {
           success: false,
           error: `File too large: ${stats.size} bytes (max ${maxSize} bytes)`
-        }
+        };
       }
 
       // Determine MIME type
@@ -443,12 +435,12 @@ ipcMain.handle(
         '.yaml': 'text/yaml',
         '.xml': 'text/xml',
         '.toml': 'text/toml'
-      }
-      const mimeType = mimeMap[ext] || (isBinary ? 'application/octet-stream' : 'text/plain')
+      };
+      const mimeType = mimeMap[ext] || (isBinary ? 'application/octet-stream' : 'text/plain');
 
       // Read file
       if (isBinary) {
-        const buffer = await fs.readFile(fullPath)
+        const buffer = await fs.readFile(fullPath);
         return {
           success: true,
           data: {
@@ -458,9 +450,9 @@ ipcMain.handle(
             encoding: 'base64',
             mimeType
           }
-        }
+        };
       } else {
-        const content = await fs.readFile(fullPath, 'utf-8')
+        const content = await fs.readFile(fullPath, 'utf-8');
         return {
           success: true,
           data: {
@@ -470,14 +462,14 @@ ipcMain.handle(
             encoding: 'utf-8',
             mimeType
           }
-        }
+        };
       }
     } catch (error) {
-      console.error('WORKSPACE_GET_FILE_CONTENT error:', error)
-      return { success: false, error: (error as Error).message }
+      console.error('WORKSPACE_GET_FILE_CONTENT error:', error);
+      return { success: false, error: (error as Error).message };
     }
   }
-)
+);
 ```
 
 ### Step 4: Create SDK handler for MCP status and commands
@@ -490,78 +482,67 @@ Create `src/main/ipc/sdk-handler.ts`:
  * Wires MCP live status and SDK commands to ClaudeService
  */
 
-import { ipcMain } from 'electron'
-import { IPC_CHANNELS } from '../../shared/ipc-channels'
-import type { IPCResponse } from '../../shared/types'
-import { ClaudeService } from '../services/claude-service'
+import { ipcMain } from 'electron';
+import { IPC_CHANNELS } from '../../shared/ipc-channels';
+import type { IPCResponse } from '../../shared/types';
+import { ClaudeService } from '../services/claude-service';
 
 export function registerSdkHandlers(claudeService: ClaudeService) {
   // Get MCP server status for active session
-  ipcMain.handle(
-    IPC_CHANNELS.MCP_GET_STATUS,
-    async (_event, sessionId: string): Promise<IPCResponse> => {
-      try {
-        if (!claudeService.hasActiveSession(sessionId)) {
-          return { success: true, data: null }
-        }
-        const status = await claudeService.getMcpServerStatus(sessionId)
-        return { success: true, data: status }
-      } catch (error) {
-        console.error('MCP_GET_STATUS error:', error)
-        return { success: false, error: (error as Error).message }
+  ipcMain.handle(IPC_CHANNELS.MCP_GET_STATUS, async (_event, sessionId: string): Promise<IPCResponse> => {
+    try {
+      if (!claudeService.hasActiveSession(sessionId)) {
+        return { success: true, data: null };
       }
+      const status = await claudeService.getMcpServerStatus(sessionId);
+      return { success: true, data: status };
+    } catch (error) {
+      console.error('MCP_GET_STATUS error:', error);
+      return { success: false, error: (error as Error).message };
     }
-  )
+  });
 
   // Reconnect MCP server
   ipcMain.handle(
     IPC_CHANNELS.MCP_RECONNECT,
     async (_event, sessionId: string, serverName: string): Promise<IPCResponse> => {
       try {
-        const result = await claudeService.reconnectMcpServer(sessionId, serverName)
-        return { success: true, data: result }
+        const result = await claudeService.reconnectMcpServer(sessionId, serverName);
+        return { success: true, data: result };
       } catch (error) {
-        console.error('MCP_RECONNECT error:', error)
-        return { success: false, error: (error as Error).message }
+        console.error('MCP_RECONNECT error:', error);
+        return { success: false, error: (error as Error).message };
       }
     }
-  )
+  );
 
   // Toggle MCP server
   ipcMain.handle(
     IPC_CHANNELS.MCP_TOGGLE,
-    async (
-      _event,
-      sessionId: string,
-      serverName: string,
-      enabled: boolean
-    ): Promise<IPCResponse> => {
+    async (_event, sessionId: string, serverName: string, enabled: boolean): Promise<IPCResponse> => {
       try {
-        const result = await claudeService.toggleMcpServer(sessionId, serverName, enabled)
-        return { success: true, data: result }
+        const result = await claudeService.toggleMcpServer(sessionId, serverName, enabled);
+        return { success: true, data: result };
       } catch (error) {
-        console.error('MCP_TOGGLE error:', error)
-        return { success: false, error: (error as Error).message }
+        console.error('MCP_TOGGLE error:', error);
+        return { success: false, error: (error as Error).message };
       }
     }
-  )
+  );
 
   // Get supported SDK commands
-  ipcMain.handle(
-    IPC_CHANNELS.SDK_GET_COMMANDS,
-    async (_event, sessionId: string): Promise<IPCResponse> => {
-      try {
-        if (!claudeService.hasActiveSession(sessionId)) {
-          return { success: true, data: null }
-        }
-        const commands = await claudeService.getSupportedCommands(sessionId)
-        return { success: true, data: commands }
-      } catch (error) {
-        console.error('SDK_GET_COMMANDS error:', error)
-        return { success: false, error: (error as Error).message }
+  ipcMain.handle(IPC_CHANNELS.SDK_GET_COMMANDS, async (_event, sessionId: string): Promise<IPCResponse> => {
+    try {
+      if (!claudeService.hasActiveSession(sessionId)) {
+        return { success: true, data: null };
       }
+      const commands = await claudeService.getSupportedCommands(sessionId);
+      return { success: true, data: commands };
+    } catch (error) {
+      console.error('SDK_GET_COMMANDS error:', error);
+      return { success: false, error: (error as Error).message };
     }
-  )
+  });
 }
 ```
 
@@ -570,13 +551,13 @@ export function registerSdkHandlers(claudeService: ClaudeService) {
 Add import at top (after line 24):
 
 ```typescript
-import { registerSdkHandlers } from './ipc/sdk-handler'
+import { registerSdkHandlers } from './ipc/sdk-handler';
 ```
 
 Add registration call where other handlers are registered (look for `registerChatHandlers` call and add after it):
 
 ```typescript
-registerSdkHandlers(claudeService)
+registerSdkHandlers(claudeService);
 ```
 
 ### Step 6: Commit
@@ -679,19 +660,18 @@ Add to the `API` interface the corresponding type declarations.
 In the `settings` section, add:
 
 ```typescript
-getClaudeEnv: () => Promise<IPCResponse<Record<string, string>>>
-updateClaudeEnv: (envUpdates: Record<string, string>) => Promise<IPCResponse<void>>
+getClaudeEnv: () => Promise<IPCResponse<Record<string, string>>>;
+updateClaudeEnv: (envUpdates: Record<string, string>) => Promise<IPCResponse<void>>;
 ```
 
 Add new `sdk` section:
 
 ```typescript
 sdk: {
-  getMcpStatus: (sessionId: string) => Promise<IPCResponse<MCPServerStatus[] | null>>
-  reconnectMcpServer: (sessionId: string, serverName: string) => Promise<IPCResponse<boolean>>
-  toggleMcpServer: (sessionId: string, serverName: string, enabled: boolean) =>
-    Promise<IPCResponse<boolean>>
-  getCommands: (sessionId: string) => Promise<IPCResponse<SlashCommand[] | null>>
+  getMcpStatus: (sessionId: string) => Promise<IPCResponse<MCPServerStatus[] | null>>;
+  reconnectMcpServer: (sessionId: string, serverName: string) => Promise<IPCResponse<boolean>>;
+  toggleMcpServer: (sessionId: string, serverName: string, enabled: boolean) => Promise<IPCResponse<boolean>>;
+  getCommands: (sessionId: string) => Promise<IPCResponse<SlashCommand[] | null>>;
 }
 ```
 
@@ -792,7 +772,7 @@ Add at the top of `FileTree.css`:
 >   '.html': { icon: FileCode, color: '#e34c26' },
 >   '.py': { icon: FileCode, color: '#3776ab' }
 >   // ... etc
-> }
+> };
 > ```
 
 ### Step 3: Remove unused Lucide import
@@ -826,8 +806,8 @@ Replace the `getFileContent` method (lines 80-92) and add new state/actions to `
 Add to the interface (after `selectedFile`, line 13):
 
 ```typescript
-fileContent: FileContentResponse | null
-isLoadingFile: boolean
+fileContent: FileContentResponse | null;
+isLoadingFile: boolean;
 ```
 
 Add to the interface actions (after `getFileContent`):
@@ -892,7 +872,7 @@ Replace `getFileContent` (lines 80-92) and add `loadFileContent`:
 Also add import for `FileContentResponse` at the top:
 
 ```typescript
-import type { FileNode, FileContentResponse } from '../../../shared/types'
+import type { FileNode, FileContentResponse } from '../../../shared/types';
 ```
 
 ### Step 2: Create `CodePreview.tsx`
@@ -1317,14 +1297,14 @@ In `App.tsx`, import FilePreview and pass it to MainLayout:
 Add import:
 
 ```typescript
-import { FilePreview } from './components/workspace/FilePreview'
-import { useWorkspaceStore } from './stores/workspace-store'
+import { FilePreview } from './components/workspace/FilePreview';
+import { useWorkspaceStore } from './stores/workspace-store';
 ```
 
 Inside `App` function, add:
 
 ```typescript
-const selectedFile = useWorkspaceStore((s) => s.selectedFile)
+const selectedFile = useWorkspaceStore((s) => s.selectedFile);
 ```
 
 Update the return to include preview:
@@ -1394,7 +1374,7 @@ Replace `createSession` (lines 83-98) with:
 Also add a `renameSession` action to the interface (after `deleteSession`):
 
 ```typescript
-renameSession: (sessionId: string, name: string) => Promise<void>
+renameSession: (sessionId: string, name: string) => Promise<void>;
 ```
 
 And implement it (after `deleteSession` implementation):
@@ -1417,7 +1397,7 @@ And implement it (after `deleteSession` implementation):
 Also update the interface definition for `createSession`:
 
 ```typescript
-createSession: (name?: string) => Promise<string>
+createSession: (name?: string) => Promise<string>;
 ```
 
 ### Step 2: Rewrite `Sidebar.tsx` - remove dialog, add inline rename
@@ -1961,14 +1941,14 @@ Add to the interface (after `activateProvider`):
 
 ```typescript
 // Actions - Claude Env Config
-loadClaudeEnv: () => Promise<Record<string, string>>
-updateClaudeEnv: (envUpdates: Record<string, string>) => Promise<void>
+loadClaudeEnv: () => Promise<Record<string, string>>;
+updateClaudeEnv: (envUpdates: Record<string, string>) => Promise<void>;
 ```
 
 Add state:
 
 ```typescript
-claudeEnv: Record<string, string>
+claudeEnv: Record<string, string>;
 ```
 
 Add initial state:
@@ -2041,7 +2021,7 @@ Add to the `MCPStore` interface:
 Add import:
 
 ```typescript
-import type { MCPConfig, MCPServerConfig, MCPServerStatus } from '../../../shared/types'
+import type { MCPConfig, MCPServerConfig, MCPServerStatus } from '../../../shared/types';
 ```
 
 Add initial state:
@@ -2095,22 +2075,21 @@ Add implementations:
 Add import of `useChatStore`:
 
 ```typescript
-import { useChatStore } from '../../stores/chat-store'
+import { useChatStore } from '../../stores/chat-store';
 ```
 
 At the top of the `MCPManager` component, add:
 
 ```typescript
-const currentSessionId = useChatStore((s) => s.currentSessionId)
-const { liveStatuses, isStatusLoading, loadLiveStatus, reconnectServer, toggleServer } =
-  useMCPStore()
+const currentSessionId = useChatStore((s) => s.currentSessionId);
+const { liveStatuses, isStatusLoading, loadLiveStatus, reconnectServer, toggleServer } = useMCPStore();
 
 // Load live status when session is active
 useEffect(() => {
   if (currentSessionId) {
-    loadLiveStatus(currentSessionId)
+    loadLiveStatus(currentSessionId);
   }
-}, [currentSessionId, loadLiveStatus])
+}, [currentSessionId, loadLiveStatus]);
 ```
 
 After the existing `{/* Content */}` section (before the closing `</div>` of the main container), add a live status section:
@@ -2770,8 +2749,8 @@ Tasks 7-12 are independent of each other and can be done in parallel after Tasks
 2. **`react-pdf` needs PDF.js worker** - You may need to configure the worker URL:
 
    ```typescript
-   import { pdfjs } from 'react-pdf'
-   pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`
+   import { pdfjs } from 'react-pdf';
+   pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
    ```
 
    For offline/Electron, copy the worker file to `public/` or use a bundled version.

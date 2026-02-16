@@ -2,12 +2,12 @@
  * Button Component - Styled button with variants
  */
 
-import { forwardRef, type ButtonHTMLAttributes } from 'react'
-import { cn } from '../../lib/utils'
+import { forwardRef, type ButtonHTMLAttributes } from 'react';
+import { cn } from '../../lib/utils';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'default' | 'primary' | 'secondary' | 'ghost' | 'danger'
-  size?: 'sm' | 'md' | 'lg'
+  variant?: 'default' | 'primary' | 'secondary' | 'ghost' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -35,10 +35,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         {...props}
       />
-    )
+    );
   }
-)
+);
 
-Button.displayName = 'Button'
+Button.displayName = 'Button';
 
-export { Button }
+export { Button };

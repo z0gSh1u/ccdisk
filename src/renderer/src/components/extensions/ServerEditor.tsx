@@ -2,172 +2,160 @@
  * Server Editor Component - Form for creating/editing MCP server configs
  */
 
-import { useState, useEffect } from 'react'
-import { Button } from '../ui/Button'
-import { Input } from '../ui/Input'
-import { Label } from '../ui/Label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/Select'
-import { Textarea } from '../ui/Textarea'
-import type { MCPServerConfig, MCPServerType } from '../../../../shared/types'
+import { useState, useEffect } from 'react';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Label } from '../ui/Label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/Select';
+import { Textarea } from '../ui/Textarea';
+import type { MCPServerConfig, MCPServerType } from '../../../../shared/types';
 
 interface ServerEditorProps {
-  mode: 'create' | 'edit' | 'view'
-  serverName?: string
-  serverConfig?: MCPServerConfig
-  onSave: (name: string, config: MCPServerConfig) => Promise<void>
-  onCancel: () => void
+  mode: 'create' | 'edit' | 'view';
+  serverName?: string;
+  serverConfig?: MCPServerConfig;
+  onSave: (name: string, config: MCPServerConfig) => Promise<void>;
+  onCancel: () => void;
 }
 
-export function ServerEditor({
-  mode,
-  serverName = '',
-  serverConfig,
-  onSave,
-  onCancel
-}: ServerEditorProps) {
-  const [name, setName] = useState(serverName)
-  const [type, setType] = useState<MCPServerType>(serverConfig?.type || 'stdio')
-  const [command, setCommand] = useState(serverConfig?.type === 'stdio' ? serverConfig.command : '')
+export function ServerEditor({ mode, serverName = '', serverConfig, onSave, onCancel }: ServerEditorProps) {
+  const [name, setName] = useState(serverName);
+  const [type, setType] = useState<MCPServerType>(serverConfig?.type || 'stdio');
+  const [command, setCommand] = useState(serverConfig?.type === 'stdio' ? serverConfig.command : '');
   const [args, setArgs] = useState(
-    serverConfig?.type === 'stdio' && serverConfig.args
-      ? JSON.stringify(serverConfig.args, null, 2)
-      : '[]'
-  )
-  const [url, setUrl] = useState(
-    serverConfig?.type === 'sse' || serverConfig?.type === 'http' ? serverConfig.url : ''
-  )
+    serverConfig?.type === 'stdio' && serverConfig.args ? JSON.stringify(serverConfig.args, null, 2) : '[]'
+  );
+  const [url, setUrl] = useState(serverConfig?.type === 'sse' || serverConfig?.type === 'http' ? serverConfig.url : '');
   const [headers, setHeaders] = useState(
     serverConfig?.type === 'sse' || serverConfig?.type === 'http'
       ? JSON.stringify(serverConfig.headers || {}, null, 2)
       : '{}'
-  )
+  );
   const [env, setEnv] = useState(
-    serverConfig?.type === 'stdio' && serverConfig.env
-      ? JSON.stringify(serverConfig.env, null, 2)
-      : '{}'
-  )
+    serverConfig?.type === 'stdio' && serverConfig.env ? JSON.stringify(serverConfig.env, null, 2) : '{}'
+  );
 
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isSaving, setIsSaving] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = useState(false);
 
-  const isReadOnly = mode === 'view'
+  const isReadOnly = mode === 'view';
 
   // Update form when serverConfig changes (for edit mode)
   useEffect(() => {
     if (serverConfig) {
-      setType(serverConfig.type)
+      setType(serverConfig.type);
       if (serverConfig.type === 'stdio') {
-        setCommand(serverConfig.command)
-        setArgs(JSON.stringify(serverConfig.args || [], null, 2))
-        setEnv(JSON.stringify(serverConfig.env || {}, null, 2))
+        setCommand(serverConfig.command);
+        setArgs(JSON.stringify(serverConfig.args || [], null, 2));
+        setEnv(JSON.stringify(serverConfig.env || {}, null, 2));
       } else {
-        setUrl(serverConfig.url)
-        setHeaders(JSON.stringify(serverConfig.headers || {}, null, 2))
+        setUrl(serverConfig.url);
+        setHeaders(JSON.stringify(serverConfig.headers || {}, null, 2));
       }
     }
-  }, [serverConfig])
+  }, [serverConfig]);
 
   const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
 
     // Name validation (only for create mode)
     if (mode === 'create') {
       if (!name.trim()) {
-        newErrors.name = 'Server name is required'
+        newErrors.name = 'Server name is required';
       } else if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
-        newErrors.name = 'Server name must contain only letters, numbers, hyphens, and underscores'
+        newErrors.name = 'Server name must contain only letters, numbers, hyphens, and underscores';
       }
     }
 
     // Type-specific validation
     if (type === 'stdio') {
       if (!command.trim()) {
-        newErrors.command = 'Command is required for stdio servers'
+        newErrors.command = 'Command is required for stdio servers';
       }
 
       // Validate args JSON
       try {
-        const parsedArgs = JSON.parse(args)
+        const parsedArgs = JSON.parse(args);
         if (!Array.isArray(parsedArgs)) {
-          newErrors.args = 'Args must be a JSON array'
+          newErrors.args = 'Args must be a JSON array';
         }
       } catch {
-        newErrors.args = 'Invalid JSON format'
+        newErrors.args = 'Invalid JSON format';
       }
 
       // Validate env JSON
       try {
-        const parsedEnv = JSON.parse(env)
+        const parsedEnv = JSON.parse(env);
         if (typeof parsedEnv !== 'object' || Array.isArray(parsedEnv)) {
-          newErrors.env = 'Environment variables must be a JSON object'
+          newErrors.env = 'Environment variables must be a JSON object';
         }
       } catch {
-        newErrors.env = 'Invalid JSON format'
+        newErrors.env = 'Invalid JSON format';
       }
     } else {
       // sse or http
       if (!url.trim()) {
-        newErrors.url = 'URL is required'
+        newErrors.url = 'URL is required';
       } else {
         try {
-          new URL(url)
+          new URL(url);
         } catch {
-          newErrors.url = 'Invalid URL format'
+          newErrors.url = 'Invalid URL format';
         }
       }
 
       // Validate headers JSON
       try {
-        const parsedHeaders = JSON.parse(headers)
+        const parsedHeaders = JSON.parse(headers);
         if (typeof parsedHeaders !== 'object' || Array.isArray(parsedHeaders)) {
-          newErrors.headers = 'Headers must be a JSON object'
+          newErrors.headers = 'Headers must be a JSON object';
         }
       } catch {
-        newErrors.headers = 'Invalid JSON format'
+        newErrors.headers = 'Invalid JSON format';
       }
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!validateForm()) {
-      return
+      return;
     }
 
-    setIsSaving(true)
+    setIsSaving(true);
 
     try {
-      let config: MCPServerConfig
+      let config: MCPServerConfig;
 
       if (type === 'stdio') {
-        const parsedArgs = JSON.parse(args)
-        const parsedEnv = JSON.parse(env)
+        const parsedArgs = JSON.parse(args);
+        const parsedEnv = JSON.parse(env);
         config = {
           type: 'stdio',
           command,
           ...(parsedArgs.length > 0 && { args: parsedArgs }),
           ...(Object.keys(parsedEnv).length > 0 && { env: parsedEnv })
-        }
+        };
       } else {
-        const parsedHeaders = JSON.parse(headers)
+        const parsedHeaders = JSON.parse(headers);
         config = {
           type,
           url,
           ...(Object.keys(parsedHeaders).length > 0 && { headers: parsedHeaders })
-        }
+        };
       }
 
-      await onSave(mode === 'create' ? name : serverName, config)
+      await onSave(mode === 'create' ? name : serverName, config);
     } catch (error) {
-      setErrors({ submit: (error as Error).message || 'Failed to save server configuration' })
+      setErrors({ submit: (error as Error).message || 'Failed to save server configuration' });
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   return (
     <div>
@@ -193,11 +181,7 @@ export function ServerEditor({
         {/* Server Type */}
         <div>
           <Label htmlFor="type">Server Type</Label>
-          <Select
-            value={type}
-            onValueChange={(value) => setType(value as MCPServerType)}
-            disabled={isReadOnly}
-          >
+          <Select value={type} onValueChange={(value) => setType(value as MCPServerType)} disabled={isReadOnly}>
             <SelectTrigger id="type" className="mt-1">
               <SelectValue />
             </SelectTrigger>
@@ -307,5 +291,5 @@ export function ServerEditor({
         </div>
       </form>
     </div>
-  )
+  );
 }

@@ -3,17 +3,17 @@
  * Allows users to add, edit, and delete MCP servers in global or workspace scope
  */
 
-import { useEffect, useState } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { useEffect, useState } from 'react';
+import { RefreshCw } from 'lucide-react';
 
-import { useMCPStore } from '../../stores/mcp-store'
-import { useChatStore } from '../../stores/chat-store'
-import { Tabs, TabsList, TabsTrigger } from '../ui/Tabs'
-import { Button } from '../ui/Button'
-import { ServerList } from './ServerList'
-import { ServerEditor } from './ServerEditor'
+import { useMCPStore } from '../../stores/mcp-store';
+import { useChatStore } from '../../stores/chat-store';
+import { Tabs, TabsList, TabsTrigger } from '../ui/Tabs';
+import { Button } from '../ui/Button';
+import { ServerList } from './ServerList';
+import { ServerEditor } from './ServerEditor';
 
-import type { MCPServerConfig } from '../../../../shared/types'
+import type { MCPServerConfig } from '../../../../shared/types';
 
 export function MCPManager() {
   const {
@@ -34,86 +34,86 @@ export function MCPManager() {
     loadLiveStatus,
     reconnectServer,
     toggleServer
-  } = useMCPStore()
+  } = useMCPStore();
 
-  const currentSessionId = useChatStore((s) => s.currentSessionId)
+  const currentSessionId = useChatStore((s) => s.currentSessionId);
 
-  const [isAddingNew, setIsAddingNew] = useState(false)
+  const [isAddingNew, setIsAddingNew] = useState(false);
 
   // Load config on mount
   useEffect(() => {
-    loadConfig()
-  }, [loadConfig])
+    loadConfig();
+  }, [loadConfig]);
 
   // Load live status when session is active
   useEffect(() => {
     if (currentSessionId) {
-      loadLiveStatus(currentSessionId)
+      loadLiveStatus(currentSessionId);
     }
-  }, [currentSessionId, loadLiveStatus])
+  }, [currentSessionId, loadLiveStatus]);
 
   // Get current scope's config
-  const currentConfig = scope === 'global' ? globalConfig : workspaceConfig
-  const servers = Object.entries(currentConfig.mcpServers)
+  const currentConfig = scope === 'global' ? globalConfig : workspaceConfig;
+  const servers = Object.entries(currentConfig.mcpServers);
 
   const handleAddNew = () => {
-    selectServer(null)
-    setIsAddingNew(true)
-    setIsEditing(true)
-  }
+    selectServer(null);
+    setIsAddingNew(true);
+    setIsEditing(true);
+  };
 
   const handleCancelAdd = () => {
-    setIsAddingNew(false)
-    setIsEditing(false)
-  }
+    setIsAddingNew(false);
+    setIsEditing(false);
+  };
 
   const handleSaveNew = async (name: string, config: MCPServerConfig) => {
     try {
-      await addServer(name, config)
-      setIsAddingNew(false)
-      setIsEditing(false)
-      selectServer(name)
+      await addServer(name, config);
+      setIsAddingNew(false);
+      setIsEditing(false);
+      selectServer(name);
     } catch (error) {
-      console.error('Failed to add server:', error)
-      throw error
+      console.error('Failed to add server:', error);
+      throw error;
     }
-  }
+  };
 
   const handleEdit = (serverName: string) => {
-    selectServer(serverName)
-    setIsAddingNew(false)
-    setIsEditing(true)
-  }
+    selectServer(serverName);
+    setIsAddingNew(false);
+    setIsEditing(true);
+  };
 
   const handleSaveEdit = async (name: string, config: MCPServerConfig) => {
     try {
-      await updateServer(name, config)
-      setIsEditing(false)
+      await updateServer(name, config);
+      setIsEditing(false);
     } catch (error) {
-      console.error('Failed to update server:', error)
-      throw error
+      console.error('Failed to update server:', error);
+      throw error;
     }
-  }
+  };
 
   const handleCancelEdit = () => {
-    setIsEditing(false)
-  }
+    setIsEditing(false);
+  };
 
   const handleDelete = async (serverName: string) => {
     if (window.confirm(`Are you sure you want to delete server "${serverName}"?`)) {
       try {
-        await deleteServer(serverName)
+        await deleteServer(serverName);
       } catch (error) {
-        console.error('Failed to delete server:', error)
+        console.error('Failed to delete server:', error);
       }
     }
-  }
+  };
 
   const handleViewDetails = (serverName: string) => {
-    selectServer(serverName)
-    setIsAddingNew(false)
-    setIsEditing(false)
-  }
+    selectServer(serverName);
+    setIsAddingNew(false);
+    setIsEditing(false);
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -135,12 +135,7 @@ export function MCPManager() {
         {/* Server List */}
         <div className="w-80 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
           <div className="p-4">
-            <Button
-              onClick={handleAddNew}
-              variant="primary"
-              className="w-full mb-4"
-              disabled={isEditing}
-            >
+            <Button onClick={handleAddNew} variant="primary" className="w-full mb-4" disabled={isEditing}>
               Add New Server
             </Button>
 
@@ -198,9 +193,7 @@ export function MCPManager() {
             <p className="text-xs text-gray-500">No MCP servers active in current session</p>
           )}
 
-          {isStatusLoading && liveStatuses.length === 0 && (
-            <p className="text-xs text-gray-500">Loading status...</p>
-          )}
+          {isStatusLoading && liveStatuses.length === 0 && <p className="text-xs text-gray-500">Loading status...</p>}
 
           <div className="space-y-2">
             {liveStatuses.map((server) => {
@@ -211,7 +204,7 @@ export function MCPManager() {
                     ? 'bg-red-500'
                     : server.status === 'disabled'
                       ? 'bg-gray-400'
-                      : 'bg-yellow-500'
+                      : 'bg-yellow-500';
 
               return (
                 <div
@@ -220,9 +213,7 @@ export function MCPManager() {
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className={`h-2 w-2 shrink-0 rounded-full ${dotColor}`} />
-                    <span className="truncate text-sm text-gray-900 dark:text-white">
-                      {server.name}
-                    </span>
+                    <span className="truncate text-sm text-gray-900 dark:text-white">{server.name}</span>
                     <span className="text-xs text-gray-500">
                       {server.tools.length} tool{server.tools.length !== 1 ? 's' : ''}
                     </span>
@@ -243,19 +234,17 @@ export function MCPManager() {
                       variant="ghost"
                       size="sm"
                       className="h-6 text-xs px-2"
-                      onClick={() =>
-                        toggleServer(currentSessionId, server.name, server.status === 'disabled')
-                      }
+                      onClick={() => toggleServer(currentSessionId, server.name, server.status === 'disabled')}
                     >
                       {server.status === 'disabled' ? 'Enable' : 'Disable'}
                     </Button>
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }

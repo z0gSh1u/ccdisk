@@ -2,17 +2,17 @@
  * ClaudeConfigEditor - Direct editor for ~/.claude/settings.json env variables
  */
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react';
 
-import { Save, Eye, EyeOff, RefreshCw } from 'lucide-react'
+import { Save, Eye, EyeOff, RefreshCw } from 'lucide-react';
 
-import { Button, Input, Label } from '../ui'
+import { Button, Input, Label } from '../ui';
 
 interface EnvField {
-  key: string
-  label: string
-  placeholder: string
-  isSecret: boolean
+  key: string;
+  label: string;
+  placeholder: string;
+  isSecret: boolean;
 }
 
 const ENV_FIELDS: EnvField[] = [
@@ -47,83 +47,81 @@ const ENV_FIELDS: EnvField[] = [
     placeholder: 'claude-haiku-3-20250514',
     isSecret: false
   }
-]
+];
 
 export function ClaudeConfigEditor() {
-  const [values, setValues] = useState<Record<string, string>>({})
-  const [visibleSecrets, setVisibleSecrets] = useState<Record<string, boolean>>({})
-  const [isSaving, setIsSaving] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [visibleSecrets, setVisibleSecrets] = useState<Record<string, boolean>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const showMessage = useCallback((type: 'success' | 'error', text: string) => {
-    setMessage({ type, text })
-    setTimeout(() => setMessage(null), 3000)
-  }, [])
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 3000);
+  }, []);
 
   const loadEnv = useCallback(async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const response = await window.api.settings.getClaudeEnv()
+      const response = await window.api.settings.getClaudeEnv();
       if (response.success && response.data) {
-        setValues(response.data)
+        setValues(response.data);
       } else {
-        showMessage('error', response.error || 'Failed to load configuration')
+        showMessage('error', response.error || 'Failed to load configuration');
       }
     } catch (error) {
-      console.error('Failed to load Claude env:', error)
-      showMessage('error', (error as Error).message)
+      console.error('Failed to load Claude env:', error);
+      showMessage('error', (error as Error).message);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [showMessage])
+  }, [showMessage]);
 
   useEffect(() => {
-    loadEnv()
-  }, [loadEnv])
+    loadEnv();
+  }, [loadEnv]);
 
   const handleSave = async () => {
-    setIsSaving(true)
+    setIsSaving(true);
     try {
       // Only send non-empty values
-      const envUpdates: Record<string, string> = {}
+      const envUpdates: Record<string, string> = {};
       for (const field of ENV_FIELDS) {
-        const value = values[field.key]?.trim()
+        const value = values[field.key]?.trim();
         if (value) {
-          envUpdates[field.key] = value
+          envUpdates[field.key] = value;
         }
       }
 
-      const response = await window.api.settings.updateClaudeEnv(envUpdates)
+      const response = await window.api.settings.updateClaudeEnv(envUpdates);
       if (response.success) {
-        showMessage('success', 'Configuration saved successfully')
+        showMessage('success', 'Configuration saved successfully');
       } else {
-        showMessage('error', response.error || 'Failed to save configuration')
+        showMessage('error', response.error || 'Failed to save configuration');
       }
     } catch (error) {
-      console.error('Failed to save Claude env:', error)
-      showMessage('error', (error as Error).message)
+      console.error('Failed to save Claude env:', error);
+      showMessage('error', (error as Error).message);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   const handleFieldChange = (key: string, value: string) => {
-    setValues((prev) => ({ ...prev, [key]: value }))
-  }
+    setValues((prev) => ({ ...prev, [key]: value }));
+  };
 
   const toggleSecretVisibility = (key: string) => {
-    setVisibleSecrets((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
+    setVisibleSecrets((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   return (
     <div className="space-y-6">
       <div>
         <p className="text-sm text-gray-500">
           Configure Claude environment variables stored in{' '}
-          <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono">
-            ~/.claude/settings.json
-          </code>
+          <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono">~/.claude/settings.json</code>
         </p>
       </div>
 
@@ -148,11 +146,7 @@ export function ClaudeConfigEditor() {
                   className="shrink-0"
                   title={visibleSecrets[field.key] ? 'Hide value' : 'Show value'}
                 >
-                  {visibleSecrets[field.key] ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {visibleSecrets[field.key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               )}
             </div>
@@ -184,5 +178,5 @@ export function ClaudeConfigEditor() {
         </Button>
       </div>
     </div>
-  )
+  );
 }

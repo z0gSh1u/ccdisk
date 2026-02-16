@@ -3,13 +3,13 @@
  * Manages executable command scripts in ~/.claude/commands/ (global) or workspace/.claude/commands/
  */
 
-import { useEffect, useState } from 'react'
-import { useCommandsStore } from '../../stores/commands-store'
-import type { Command } from '../../../../shared/types'
-import { Tabs, TabsList, TabsTrigger } from '../ui/Tabs'
-import { Button } from '../ui/Button'
-import { Input } from '../ui/Input'
-import { FileCode, Trash2, Plus, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { useEffect, useState } from 'react';
+import { useCommandsStore } from '../../stores/commands-store';
+import type { Command } from '../../../../shared/types';
+import { Tabs, TabsList, TabsTrigger } from '../ui/Tabs';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { FileCode, Trash2, Plus, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export function CommandsManager() {
   const {
@@ -25,67 +25,67 @@ export function CommandsManager() {
     deleteCommand,
     getCommandsByScope,
     setupCommandsWatcher
-  } = useCommandsStore()
+  } = useCommandsStore();
 
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [newCommandName, setNewCommandName] = useState('')
-  const [newCommandContent, setNewCommandContent] = useState('#!/bin/bash\n\n')
-  const [newCommandExtension, setNewCommandExtension] = useState('.sh')
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newCommandName, setNewCommandName] = useState('');
+  const [newCommandContent, setNewCommandContent] = useState('#!/bin/bash\n\n');
+  const [newCommandExtension, setNewCommandExtension] = useState('.sh');
 
   // Load commands on mount and setup file watcher
   useEffect(() => {
-    loadCommands()
-    const cleanup = setupCommandsWatcher()
-    return cleanup
-  }, [loadCommands, setupCommandsWatcher])
+    loadCommands();
+    const cleanup = setupCommandsWatcher();
+    return cleanup;
+  }, [loadCommands, setupCommandsWatcher]);
 
   // Get commands for current scope
-  const currentCommands = getCommandsByScope(currentScope)
+  const currentCommands = getCommandsByScope(currentScope);
 
   const handleCreateCommand = async () => {
     if (!newCommandName.trim()) {
-      return
+      return;
     }
 
     try {
-      const fullName = newCommandName + newCommandExtension
-      await createCommand(fullName, newCommandContent)
-      setIsCreateDialogOpen(false)
-      setNewCommandName('')
-      setNewCommandContent('#!/bin/bash\n\n')
-      setNewCommandExtension('.sh')
+      const fullName = newCommandName + newCommandExtension;
+      await createCommand(fullName, newCommandContent);
+      setIsCreateDialogOpen(false);
+      setNewCommandName('');
+      setNewCommandContent('#!/bin/bash\n\n');
+      setNewCommandExtension('.sh');
     } catch (err) {
-      console.error('Failed to create command:', err)
+      console.error('Failed to create command:', err);
     }
-  }
+  };
 
   const handleDeleteCommand = async (command: Command) => {
     if (!confirm(`Are you sure you want to delete "${command.name}"?`)) {
-      return
+      return;
     }
 
     try {
-      await deleteCommand(command.name, command.scope)
+      await deleteCommand(command.name, command.scope);
     } catch (err) {
-      console.error('Failed to delete command:', err)
+      console.error('Failed to delete command:', err);
     }
-  }
+  };
 
   const handleExtensionChange = (ext: string) => {
-    setNewCommandExtension(ext)
+    setNewCommandExtension(ext);
     // Update shebang based on extension
     if (ext === '.sh') {
-      setNewCommandContent('#!/bin/bash\n\n')
+      setNewCommandContent('#!/bin/bash\n\n');
     } else if (ext === '.js') {
-      setNewCommandContent('#!/usr/bin/env node\n\n')
+      setNewCommandContent('#!/usr/bin/env node\n\n');
     } else if (ext === '.py') {
-      setNewCommandContent('#!/usr/bin/env python3\n\n')
+      setNewCommandContent('#!/usr/bin/env python3\n\n');
     } else if (ext === '.rb') {
-      setNewCommandContent('#!/usr/bin/env ruby\n\n')
+      setNewCommandContent('#!/usr/bin/env ruby\n\n');
     } else {
-      setNewCommandContent('')
+      setNewCommandContent('');
     }
-  }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -108,10 +108,7 @@ export function CommandsManager() {
 
       {/* Scope Selector */}
       <div className="p-4">
-        <Tabs
-          value={currentScope}
-          onValueChange={(value) => setScope(value as 'global' | 'workspace')}
-        >
+        <Tabs value={currentScope} onValueChange={(value) => setScope(value as 'global' | 'workspace')}>
           <TabsList>
             <TabsTrigger value="global">Global</TabsTrigger>
             <TabsTrigger value="workspace">Workspace</TabsTrigger>
@@ -149,9 +146,7 @@ export function CommandsManager() {
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <FileCode className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {command.name}
-                        </p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{command.name}</p>
                         <div className="flex items-center gap-1 mt-0.5">
                           {command.isExecutable ? (
                             <CheckCircle2 className="w-3 h-3 text-green-600" />
@@ -166,8 +161,8 @@ export function CommandsManager() {
                     </div>
                     <button
                       onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteCommand(command)
+                        e.stopPropagation();
+                        handleDeleteCommand(command);
                       }}
                       className="p-1 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
                     >
@@ -189,9 +184,7 @@ export function CommandsManager() {
                   <FileCode className="w-5 h-5" />
                   {selectedCommand.name}
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {selectedCommand.path}
-                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{selectedCommand.path}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <span
                     className={`
@@ -238,9 +231,7 @@ export function CommandsManager() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4">
             <div className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Create New Command
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Create New Command</h3>
 
               <div className="space-y-4">
                 {/* Command Name */}
@@ -297,10 +288,10 @@ export function CommandsManager() {
                 <Button
                   variant="ghost"
                   onClick={() => {
-                    setIsCreateDialogOpen(false)
-                    setNewCommandName('')
-                    setNewCommandContent('#!/bin/bash\n\n')
-                    setNewCommandExtension('.sh')
+                    setIsCreateDialogOpen(false);
+                    setNewCommandName('');
+                    setNewCommandContent('#!/bin/bash\n\n');
+                    setNewCommandExtension('.sh');
                   }}
                 >
                   Cancel
@@ -314,5 +305,5 @@ export function CommandsManager() {
         </div>
       )}
     </div>
-  )
+  );
 }

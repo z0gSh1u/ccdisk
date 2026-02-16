@@ -2,14 +2,14 @@
  * CodePreview - Syntax-highlighted code viewer using highlight.js
  */
 
-import { useEffect, useRef } from 'react'
-import hljs from 'highlight.js'
-import 'highlight.js/styles/github.css'
+import { useEffect, useRef } from 'react';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/github.css';
 
 interface CodePreviewProps {
-  content: string
-  language?: string
-  fileName?: string
+  content: string;
+  language?: string;
+  fileName?: string;
 }
 
 // Map file extension to highlight.js language
@@ -48,28 +48,28 @@ const EXT_TO_LANG: Record<string, string> = {
   '.ini': 'ini',
   '.dockerfile': 'dockerfile',
   '.makefile': 'makefile'
-}
+};
 
 function getLanguage(fileName?: string): string | undefined {
-  if (!fileName) return undefined
-  const ext = '.' + fileName.split('.').pop()?.toLowerCase()
-  return EXT_TO_LANG[ext]
+  if (!fileName) return undefined;
+  const ext = '.' + fileName.split('.').pop()?.toLowerCase();
+  return EXT_TO_LANG[ext];
 }
 
 export function CodePreview({ content, language, fileName }: CodePreviewProps): React.ReactElement {
-  const codeRef = useRef<HTMLElement>(null)
-  const lang = language || getLanguage(fileName)
+  const codeRef = useRef<HTMLElement>(null);
+  const lang = language || getLanguage(fileName);
 
   useEffect(() => {
     if (codeRef.current) {
       // Reset previous highlighting
-      codeRef.current.removeAttribute('data-highlighted')
+      codeRef.current.removeAttribute('data-highlighted');
       if (lang) {
-        codeRef.current.className = `language-${lang}`
+        codeRef.current.className = `language-${lang}`;
       }
-      hljs.highlightElement(codeRef.current)
+      hljs.highlightElement(codeRef.current);
     }
-  }, [content, lang])
+  }, [content, lang]);
 
   return (
     <div className="h-full overflow-auto bg-white">
@@ -79,5 +79,5 @@ export function CodePreview({ content, language, fileName }: CodePreviewProps): 
         </code>
       </pre>
     </div>
-  )
+  );
 }

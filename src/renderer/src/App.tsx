@@ -2,50 +2,51 @@
  * App Component - Main application entry point
  */
 
-import { useEffect, useState } from 'react'
-import { MainLayout } from './components/MainLayout'
-import { Sidebar } from './components/Sidebar'
-import { ChatInterface } from './components/ChatInterface'
-import { FilePreview } from './components/workspace/FilePreview'
-import { SidePanel, type PanelType } from './components/SidePanel'
-import { useChatStore, setupChatStreamListener } from './stores/chat-store'
-import { useWorkspaceStore } from './stores/workspace-store'
-import { useSettingsStore } from './stores/settings-store'
+import { useEffect, useState } from 'react';
+import { MainLayout } from './components/MainLayout';
+import { Sidebar } from './components/Sidebar';
+import { ChatInterface } from './components/ChatInterface';
+import { FilePreview } from './components/workspace/FilePreview';
+import { SidePanel, type PanelType } from './components/SidePanel';
+import { useChatStore, setupChatStreamListener } from './stores/chat-store';
+import { useWorkspaceStore } from './stores/workspace-store';
+import { useSettingsStore } from './stores/settings-store';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from './components/ui/dropdown-menu'
-import { ChevronDown } from 'lucide-react'
-import type { PermissionMode } from '../../shared/types'
+} from './components/ui/dropdown-menu';
+import { ChevronDown } from 'lucide-react';
+import { noDragStyle } from './components/PseudoTitleBar';
+import type { PermissionMode } from '../../shared/types';
 
 function App() {
-  const { loadSessions } = useChatStore()
-  const { loadWorkspace, setupFileWatcher } = useWorkspaceStore()
-  const { loadProviders } = useSettingsStore()
-  const selectedFile = useWorkspaceStore((s) => s.selectedFile)
-  const [activePanelType, setActivePanelType] = useState<PanelType | null>(null)
+  const { loadSessions } = useChatStore();
+  const { loadWorkspace, setupFileWatcher } = useWorkspaceStore();
+  const { loadProviders } = useSettingsStore();
+  const selectedFile = useWorkspaceStore((s) => s.selectedFile);
+  const [activePanelType, setActivePanelType] = useState<PanelType | null>(null);
 
   // Initialize app on mount
   useEffect(() => {
     // Setup stream listener for real-time chat updates
-    const teardownStreamListener = setupChatStreamListener()
+    const teardownStreamListener = setupChatStreamListener();
 
     // Load initial data
-    loadWorkspace() // Load default workspace first
-    loadSessions()
-    loadProviders()
+    loadWorkspace(); // Load default workspace first
+    loadSessions();
+    loadProviders();
 
     // Setup file watcher
-    const unwatchFiles = setupFileWatcher()
+    const unwatchFiles = setupFileWatcher();
 
     // Cleanup on unmount
     return () => {
-      teardownStreamListener()
-      unwatchFiles()
-    }
-  }, [loadSessions, loadProviders, loadWorkspace, setupFileWatcher])
+      teardownStreamListener();
+      unwatchFiles();
+    };
+  }, [loadSessions, loadProviders, loadWorkspace, setupFileWatcher]);
 
   return (
     <MainLayout
@@ -60,12 +61,12 @@ function App() {
         onClose={() => setActivePanelType(null)}
       />
     </MainLayout>
-  )
+  );
 }
 
 // Toolbar component
 function Toolbar() {
-  const { permissionMode, setPermissionMode } = useChatStore()
+  const { permissionMode, setPermissionMode } = useChatStore();
 
   const modes = [
     {
@@ -83,9 +84,9 @@ function Toolbar() {
       label: 'Bypass',
       description: 'Auto-approve all tools'
     }
-  ]
+  ];
 
-  const currentMode = modes.find((m) => m.value === permissionMode) || modes[0]
+  const currentMode = modes.find((m) => m.value === permissionMode) || modes[0];
 
   return (
     <div className="flex items-center justify-between w-full">
@@ -95,7 +96,10 @@ function Toolbar() {
       </div>
 
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex items-center gap-1 px-3 py-1.5 rounded-md border border-border-subtle bg-white hover:bg-bg-accent transition-colors text-sm">
+        <DropdownMenuTrigger
+          className="flex items-center gap-1 px-3 py-1.5 rounded-md border border-border-subtle bg-white hover:bg-bg-accent transition-colors text-sm cursor-pointer"
+          style={noDragStyle}
+        >
           <span className="text-text-secondary">Mode:</span>
           <span className="font-medium text-text-primary">{currentMode.label}</span>
           <ChevronDown className="h-3 w-3 text-text-tertiary" />
@@ -116,7 +120,7 @@ function Toolbar() {
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

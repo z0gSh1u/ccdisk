@@ -2,10 +2,11 @@
  * Sidebar Component - Navigation sidebar with sessions and workspace
  */
 
-import { useState, useRef, useEffect } from 'react'
-import { useChatStore } from '../stores/chat-store'
-import { useWorkspaceStore } from '../stores/workspace-store'
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui'
+import { useState, useRef, useEffect } from 'react';
+import { useChatStore } from '../stores/chat-store';
+import { useWorkspaceStore } from '../stores/workspace-store';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui';
+import { cn } from '../lib/utils';
 import {
   Plus,
   Folder,
@@ -17,84 +18,84 @@ import {
   Terminal,
   Puzzle,
   Activity
-} from 'lucide-react'
-import { FileTree } from './workspace/FileTree'
-import type { PanelType } from './SidePanel'
+} from 'lucide-react';
+import { FileTree } from './workspace/FileTree';
+import type { PanelType } from './SidePanel';
 
 interface SidebarProps {
-  activePanelType: PanelType | null
-  onPanelTypeChange: (type: PanelType | null) => void
+  activePanelType: PanelType | null;
+  onPanelTypeChange: (type: PanelType | null) => void;
 }
 
 export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
-  const { sessions, currentSessionId, selectSession, createSession, deleteSession, renameSession } =
-    useChatStore()
-  const { currentWorkspace, openWorkspaceInExplorer } = useWorkspaceStore()
-  const [isFileTreeExpanded, setIsFileTreeExpanded] = useState(false)
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const { sessions, currentSessionId, selectSession, createSession, deleteSession, renameSession } = useChatStore();
+  const { currentWorkspace, openWorkspaceInExplorer } = useWorkspaceStore();
+  const [isFileTreeExpanded, setIsFileTreeExpanded] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const isMacOS = window.platform === 'darwin';
 
   // Inline rename state
-  const [editingSessionId, setEditingSessionId] = useState<string | null>(null)
-  const [editingName, setEditingName] = useState('')
-  const renameInputRef = useRef<HTMLInputElement>(null)
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   // Focus and select input text when editing starts
   useEffect(() => {
     if (editingSessionId && renameInputRef.current) {
-      renameInputRef.current.focus()
-      renameInputRef.current.select()
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
     }
-  }, [editingSessionId])
+  }, [editingSessionId]);
 
   const handleNewSession = async () => {
     try {
-      await createSession()
+      await createSession();
     } catch (error) {
-      console.error('Failed to create session:', error)
+      console.error('Failed to create session:', error);
     }
-  }
+  };
 
   const handleOpenWorkspace = async () => {
     try {
-      await openWorkspaceInExplorer()
+      await openWorkspaceInExplorer();
     } catch (error) {
-      console.error('Failed to open workspace:', error)
+      console.error('Failed to open workspace:', error);
     }
-  }
+  };
 
   const handleStartRename = (sessionId: string, currentName: string) => {
-    setEditingSessionId(sessionId)
-    setEditingName(currentName)
-  }
+    setEditingSessionId(sessionId);
+    setEditingName(currentName);
+  };
 
   const handleSaveRename = async () => {
     if (editingSessionId && editingName.trim()) {
-      await renameSession(editingSessionId, editingName)
+      await renameSession(editingSessionId, editingName);
     }
-    setEditingSessionId(null)
-    setEditingName('')
-  }
+    setEditingSessionId(null);
+    setEditingName('');
+  };
 
   const handleCancelRename = () => {
-    setEditingSessionId(null)
-    setEditingName('')
-  }
+    setEditingSessionId(null);
+    setEditingName('');
+  };
 
   const handleDeleteSession = async () => {
-    if (!deleteConfirmId) return
+    if (!deleteConfirmId) return;
     try {
-      await deleteSession(deleteConfirmId)
+      await deleteSession(deleteConfirmId);
     } catch (error) {
-      console.error('Failed to delete session:', error)
+      console.error('Failed to delete session:', error);
     }
-    setDeleteConfirmId(null)
-  }
+    setDeleteConfirmId(null);
+  };
 
   return (
     <>
       <div className="flex flex-col h-full bg-bg-secondary border-r border-border-subtle">
-        {/* Header / Brand */}
-        <div className="shrink-0 p-4 flex items-center gap-2">
+        {/* Header / Brand - with top padding on macOS to avoid traffic lights */}
+        <div className={cn('shrink-0 p-4 flex items-center gap-2', isMacOS && 'pt-6')}>
           <div className="h-6 w-6 rounded bg-accent flex items-center justify-center text-white font-serif font-bold text-xs">
             C
           </div>
@@ -104,9 +105,7 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
         {/* Workspace section */}
         <div className="px-4 py-2">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-xs font-medium uppercase tracking-wider text-text-tertiary">
-              Workspace
-            </div>
+            <div className="text-xs font-medium uppercase tracking-wider text-text-tertiary">Workspace</div>
             <button
               onClick={() => setIsFileTreeExpanded(!isFileTreeExpanded)}
               className="p-1 rounded hover:bg-bg-accent transition-colors"
@@ -145,9 +144,7 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
         {/* Sessions section */}
         <div className="flex-1 overflow-y-auto px-2 py-4">
           <div className="mb-2 px-2 flex items-center justify-between group">
-            <div className="text-xs font-medium uppercase tracking-wider text-text-tertiary">
-              Recents
-            </div>
+            <div className="text-xs font-medium uppercase tracking-wider text-text-tertiary">Recents</div>
             <button
               onClick={handleNewSession}
               className="flex items-center gap-1 rounded px-1.5 py-0.5 text-text-tertiary hover:bg-bg-accent hover:text-text-primary transition-colors text-xs"
@@ -168,10 +165,7 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
                     : 'text-text-secondary hover:bg-bg-accent hover:text-text-primary'
                 }`}
               >
-                <button
-                  onClick={() => selectSession(session.id)}
-                  className="flex items-center gap-2 flex-1 min-w-0"
-                >
+                <button onClick={() => selectSession(session.id)} className="flex items-center gap-2 flex-1 min-w-0">
                   <MessageSquare
                     className={`h-4 w-4 shrink-0 ${currentSessionId === session.id ? 'text-accent' : 'text-text-tertiary group-hover:text-text-secondary'}`}
                   />
@@ -182,9 +176,9 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
                       onChange={(e) => setEditingName(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
-                          handleSaveRename()
+                          handleSaveRename();
                         } else if (e.key === 'Escape') {
-                          handleCancelRename()
+                          handleCancelRename();
                         }
                       }}
                       onBlur={handleSaveRename}
@@ -195,8 +189,8 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
                     <div
                       className="truncate flex-1"
                       onDoubleClick={(e) => {
-                        e.stopPropagation()
-                        handleStartRename(session.id, session.name)
+                        e.stopPropagation();
+                        handleStartRename(session.id, session.name);
                       }}
                     >
                       {session.name}
@@ -206,8 +200,8 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
                 {editingSessionId !== session.id && (
                   <button
                     onClick={(e) => {
-                      e.stopPropagation()
-                      setDeleteConfirmId(session.id)
+                      e.stopPropagation();
+                      setDeleteConfirmId(session.id);
                     }}
                     className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-100 hover:text-red-600 transition-all shrink-0"
                     title="Delete session"
@@ -219,9 +213,7 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
             ))}
 
             {sessions.length === 0 && (
-              <div className="px-4 py-8 text-center text-sm text-text-tertiary italic">
-                No active sessions
-              </div>
+              <div className="px-4 py-8 text-center text-sm text-text-tertiary italic">No active sessions</div>
             )}
           </div>
         </div>
@@ -291,15 +283,12 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
             <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>
               Cancel
             </Button>
-            <Button
-              className="bg-red-600 text-white hover:bg-red-700"
-              onClick={handleDeleteSession}
-            >
+            <Button className="bg-red-600 text-white hover:bg-red-700" onClick={handleDeleteSession}>
               Delete
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }

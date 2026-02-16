@@ -2,13 +2,13 @@
  * Select Component - Dropdown select using Radix UI
  */
 
-import * as SelectPrimitive from '@radix-ui/react-select'
-import { forwardRef } from 'react'
-import { cn } from '../../lib/utils'
+import * as SelectPrimitive from '@radix-ui/react-select';
+import { forwardRef } from 'react';
+import { cn } from '../../lib/utils';
 
-const Select = SelectPrimitive.Root
-const SelectGroup = SelectPrimitive.Group
-const SelectValue = SelectPrimitive.Value
+const Select = SelectPrimitive.Root;
+const SelectGroup = SelectPrimitive.Group;
+const SelectValue = SelectPrimitive.Value;
 
 const SelectTrigger = forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
@@ -43,8 +43,8 @@ const SelectTrigger = forwardRef<
       </svg>
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
-))
-SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
+));
+SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 
 const SelectContent = forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
@@ -80,8 +80,8 @@ const SelectContent = forwardRef<
       </SelectPrimitive.Viewport>
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
-))
-SelectContent.displayName = SelectPrimitive.Content.displayName
+));
+SelectContent.displayName = SelectPrimitive.Content.displayName;
 
 const SelectItem = forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
@@ -118,7 +118,7 @@ const SelectItem = forwardRef<
     </span>
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
   </SelectPrimitive.Item>
-))
-SelectItem.displayName = SelectPrimitive.Item.displayName
+));
+SelectItem.displayName = SelectPrimitive.Item.displayName;
 
-export { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectItem }
+export { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectItem };

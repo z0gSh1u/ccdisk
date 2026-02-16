@@ -36,42 +36,42 @@
  * SidePanel - Slide-in panel from right side for settings and configurations
  */
 
-import { useEffect } from 'react'
-import { X } from 'lucide-react'
-import { ClaudeConfigEditor } from './settings/ClaudeConfigEditor'
-import { MCPManager } from './extensions/MCPManager'
-import { SkillsCommandsManager } from './settings/SkillsCommandsManager'
+import { useEffect } from 'react';
+import { X } from 'lucide-react';
+import { ClaudeConfigEditor } from './settings/ClaudeConfigEditor';
+import { MCPManager } from './extensions/MCPManager';
+import { SkillsCommandsManager } from './settings/SkillsCommandsManager';
 
-export type PanelType = 'skills' | 'mcp' | 'claude'
+export type PanelType = 'skills' | 'mcp' | 'claude';
 
 interface SidePanelProps {
-  isOpen: boolean
-  panelType: PanelType | null
-  onClose: () => void
+  isOpen: boolean;
+  panelType: PanelType | null;
+  onClose: () => void;
 }
 
 const PANEL_TITLES: Record<PanelType, string> = {
   skills: 'Skills & Commands',
   mcp: 'MCP Servers',
   claude: 'Claude Configuration'
-}
+};
 
 export function SidePanel({ isOpen, panelType, onClose }: SidePanelProps) {
   // ESC key handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
-        onClose()
+        onClose();
       }
-    }
+    };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown)
-      return () => document.removeEventListener('keydown', handleKeyDown)
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
     }
-  }, [isOpen, onClose])
+  }, [isOpen, onClose]);
 
-  if (!isOpen || !panelType) return null
+  if (!isOpen || !panelType) return null;
 
   return (
     <div className="fixed inset-0 z-50">
@@ -83,11 +83,7 @@ export function SidePanel({ isOpen, panelType, onClose }: SidePanelProps) {
         {/* Header */}
         <div className="shrink-0 flex items-center justify-between p-4 border-b border-border-subtle">
           <h2 className="text-lg font-semibold text-text-primary">{PANEL_TITLES[panelType]}</h2>
-          <button
-            onClick={onClose}
-            className="p-1 rounded hover:bg-bg-accent transition-colors"
-            title="Close panel"
-          >
+          <button onClick={onClose} className="p-1 rounded hover:bg-bg-accent transition-colors" title="Close panel">
             <X className="h-5 w-5 text-text-tertiary" />
           </button>
         </div>
@@ -100,7 +96,7 @@ export function SidePanel({ isOpen, panelType, onClose }: SidePanelProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 ```
 
@@ -147,7 +143,7 @@ git commit -m "feat: create SidePanel component base structure"
 同时更新容器 div，移除 `if (!isOpen || !panelType) return null`，改为始终渲染但控制可见性：
 
 ```tsx
-return <div className={`fixed inset-0 z-50 ${isOpen ? 'block' : 'hidden'}`}>{/* ... */}</div>
+return <div className={`fixed inset-0 z-50 ${isOpen ? 'block' : 'hidden'}`}>{/* ... */}</div>;
 ```
 
 **Step 2: 添加响应式宽度**
@@ -174,14 +170,14 @@ return <div className={`fixed inset-0 z-50 ${isOpen ? 'block' : 'hidden'}`}>{/* 
 {
   /* Overlay - blocks all interactions with content below */
 }
-;<div
+<div
   className={`
     absolute inset-0 bg-black/30
     transition-opacity duration-300
     ${isOpen ? 'opacity-100' : 'opacity-0'}
   `}
   onClick={onClose}
-/>
+/>;
 ```
 
 **Step 4: 验证动画效果**
@@ -236,14 +232,14 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
 
 ```tsx
 // 删除这行
-const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 ```
 
 删除 SettingsDialog 导入（第 19 行）：
 
 ```tsx
 // 删除这行
-import { SettingsDialog } from './settings/SettingsDialog'
+import { SettingsDialog } from './settings/SettingsDialog';
 ```
 
 删除 Footer 区域的 Settings 按钮（223-232 行）和 SettingsDialog 渲染（259 行）。
@@ -256,7 +252,7 @@ import { SettingsDialog } from './settings/SettingsDialog'
 {
   /* Footer - Settings Panels */
 }
-;<div className="shrink-0 p-2 border-t border-border-subtle space-y-1">
+<div className="shrink-0 p-2 border-t border-border-subtle space-y-1">
   <button
     onClick={() => onPanelTypeChange(activePanelType === 'skills' ? null : 'skills')}
     className={`
@@ -304,7 +300,7 @@ import { SettingsDialog } from './settings/SettingsDialog'
     <Activity className="h-5 w-5 text-text-tertiary" />
     <div className="text-sm font-medium">Claude Config</div>
   </button>
-</div>
+</div>;
 ```
 
 **Step 4: 移除 SettingsDialog 渲染**
@@ -318,7 +314,7 @@ import { SettingsDialog } from './settings/SettingsDialog'
 {
   /* Settings Dialog */
 }
-;<SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+<SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />;
 ```
 
 **Step 5: 类型检查**
@@ -349,13 +345,13 @@ git commit -m "feat: replace Settings button with three panel buttons in Sidebar
 在 `App.tsx` 顶部添加导入：
 
 ```tsx
-import { SidePanel, type PanelType } from './components/SidePanel'
+import { SidePanel, type PanelType } from './components/SidePanel';
 ```
 
 在 `App` 组件内部添加状态（现有 state 之后）：
 
 ```tsx
-const [activePanelType, setActivePanelType] = useState<PanelType | null>(null)
+const [activePanelType, setActivePanelType] = useState<PanelType | null>(null);
 ```
 
 **Step 2: 更新 Sidebar 渲染，传递 props**
@@ -377,13 +373,9 @@ return (
     <MainLayout preview={showFilePreview ? <FilePreview /> : null}>
       <ChatInterface />
     </MainLayout>
-    <SidePanel
-      isOpen={activePanelType !== null}
-      panelType={activePanelType}
-      onClose={() => setActivePanelType(null)}
-    />
+    <SidePanel isOpen={activePanelType !== null} panelType={activePanelType} onClose={() => setActivePanelType(null)} />
   </div>
-)
+);
 ```
 
 **Step 4: 类型检查**

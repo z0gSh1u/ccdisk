@@ -2,40 +2,40 @@
  * SidePanel - Slide-in panel from right side for settings and configurations
  */
 
-import { useEffect } from 'react'
-import { X } from 'lucide-react'
-import { ClaudeConfigEditor } from './settings/ClaudeConfigEditor'
-import { MCPManager } from './extensions/MCPManager'
-import { SkillsCommandsManager } from './settings/SkillsCommandsManager'
+import { useEffect } from 'react';
+import { X } from 'lucide-react';
+import { ClaudeConfigEditor } from './settings/ClaudeConfigEditor';
+import { MCPManager } from './extensions/MCPManager';
+import { SkillsCommandsManager } from './settings/SkillsCommandsManager';
 
-export type PanelType = 'skills' | 'mcp' | 'claude'
+export type PanelType = 'skills' | 'mcp' | 'claude';
 
 interface SidePanelProps {
-  isOpen: boolean
-  panelType: PanelType | null
-  onClose: () => void
+  isOpen: boolean;
+  panelType: PanelType | null;
+  onClose: () => void;
 }
 
 const PANEL_TITLES: Record<PanelType, string> = {
   skills: 'Skills & Commands',
   mcp: 'MCP Servers',
   claude: 'Claude Configuration'
-}
+};
 
 export function SidePanel({ isOpen, panelType, onClose }: SidePanelProps) {
   // ESC key handler
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose()
+        onClose();
       }
-    }
+    };
 
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   return (
     <div className={`fixed inset-0 z-50 ${isOpen ? 'block' : 'hidden'}`}>
@@ -53,7 +53,7 @@ export function SidePanel({ isOpen, panelType, onClose }: SidePanelProps) {
       <div
         className={`
           absolute right-0 top-0 bottom-0
-          w-[480px] max-[1200px]:w-[400px] max-[800px]:w-[calc(100vw-40px)]
+          w-[80vw]
           bg-white shadow-2xl flex flex-col
           transform transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : 'translate-x-full'}
@@ -61,14 +61,8 @@ export function SidePanel({ isOpen, panelType, onClose }: SidePanelProps) {
       >
         {/* Header */}
         <div className="shrink-0 flex items-center justify-between p-4 border-b border-border-subtle">
-          <h2 className="text-lg font-semibold text-text-primary">
-            {panelType ? PANEL_TITLES[panelType] : ''}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1 rounded hover:bg-bg-accent transition-colors"
-            title="Close panel"
-          >
+          <h2 className="text-lg font-semibold text-text-primary">{panelType ? PANEL_TITLES[panelType] : ''}</h2>
+          <button onClick={onClose} className="p-1 rounded hover:bg-bg-accent transition-colors" title="Close panel">
             <X className="h-5 w-5 text-text-tertiary" />
           </button>
         </div>
@@ -81,5 +75,5 @@ export function SidePanel({ isOpen, panelType, onClose }: SidePanelProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

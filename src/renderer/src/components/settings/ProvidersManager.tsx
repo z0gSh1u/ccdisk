@@ -2,30 +2,30 @@
  * ProvidersManager Component - Manage API providers
  */
 
-import { useEffect, useState } from 'react'
-import { useSettingsStore } from '../../stores/settings-store'
-import { Button, Input, ScrollArea } from '../ui'
-import { Plus, Check, Trash2, Eye, EyeOff } from 'lucide-react'
-import type { Provider } from '../../../../shared/types'
+import { useEffect, useState } from 'react';
+import { useSettingsStore } from '../../stores/settings-store';
+import { Button, Input, ScrollArea } from '../ui';
+import { Plus, Check, Trash2, Eye, EyeOff } from 'lucide-react';
+import type { Provider } from '../../../../shared/types';
 
 export function ProvidersManager() {
-  const { providers, loadProviders, deleteProvider } = useSettingsStore()
+  const { providers, loadProviders, deleteProvider } = useSettingsStore();
 
-  const [isAdding, setIsAdding] = useState(false)
-  const [showSecrets, setShowSecrets] = useState(false)
+  const [isAdding, setIsAdding] = useState(false);
+  const [showSecrets, setShowSecrets] = useState(false);
   const [newProvider, setNewProvider] = useState({
     name: '',
     apiKey: '',
     baseUrl: ''
-  })
+  });
 
   useEffect(() => {
-    loadProviders()
-  }, [loadProviders])
+    loadProviders();
+  }, [loadProviders]);
 
   const handleAdd = async () => {
     if (!newProvider.name.trim() || !newProvider.apiKey.trim()) {
-      return
+      return;
     }
 
     try {
@@ -35,41 +35,41 @@ export function ProvidersManager() {
         baseUrl: newProvider.baseUrl || null,
         extraEnv: null,
         isActive: false
-      })
+      });
 
       if (response.success) {
-        setNewProvider({ name: '', apiKey: '', baseUrl: '' })
-        setIsAdding(false)
-        await loadProviders()
+        setNewProvider({ name: '', apiKey: '', baseUrl: '' });
+        setIsAdding(false);
+        await loadProviders();
       }
     } catch (error) {
-      console.error('Failed to create provider:', error)
-      alert('Failed to create provider')
+      console.error('Failed to create provider:', error);
+      alert('Failed to create provider');
     }
-  }
+  };
 
   const handleActivate = async (id: string) => {
     try {
-      const response = await window.api.settings.activateProvider(id)
+      const response = await window.api.settings.activateProvider(id);
       if (response.success) {
-        await loadProviders()
+        await loadProviders();
       }
     } catch (error) {
-      console.error('Failed to activate provider:', error)
+      console.error('Failed to activate provider:', error);
     }
-  }
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this provider?')) {
-      return
+      return;
     }
 
     try {
-      await deleteProvider(id)
+      await deleteProvider(id);
     } catch (error) {
-      console.error('Failed to delete provider:', error)
+      console.error('Failed to delete provider:', error);
     }
-  }
+  };
 
   return (
     <div className="space-y-4">
@@ -77,11 +77,7 @@ export function ProvidersManager() {
         <div className="text-sm text-text-secondary">
           Configure Claude API providers. The active provider will be used for all conversations.
         </div>
-        <Button
-          size="sm"
-          onClick={() => setIsAdding(!isAdding)}
-          className="bg-accent text-white hover:bg-accent-hover"
-        >
+        <Button size="sm" onClick={() => setIsAdding(!isAdding)} className="bg-accent text-white hover:bg-accent-hover">
           <Plus className="h-4 w-4 mr-1" />
           Add Provider
         </Button>
@@ -112,8 +108,8 @@ export function ProvidersManager() {
             <Button
               variant="ghost"
               onClick={() => {
-                setIsAdding(false)
-                setNewProvider({ name: '', apiKey: '', baseUrl: '' })
+                setIsAdding(false);
+                setNewProvider({ name: '', apiKey: '', baseUrl: '' });
               }}
             >
               Cancel
@@ -135,26 +131,17 @@ export function ProvidersManager() {
                 <div className="flex items-center gap-2">
                   <div className="font-medium text-text-primary">{provider.name}</div>
                   {provider.isActive && (
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-accent text-white">
-                      Active
-                    </span>
+                    <span className="px-2 py-0.5 text-xs rounded-full bg-accent text-white">Active</span>
                   )}
                 </div>
-                <div className="text-sm text-text-secondary mt-1">
-                  {provider.baseUrl || 'Default API endpoint'}
-                </div>
+                <div className="text-sm text-text-secondary mt-1">{provider.baseUrl || 'Default API endpoint'}</div>
                 <div className="text-xs text-text-tertiary mt-1 font-mono">
                   {showSecrets ? provider.apiKey : '••••••••' + provider.apiKey.slice(-8)}
                 </div>
               </div>
               <div className="flex gap-2">
                 {!provider.isActive && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleActivate(provider.id)}
-                    className="text-accent"
-                  >
+                  <Button size="sm" variant="ghost" onClick={() => handleActivate(provider.id)} className="text-accent">
                     <Check className="h-4 w-4 mr-1" />
                     Activate
                   </Button>
@@ -172,27 +159,18 @@ export function ProvidersManager() {
           ))}
 
           {providers.length === 0 && !isAdding && (
-            <div className="text-center py-12 text-text-tertiary">
-              No providers configured. Add one to get started.
-            </div>
+            <div className="text-center py-12 text-text-tertiary">No providers configured. Add one to get started.</div>
           )}
         </div>
       </ScrollArea>
 
       <div className="flex items-center justify-between pt-4 border-t border-border-subtle">
-        <div className="text-xs text-text-tertiary">
-          API keys are stored locally and never shared
-        </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => setShowSecrets(!showSecrets)}
-          className="text-text-tertiary"
-        >
+        <div className="text-xs text-text-tertiary">API keys are stored locally and never shared</div>
+        <Button size="sm" variant="ghost" onClick={() => setShowSecrets(!showSecrets)} className="text-text-tertiary">
           {showSecrets ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
           {showSecrets ? 'Hide' : 'Show'} Secrets
         </Button>
       </div>
     </div>
-  )
+  );
 }

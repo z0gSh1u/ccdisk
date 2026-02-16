@@ -105,14 +105,14 @@ src/
 
 ```typescript
 // Example import order
-import { app, BrowserWindow } from 'electron'
-import { join } from 'path'
-import Database from 'better-sqlite3'
+import { app, BrowserWindow } from 'electron';
+import { join } from 'path';
+import Database from 'better-sqlite3';
 
-import { DatabaseService } from './services/db-service'
-import { registerWorkspaceHandlers } from './ipc/workspace-handler'
+import { DatabaseService } from './services/db-service';
+import { registerWorkspaceHandlers } from './ipc/workspace-handler';
 
-import type { Session, StreamEvent } from '../../shared/types'
+import type { Session, StreamEvent } from '../../shared/types';
 ```
 
 ### Formatting (Prettier Config)
@@ -164,23 +164,23 @@ trailingComma: none # No trailing commas
 type StreamEvent =
   | { type: 'text'; data: string }
   | { type: 'tool_use'; data: ToolUseData }
-  | { type: 'error'; data: string }
+  | { type: 'error'; data: string };
 
 // Generic response type
 interface IPCResponse<T = unknown> {
-  success: boolean
-  data?: T
-  error?: string
+  success: boolean;
+  data?: T;
+  error?: string;
 }
 
 // Extending base types
 export interface ChatMessage extends Message {
-  isStreaming?: boolean
-  streamingText?: string
+  isStreaming?: boolean;
+  streamingText?: string;
 }
 
 // Record types for dictionaries
-mcpServers: Record<string, MCPServerConfig>
+mcpServers: Record<string, MCPServerConfig>;
 ```
 
 ### Error Handling
@@ -191,16 +191,16 @@ mcpServers: Record<string, MCPServerConfig>
 try {
   // Validate inputs first
   if (!sessionName.trim()) {
-    throw new Error('Session name is required')
+    throw new Error('Session name is required');
   }
 
   // Perform operation
-  const result = await operation()
+  const result = await operation();
 
-  return { success: true, data: result }
+  return { success: true, data: result };
 } catch (error) {
-  console.error('Descriptive context:', error)
-  return { success: false, error: (error as Error).message }
+  console.error('Descriptive context:', error);
+  return { success: false, error: (error as Error).message };
 }
 ```
 
@@ -261,19 +261,19 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
 ```typescript
 export class ServiceName {
-  private dependency: Type
+  private dependency: Type;
 
   constructor(dependency: Type) {
-    this.dependency = dependency
+    this.dependency = dependency;
   }
 
   async publicMethod(): Promise<ReturnType> {
     try {
       // implementation
-      return result
+      return result;
     } catch (error) {
-      console.error('ServiceName.publicMethod error:', error)
-      throw error
+      console.error('ServiceName.publicMethod error:', error);
+      throw error;
     }
   }
 
@@ -288,12 +288,12 @@ export class ServiceName {
 ```typescript
 interface StoreInterface {
   // State
-  data: Type[]
-  isLoading: boolean
+  data: Type[];
+  isLoading: boolean;
 
   // Actions
-  loadData: () => Promise<void>
-  updateItem: (id: string, updates: Partial<Type>) => void
+  loadData: () => Promise<void>;
+  updateItem: (id: string, updates: Partial<Type>) => void;
 }
 
 export const useStoreName = create<StoreInterface>((set, get) => ({
@@ -301,23 +301,23 @@ export const useStoreName = create<StoreInterface>((set, get) => ({
   isLoading: false,
 
   loadData: async () => {
-    set({ isLoading: true })
+    set({ isLoading: true });
     try {
-      const result = await window.api.loadData()
+      const result = await window.api.loadData();
       if (result.success) {
-        set({ data: result.data })
+        set({ data: result.data });
       }
     } finally {
-      set({ isLoading: false })
+      set({ isLoading: false });
     }
   },
 
   updateItem: (id, updates) => {
     set((state) => ({
       data: state.data.map((item) => (item.id === id ? { ...item, ...updates } : item))
-    }))
+    }));
   }
-}))
+}));
 ```
 
 ---

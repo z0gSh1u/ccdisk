@@ -200,7 +200,7 @@ export const IPC_CHANNELS = {
   // MCP servers
   MCP_GET_CONFIG: 'mcp:get-config',
   MCP_UPDATE_CONFIG: 'mcp:update-config'
-} as const
+} as const;
 ```
 
 ---
@@ -215,7 +215,7 @@ export const IPC_CHANNELS = {
 ### Schema (`src/main/db/schema.ts`)
 
 ```typescript
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
@@ -225,7 +225,7 @@ export const sessions = sqliteTable('sessions', {
   model: text('model'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
-})
+});
 
 export const messages = sqliteTable('messages', {
   id: text('id').primaryKey(),
@@ -236,7 +236,7 @@ export const messages = sqliteTable('messages', {
   content: text('content').notNull(), // JSON serialized
   tokenUsage: text('token_usage'), // JSON serialized
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
-})
+});
 
 export const providers = sqliteTable('providers', {
   id: text('id').primaryKey(),
@@ -247,12 +247,12 @@ export const providers = sqliteTable('providers', {
   isActive: integer('is_active', { mode: 'boolean' }).default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
-})
+});
 
 export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull()
-})
+});
 ```
 
 ### Database Service
@@ -297,16 +297,16 @@ class DatabaseService {
 ```typescript
 class ClaudeService {
   // Send message and stream responses via IPC
-  async sendMessage(sessionId: string, message: string, files?: File[])
+  async sendMessage(sessionId: string, message: string, files?: File[]);
 
   // Resume existing SDK session
-  async resumeSession(sdkSessionId: string, message: string)
+  async resumeSession(sdkSessionId: string, message: string);
 
   // Handle permission requests (canUseTool hook)
-  async requestPermission(toolName: string, input: any, suggestions: string[])
+  async requestPermission(toolName: string, input: any, suggestions: string[]);
 
   // Abort ongoing operation
-  abortSession(sessionId: string)
+  abortSession(sessionId: string);
 }
 ```
 
@@ -346,7 +346,7 @@ export type StreamEvent =
   | { type: 'permission_request'; data: PermissionRequest }
   | { type: 'result'; data: { usage: TokenUsage; session_id: string } }
   | { type: 'error'; data: string }
-  | { type: 'status'; data: { session_id?: string; model?: string } }
+  | { type: 'status'; data: { session_id?: string; model?: string } };
 ```
 
 ### Permission Handling
@@ -565,21 +565,21 @@ SettingsLayout
 
 ```typescript
 interface ChatStore {
-  sessions: Session[]
-  currentSessionId: string | null
-  messages: Record<string, Message[]>
-  isStreaming: boolean
-  permissionMode: PermissionMode
-  pendingPermissions: PermissionRequest[]
+  sessions: Session[];
+  currentSessionId: string | null;
+  messages: Record<string, Message[]>;
+  isStreaming: boolean;
+  permissionMode: PermissionMode;
+  pendingPermissions: PermissionRequest[];
 
   // Actions
-  loadSessions: () => Promise<void>
-  createSession: (name: string) => Promise<void>
-  selectSession: (id: string) => Promise<void>
-  deleteSession: (id: string) => Promise<void>
-  sendMessage: (message: string, files?: File[]) => Promise<void>
-  respondToPermission: (requestId: string, approved: boolean, input?: any) => Promise<void>
-  setPermissionMode: (mode: PermissionMode) => Promise<void>
+  loadSessions: () => Promise<void>;
+  createSession: (name: string) => Promise<void>;
+  selectSession: (id: string) => Promise<void>;
+  deleteSession: (id: string) => Promise<void>;
+  sendMessage: (message: string, files?: File[]) => Promise<void>;
+  respondToPermission: (requestId: string, approved: boolean, input?: any) => Promise<void>;
+  setPermissionMode: (mode: PermissionMode) => Promise<void>;
 }
 ```
 
@@ -587,15 +587,15 @@ interface ChatStore {
 
 ```typescript
 interface WorkspaceStore {
-  workspacePath: string | null
-  fileTree: FileNode[]
-  selectedFile: string | null
-  fileContent: string | null
+  workspacePath: string | null;
+  fileTree: FileNode[];
+  selectedFile: string | null;
+  fileContent: string | null;
 
   // Actions
-  selectWorkspace: (path: string) => Promise<void>
-  refreshFileTree: () => Promise<void>
-  selectFile: (path: string) => Promise<void>
+  selectWorkspace: (path: string) => Promise<void>;
+  refreshFileTree: () => Promise<void>;
+  selectFile: (path: string) => Promise<void>;
 }
 ```
 
@@ -603,15 +603,15 @@ interface WorkspaceStore {
 
 ```typescript
 interface SettingsStore {
-  providers: Provider[]
-  activeProviderId: string | null
+  providers: Provider[];
+  activeProviderId: string | null;
 
   // Actions
-  loadProviders: () => Promise<void>
-  createProvider: (provider: Omit<Provider, 'id'>) => Promise<void>
-  updateProvider: (id: string, provider: Partial<Provider>) => Promise<void>
-  deleteProvider: (id: string) => Promise<void>
-  activateProvider: (id: string) => Promise<void>
+  loadProviders: () => Promise<void>;
+  createProvider: (provider: Omit<Provider, 'id'>) => Promise<void>;
+  updateProvider: (id: string, provider: Partial<Provider>) => Promise<void>;
+  deleteProvider: (id: string) => Promise<void>;
+  activateProvider: (id: string) => Promise<void>;
 }
 ```
 

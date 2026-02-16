@@ -2,17 +2,17 @@
  * Config service for managing Claude Code settings.json
  * Location: ~/.claude/settings.json
  */
-import fs from 'fs/promises'
-import path from 'path'
-import os from 'os'
-import { Provider } from '../../shared/types'
+import fs from 'fs/promises';
+import path from 'path';
+import os from 'os';
+import { Provider } from '../../shared/types';
 
 export class ConfigService {
-  private settingsPath: string
+  private settingsPath: string;
 
   constructor() {
     // Settings stored at ~/.claude/settings.json (Claude SDK standard location)
-    this.settingsPath = path.join(os.homedir(), '.claude', 'settings.json')
+    this.settingsPath = path.join(os.homedir(), '.claude', 'settings.json');
   }
 
   /**
@@ -21,16 +21,16 @@ export class ConfigService {
    */
   async getSettings(): Promise<Record<string, unknown>> {
     try {
-      const content = await fs.readFile(this.settingsPath, 'utf-8')
-      return JSON.parse(content)
+      const content = await fs.readFile(this.settingsPath, 'utf-8');
+      return JSON.parse(content);
     } catch (error) {
       // File doesn't exist or invalid JSON - return empty object
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        return {}
+        return {};
       }
       // Invalid JSON - log and return empty object
-      console.error('Failed to parse settings.json:', error)
-      return {}
+      console.error('Failed to parse settings.json:', error);
+      return {};
     }
   }
 
@@ -42,20 +42,20 @@ export class ConfigService {
   async updateSettings(settings: Record<string, unknown>): Promise<void> {
     try {
       // Ensure directory exists
-      const dir = path.dirname(this.settingsPath)
-      await fs.mkdir(dir, { recursive: true })
+      const dir = path.dirname(this.settingsPath);
+      await fs.mkdir(dir, { recursive: true });
 
       // Read existing settings
-      const existingSettings = await this.getSettings()
+      const existingSettings = await this.getSettings();
 
       // Deep merge settings
-      const mergedSettings = this.mergeSettings(existingSettings, settings)
+      const mergedSettings = this.mergeSettings(existingSettings, settings);
 
       // Write with pretty formatting
-      await fs.writeFile(this.settingsPath, JSON.stringify(mergedSettings, null, 2), 'utf-8')
+      await fs.writeFile(this.settingsPath, JSON.stringify(mergedSettings, null, 2), 'utf-8');
     } catch (error) {
-      console.error('Failed to write settings.json:', error)
-      throw error
+      console.error('Failed to write settings.json:', error);
+      throw error;
     }
   }
 
@@ -71,31 +71,31 @@ export class ConfigService {
       // Build env object from provider
       const env: Record<string, string> = {
         ANTHROPIC_AUTH_TOKEN: provider.apiKey
-      }
+      };
 
       // Add base URL if provided
       if (provider.baseUrl) {
-        env.ANTHROPIC_BASE_URL = provider.baseUrl
+        env.ANTHROPIC_BASE_URL = provider.baseUrl;
       }
 
       // Parse and merge extraEnv if provided
       if (provider.extraEnv) {
         try {
-          const extraEnv = JSON.parse(provider.extraEnv)
+          const extraEnv = JSON.parse(provider.extraEnv);
           if (typeof extraEnv === 'object' && extraEnv !== null) {
-            Object.assign(env, extraEnv)
+            Object.assign(env, extraEnv);
           }
         } catch (error) {
-          console.error('Failed to parse provider.extraEnv:', error)
+          console.error('Failed to parse provider.extraEnv:', error);
           // Continue without extraEnv
         }
       }
 
       // Update settings with env
-      await this.updateSettings({ env })
+      await this.updateSettings({ env });
     } catch (error) {
-      console.error('Failed to sync provider to settings.json:', error)
-      throw error
+      console.error('Failed to sync provider to settings.json:', error);
+      throw error;
     }
   }
 
@@ -104,8 +104,8 @@ export class ConfigService {
    * Returns only the 6 known ANTHROPIC_ keys
    */
   async getClaudeEnv(): Promise<Record<string, string>> {
-    const settings = await this.getSettings()
-    const env = (settings.env as Record<string, string>) || {}
+    const settings = await this.getSettings();
+    const env = (settings.env as Record<string, string>) || {};
     const knownKeys = [
       'ANTHROPIC_AUTH_TOKEN',
       'ANTHROPIC_BASE_URL',
@@ -113,14 +113,14 @@ export class ConfigService {
       'ANTHROPIC_DEFAULT_SONNET_MODEL',
       'ANTHROPIC_DEFAULT_OPUS_MODEL',
       'ANTHROPIC_DEFAULT_HAIKU_MODEL'
-    ]
-    const result: Record<string, string> = {}
+    ];
+    const result: Record<string, string> = {};
     for (const key of knownKeys) {
       if (env[key]) {
-        result[key] = env[key]
+        result[key] = env[key];
       }
     }
-    return result
+    return result;
   }
 
   /**
@@ -128,31 +128,28 @@ export class ConfigService {
    * Merges with existing env, removes keys with empty string values
    */
   async updateClaudeEnv(envUpdates: Record<string, string>): Promise<void> {
-    const settings = await this.getSettings()
-    const existingEnv = (settings.env as Record<string, string>) || {}
+    const settings = await this.getSettings();
+    const existingEnv = (settings.env as Record<string, string>) || {};
 
     // Merge updates, remove empty values
-    const newEnv = { ...existingEnv }
+    const newEnv = { ...existingEnv };
     for (const [key, value] of Object.entries(envUpdates)) {
       if (value && value.trim()) {
-        newEnv[key] = value.trim()
+        newEnv[key] = value.trim();
       } else {
-        delete newEnv[key]
+        delete newEnv[key];
       }
     }
 
-    await this.updateSettings({ env: newEnv })
+    await this.updateSettings({ env: newEnv });
   }
 
   /**
    * Deep merge two settings objects
    * Second object takes precedence for conflicts
    */
-  private mergeSettings(
-    existing: Record<string, unknown>,
-    updates: Record<string, unknown>
-  ): Record<string, unknown> {
-    const result = { ...existing }
+  private mergeSettings(existing: Record<string, unknown>, updates: Record<string, unknown>): Record<string, unknown> {
+    const result = { ...existing };
 
     for (const [key, value] of Object.entries(updates)) {
       if (
@@ -164,16 +161,13 @@ export class ConfigService {
         !Array.isArray(result[key])
       ) {
         // Recursively merge objects
-        result[key] = this.mergeSettings(
-          result[key] as Record<string, unknown>,
-          value as Record<string, unknown>
-        )
+        result[key] = this.mergeSettings(result[key] as Record<string, unknown>, value as Record<string, unknown>);
       } else {
         // Overwrite primitives, arrays, and nulls
-        result[key] = value
+        result[key] = value;
       }
     }
 
-    return result
+    return result;
   }
 }

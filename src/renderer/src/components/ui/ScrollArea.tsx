@@ -2,23 +2,21 @@
  * ScrollArea Component - Custom scrollable container
  */
 
-import { type ReactNode, forwardRef, type HTMLAttributes } from 'react'
-import { cn } from '../../lib/utils'
+import { type ReactNode, forwardRef, type HTMLAttributes } from 'react';
+import { cn } from '../../lib/utils';
 
 export interface ScrollAreaProps extends HTMLAttributes<HTMLDivElement> {
-  children: ReactNode
+  children: ReactNode;
 }
 
-const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
-  ({ className, children, ...props }, ref) => {
-    return (
-      <div ref={ref} className={cn('overflow-auto', className)} {...props}>
-        {children}
-      </div>
-    )
-  }
-)
+const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(({ className, children, ...props }, ref) => {
+  return (
+    <div ref={ref} className={cn('overflow-auto', className)} {...props}>
+      {children}
+    </div>
+  );
+});
 
-ScrollArea.displayName = 'ScrollArea'
+ScrollArea.displayName = 'ScrollArea';
 
-export { ScrollArea }
+export { ScrollArea };

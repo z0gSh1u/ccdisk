@@ -2,9 +2,9 @@
  * Label Component - Form label using Radix UI
  */
 
-import * as LabelPrimitive from '@radix-ui/react-label'
-import { forwardRef } from 'react'
-import { cn } from '../../lib/utils'
+import * as LabelPrimitive from '@radix-ui/react-label';
+import { forwardRef } from 'react';
+import { cn } from '../../lib/utils';
 
 const Label = forwardRef<
   React.ElementRef<typeof LabelPrimitive.Root>,
@@ -19,8 +19,8 @@ const Label = forwardRef<
     )}
     {...props}
   />
-))
+));
 
-Label.displayName = LabelPrimitive.Root.displayName
+Label.displayName = LabelPrimitive.Root.displayName;
 
-export { Label }
+export { Label };
