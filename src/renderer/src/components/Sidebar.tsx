@@ -6,7 +6,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useChatStore } from '../stores/chat-store';
 import { useWorkspaceStore } from '../stores/workspace-store';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui';
-import { cn } from '../lib/utils';
 import {
   Plus,
   Folder,
@@ -32,7 +31,6 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
   const { currentWorkspace, openWorkspaceInExplorer } = useWorkspaceStore();
   const [isFileTreeExpanded, setIsFileTreeExpanded] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const isMacOS = window.platform === 'darwin';
 
   // Inline rename state
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
@@ -94,8 +92,7 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
   return (
     <>
       <div className="flex flex-col h-full bg-bg-secondary border-r border-border-subtle">
-        {/* Header / Brand - with top padding on macOS to avoid traffic lights */}
-        <div className={cn('shrink-0 p-4 flex items-center gap-2', isMacOS && 'pt-6')}>
+        <div className="shrink-0 pt-6 p-4 flex items-center gap-2">
           <div className="h-6 w-6 rounded bg-accent flex items-center justify-center text-white font-serif font-bold text-xs">
             C
           </div>

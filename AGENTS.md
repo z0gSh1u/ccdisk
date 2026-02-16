@@ -13,6 +13,7 @@ Electron desktop application built with:
 - **Build System**: electron-vite + Vite
 - **State Management**: Zustand
 - **Package Manager**: pnpm (required)
+- **Platform**: macOS (Apple Silicon/M-chip only)
 
 ---
 
@@ -331,6 +332,7 @@ export const useStoreName = create<StoreInterface>((set, get) => ({
 5. **Don't forget semicolons are disabled** - Prettier will remove them
 6. **Validate IPC inputs** - never trust data from renderer
 7. **Clean up resources** - close file watchers, database connections, etc.
+8. **No platform checks needed** - project only supports macOS (darwin), so all platform-specific code has been removed
 
 ---
 

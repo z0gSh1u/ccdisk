@@ -16,9 +16,6 @@ import type {
   FileContentResponse
 } from '../shared/types';
 
-// Platform info
-const platform = process.platform;
-
 // Custom APIs for renderer
 const api = {
   // Chat operations
@@ -141,7 +138,6 @@ if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI);
     contextBridge.exposeInMainWorld('api', api);
-    contextBridge.exposeInMainWorld('platform', platform);
   } catch (error) {
     console.error(error);
   }
@@ -150,6 +146,4 @@ if (process.contextIsolated) {
   window.electron = electronAPI;
   // @ts-ignore (define in dts)
   window.api = api;
-  // @ts-ignore (define in dts)
-  window.platform = platform;
 }
