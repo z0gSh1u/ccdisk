@@ -28,24 +28,6 @@ const ENV_FIELDS: EnvField[] = [
     label: 'Model',
     placeholder: 'claude-sonnet-4-20250514',
     isSecret: false
-  },
-  {
-    key: 'ANTHROPIC_DEFAULT_SONNET_MODEL',
-    label: 'Default Sonnet Model',
-    placeholder: 'claude-sonnet-4-20250514',
-    isSecret: false
-  },
-  {
-    key: 'ANTHROPIC_DEFAULT_OPUS_MODEL',
-    label: 'Default Opus Model',
-    placeholder: 'claude-opus-4-20250514',
-    isSecret: false
-  },
-  {
-    key: 'ANTHROPIC_DEFAULT_HAIKU_MODEL',
-    label: 'Default Haiku Model',
-    placeholder: 'claude-haiku-3-20250514',
-    isSecret: false
   }
 ];
 
@@ -92,6 +74,12 @@ export function ClaudeConfigEditor() {
         if (value) {
           envUpdates[field.key] = value;
         }
+      }
+
+      if (envUpdates.ANTHROPIC_MODEL) {
+        envUpdates.ANTHROPIC_DEFAULT_SONNET_MODEL = envUpdates.ANTHROPIC_MODEL;
+        envUpdates.ANTHROPIC_DEFAULT_OPUS_MODEL = envUpdates.ANTHROPIC_MODEL;
+        envUpdates.ANTHROPIC_DEFAULT_HAIKU_MODEL = envUpdates.ANTHROPIC_MODEL;
       }
 
       const response = await window.api.settings.updateClaudeEnv(envUpdates);

@@ -7,9 +7,7 @@ import type {
   Skill,
   Command,
   MCPConfig,
-  MCPServerStatus,
   SlashCommand,
-  PermissionMode,
   StreamEvent,
   IPCResponse,
   FileAttachment,
@@ -18,14 +16,18 @@ import type {
 
 interface API {
   chat: {
-    sendMessage: (sessionId: string, message: string, files?: FileAttachment[]) => Promise<IPCResponse<void>>;
+    sendMessage: (
+      sessionId: string,
+      message: string,
+      files?: FileAttachment[],
+      sdkSessionId?: string
+    ) => Promise<IPCResponse<void>>;
     onStream: (callback: (sessionId: string, event: StreamEvent) => void) => () => void;
     respondPermission: (
       requestId: string,
       approved: boolean,
       input?: Record<string, unknown>
     ) => Promise<IPCResponse<void>>;
-    setPermissionMode: (mode: PermissionMode) => Promise<IPCResponse<void>>;
     abort: (sessionId: string) => Promise<IPCResponse<void>>;
   };
   sessions: {
@@ -75,9 +77,6 @@ interface API {
     updateConfig: (config: MCPConfig, scope: 'global' | 'workspace') => Promise<IPCResponse<void>>;
   };
   sdk: {
-    getMcpStatus: (sessionId: string) => Promise<IPCResponse<MCPServerStatus[] | null>>;
-    reconnectMcpServer: (sessionId: string, serverName: string) => Promise<IPCResponse<boolean>>;
-    toggleMcpServer: (sessionId: string, serverName: string, enabled: boolean) => Promise<IPCResponse<boolean>>;
     getCommands: (sessionId: string) => Promise<IPCResponse<SlashCommand[] | null>>;
   };
 }

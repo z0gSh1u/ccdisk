@@ -87,33 +87,27 @@ describe('CommandsService', () => {
       // Create global commands
       await fs.mkdir(globalCommandsDir, { recursive: true });
       await fs.writeFile(path.join(globalCommandsDir, 'deploy.sh'), '#!/bin/bash\necho "deploying"', 'utf-8');
-      await fs.chmod(path.join(globalCommandsDir, 'deploy.sh'), 0o755);
       await fs.writeFile(path.join(globalCommandsDir, 'test.py'), '#!/usr/bin/env python3\nprint("testing")', 'utf-8');
-      await fs.chmod(path.join(globalCommandsDir, 'test.py'), 0o755);
 
       const commands = await commandsService.listCommands();
       assert.equal(commands.length, 2);
       assert.equal(commands[0].name, 'deploy.sh');
       assert.equal(commands[0].scope, 'global');
       assert.equal(commands[0].path, path.join(globalCommandsDir, 'deploy.sh'));
-      assert.equal(commands[0].isExecutable, true);
       assert.equal(commands[1].name, 'test.py');
       assert.equal(commands[1].scope, 'global');
-      assert.equal(commands[1].isExecutable, true);
     });
 
     it('should list workspace commands', async () => {
       // Create workspace commands
       await fs.mkdir(workspaceCommandsDir, { recursive: true });
       await fs.writeFile(path.join(workspaceCommandsDir, 'build.sh'), '#!/bin/bash\necho "building"', 'utf-8');
-      await fs.chmod(path.join(workspaceCommandsDir, 'build.sh'), 0o755);
 
       const commands = await commandsService.listCommands();
       assert.equal(commands.length, 1);
       assert.equal(commands[0].name, 'build.sh');
       assert.equal(commands[0].scope, 'workspace');
       assert.equal(commands[0].path, path.join(workspaceCommandsDir, 'build.sh'));
-      assert.equal(commands[0].isExecutable, true);
     });
 
     it('should list both global and workspace commands', async () => {
@@ -121,9 +115,7 @@ describe('CommandsService', () => {
       await fs.mkdir(globalCommandsDir, { recursive: true });
       await fs.mkdir(workspaceCommandsDir, { recursive: true });
       await fs.writeFile(path.join(globalCommandsDir, 'global.sh'), '#!/bin/bash\necho "global"', 'utf-8');
-      await fs.chmod(path.join(globalCommandsDir, 'global.sh'), 0o755);
       await fs.writeFile(path.join(workspaceCommandsDir, 'workspace.sh'), '#!/bin/bash\necho "workspace"', 'utf-8');
-      await fs.chmod(path.join(workspaceCommandsDir, 'workspace.sh'), 0o755);
 
       const commands = await commandsService.listCommands();
       assert.equal(commands.length, 2);
@@ -134,31 +126,10 @@ describe('CommandsService', () => {
       assert.equal(commands[1].scope, 'workspace');
     });
 
-    it('should detect non-executable files', async () => {
-      await fs.mkdir(globalCommandsDir, { recursive: true });
-      await fs.writeFile(path.join(globalCommandsDir, 'executable.sh'), '#!/bin/bash', 'utf-8');
-      await fs.chmod(path.join(globalCommandsDir, 'executable.sh'), 0o755);
-      await fs.writeFile(path.join(globalCommandsDir, 'not-executable.sh'), '#!/bin/bash', 'utf-8');
-      await fs.chmod(path.join(globalCommandsDir, 'not-executable.sh'), 0o644);
-
-      const commands = await commandsService.listCommands();
-      assert.equal(commands.length, 2);
-
-      const executable = commands.find((c) => c.name === 'executable.sh');
-      const notExecutable = commands.find((c) => c.name === 'not-executable.sh');
-
-      assert.ok(executable);
-      assert.equal(executable.isExecutable, true);
-      assert.ok(notExecutable);
-      assert.equal(notExecutable.isExecutable, false);
-    });
-
     it('should filter out hidden files', async () => {
       await fs.mkdir(globalCommandsDir, { recursive: true });
       await fs.writeFile(path.join(globalCommandsDir, 'visible.sh'), '#!/bin/bash', 'utf-8');
-      await fs.chmod(path.join(globalCommandsDir, 'visible.sh'), 0o755);
       await fs.writeFile(path.join(globalCommandsDir, '.hidden'), '#!/bin/bash', 'utf-8');
-      await fs.chmod(path.join(globalCommandsDir, '.hidden'), 0o755);
       await fs.writeFile(path.join(globalCommandsDir, '.DS_Store'), 'binary data', 'utf-8');
 
       const commands = await commandsService.listCommands();
@@ -169,7 +140,6 @@ describe('CommandsService', () => {
     it('should filter out directories', async () => {
       await fs.mkdir(globalCommandsDir, { recursive: true });
       await fs.writeFile(path.join(globalCommandsDir, 'command.sh'), '#!/bin/bash', 'utf-8');
-      await fs.chmod(path.join(globalCommandsDir, 'command.sh'), 0o755);
       await fs.mkdir(path.join(globalCommandsDir, 'subdir'));
 
       const commands = await commandsService.listCommands();
@@ -180,7 +150,6 @@ describe('CommandsService', () => {
     it('should filter out symlinks', async () => {
       await fs.mkdir(globalCommandsDir, { recursive: true });
       await fs.writeFile(path.join(globalCommandsDir, 'real-command.sh'), '#!/bin/bash', 'utf-8');
-      await fs.chmod(path.join(globalCommandsDir, 'real-command.sh'), 0o755);
       await fs.symlink(
         path.join(globalCommandsDir, 'real-command.sh'),
         path.join(globalCommandsDir, 'symlink-command')
@@ -196,9 +165,6 @@ describe('CommandsService', () => {
       await fs.writeFile(path.join(globalCommandsDir, 'script.sh'), '#!/bin/bash', 'utf-8');
       await fs.writeFile(path.join(globalCommandsDir, 'script.py'), '#!/usr/bin/env python3', 'utf-8');
       await fs.writeFile(path.join(globalCommandsDir, 'script.js'), '#!/usr/bin/env node', 'utf-8');
-      await fs.chmod(path.join(globalCommandsDir, 'script.sh'), 0o755);
-      await fs.chmod(path.join(globalCommandsDir, 'script.py'), 0o755);
-      await fs.chmod(path.join(globalCommandsDir, 'script.js'), 0o755);
 
       const commands = await commandsService.listCommands();
       assert.equal(commands.length, 3);
@@ -213,7 +179,6 @@ describe('CommandsService', () => {
 
       await fs.mkdir(globalCommandsDir, { recursive: true });
       await fs.writeFile(path.join(globalCommandsDir, 'global.sh'), '#!/bin/bash', 'utf-8');
-      await fs.chmod(path.join(globalCommandsDir, 'global.sh'), 0o755);
 
       const commands = await serviceWithoutWorkspace.listCommands();
       assert.equal(commands.length, 1);
@@ -229,15 +194,10 @@ describe('CommandsService', () => {
       assert.equal(command.name, 'hello.sh');
       assert.equal(command.scope, 'global');
       assert.equal(command.path, path.join(globalCommandsDir, 'hello.sh'));
-      assert.equal(command.isExecutable, true);
 
       // Verify file was created
       const fileContent = await fs.readFile(path.join(globalCommandsDir, 'hello.sh'), 'utf-8');
       assert.equal(fileContent, content);
-
-      // Verify executable permissions
-      const stats = await fs.stat(path.join(globalCommandsDir, 'hello.sh'));
-      assert.equal((stats.mode & 0o111) !== 0, true);
     });
 
     it('should create workspace command', async () => {
@@ -246,15 +206,10 @@ describe('CommandsService', () => {
 
       assert.equal(command.name, 'hello.py');
       assert.equal(command.scope, 'workspace');
-      assert.equal(command.isExecutable, true);
 
       // Verify file was created
       const fileContent = await fs.readFile(path.join(workspaceCommandsDir, 'hello.py'), 'utf-8');
       assert.equal(fileContent, content);
-
-      // Verify executable permissions
-      const stats = await fs.stat(path.join(workspaceCommandsDir, 'hello.py'));
-      assert.equal((stats.mode & 0o111) !== 0, true);
     });
 
     it('should create directory if it does not exist', async () => {
@@ -297,15 +252,6 @@ describe('CommandsService', () => {
       assert.ok(files.includes('script.sh'));
       assert.ok(files.includes('script.py'));
       assert.ok(files.includes('script.js'));
-    });
-
-    it('should set correct executable permissions (0o755)', async () => {
-      await commandsService.createCommand('check-perms.sh', '#!/bin/bash', 'global');
-
-      const stats = await fs.stat(path.join(globalCommandsDir, 'check-perms.sh'));
-      // Check that the file has 0o755 permissions
-      const perms = stats.mode & 0o777;
-      assert.equal(perms, 0o755);
     });
 
     it('should handle command names without extensions', async () => {

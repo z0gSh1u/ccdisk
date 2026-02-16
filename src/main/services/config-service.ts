@@ -101,24 +101,19 @@ export class ConfigService {
 
   /**
    * Read Claude env variables from settings.json
-   * Returns only the 6 known ANTHROPIC_ keys
+   * Returns only the 3 known ANTHROPIC_ keys
    */
   async getClaudeEnv(): Promise<Record<string, string>> {
     const settings = await this.getSettings();
     const env = (settings.env as Record<string, string>) || {};
-    const knownKeys = [
-      'ANTHROPIC_AUTH_TOKEN',
-      'ANTHROPIC_BASE_URL',
-      'ANTHROPIC_MODEL',
-      'ANTHROPIC_DEFAULT_SONNET_MODEL',
-      'ANTHROPIC_DEFAULT_OPUS_MODEL',
-      'ANTHROPIC_DEFAULT_HAIKU_MODEL'
-    ];
     const result: Record<string, string> = {};
-    for (const key of knownKeys) {
-      if (env[key]) {
-        result[key] = env[key];
-      }
+
+    if (env.ANTHROPIC_AUTH_TOKEN) result.ANTHROPIC_AUTH_TOKEN = env.ANTHROPIC_AUTH_TOKEN;
+    if (env.ANTHROPIC_BASE_URL) result.ANTHROPIC_BASE_URL = env.ANTHROPIC_BASE_URL;
+    if (env.ANTHROPIC_MODEL) {
+      result.ANTHROPIC_MODEL = env.ANTHROPIC_MODEL;
+    } else if (env.ANTHROPIC_DEFAULT_SONNET_MODEL) {
+      result.ANTHROPIC_MODEL = env.ANTHROPIC_DEFAULT_SONNET_MODEL;
     }
     return result;
   }
@@ -130,6 +125,15 @@ export class ConfigService {
   async updateClaudeEnv(envUpdates: Record<string, string>): Promise<void> {
     const settings = await this.getSettings();
     const existingEnv = (settings.env as Record<string, string>) || {};
+
+    if (envUpdates.ANTHROPIC_MODEL) {
+      const model = envUpdates.ANTHROPIC_MODEL.trim();
+      if (model) {
+        envUpdates.ANTHROPIC_DEFAULT_SONNET_MODEL = model;
+        envUpdates.ANTHROPIC_DEFAULT_OPUS_MODEL = model;
+        envUpdates.ANTHROPIC_DEFAULT_HAIKU_MODEL = model;
+      }
+    }
 
     // Merge updates, remove empty values
     const newEnv = { ...existingEnv };

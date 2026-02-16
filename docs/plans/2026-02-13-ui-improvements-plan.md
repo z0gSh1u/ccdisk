@@ -2437,30 +2437,6 @@ export function SkillsCommandsManager() {
             )}
           </div>
 
-          {/* SDK Commands section (read-only, when session active) */}
-          {sdkCommands.length > 0 && (
-            <div className="p-3 border-t border-gray-100">
-              <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2 flex items-center gap-1">
-                <Terminal className="h-3 w-3" /> SDK Commands
-                <span className="text-[10px] font-normal bg-gray-100 px-1 rounded">read-only</span>
-              </div>
-              {sdkCommands.map((cmd) => (
-                <div
-                  key={`sdk-${cmd.name}`}
-                  onClick={() => handleSelectSdkCommand(cmd)}
-                  className={cn(
-                    'px-3 py-2 rounded-md text-sm cursor-pointer transition-colors',
-                    selected?.type === 'sdk-command' &&
-                      (selected.item as SlashCommand).name === cmd.name
-                      ? 'bg-blue-50 text-blue-900'
-                      : 'hover:bg-gray-100 text-gray-700'
-                  )}
-                >
-                  <span className="font-medium font-mono text-xs">/{cmd.name}</span>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Detail / Editor */}

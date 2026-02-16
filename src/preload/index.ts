@@ -9,7 +9,6 @@ import type {
   Skill,
   Command,
   MCPConfig,
-  PermissionMode,
   StreamEvent,
   IPCResponse,
   FileAttachment,
@@ -20,8 +19,8 @@ import type {
 const api = {
   // Chat operations
   chat: {
-    sendMessage: (sessionId: string, message: string, files?: FileAttachment[]) =>
-      ipcRenderer.invoke(IPC_CHANNELS.CHAT_SEND, sessionId, message, files),
+    sendMessage: (sessionId: string, message: string, files?: FileAttachment[], sdkSessionId?: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.CHAT_SEND, sessionId, message, files, sdkSessionId),
     onStream: (callback: (sessionId: string, event: StreamEvent) => void) => {
       const handler = (_event: Electron.IpcRendererEvent, sessionId: string, data: StreamEvent) =>
         callback(sessionId, data);
@@ -30,7 +29,6 @@ const api = {
     },
     respondPermission: (requestId: string, approved: boolean, input?: Record<string, unknown>) =>
       ipcRenderer.invoke(IPC_CHANNELS.CHAT_PERMISSION_RESPONSE, requestId, approved, input),
-    setPermissionMode: (mode: PermissionMode) => ipcRenderer.invoke(IPC_CHANNELS.CHAT_SET_PERMISSION_MODE, mode),
     abort: (sessionId: string) => ipcRenderer.invoke(IPC_CHANNELS.CHAT_ABORT, sessionId)
   },
 
@@ -122,11 +120,6 @@ const api = {
 
   // SDK operations (requires active session)
   sdk: {
-    getMcpStatus: (sessionId: string) => ipcRenderer.invoke(IPC_CHANNELS.MCP_GET_STATUS, sessionId),
-    reconnectMcpServer: (sessionId: string, serverName: string) =>
-      ipcRenderer.invoke(IPC_CHANNELS.MCP_RECONNECT, sessionId, serverName),
-    toggleMcpServer: (sessionId: string, serverName: string, enabled: boolean) =>
-      ipcRenderer.invoke(IPC_CHANNELS.MCP_TOGGLE, sessionId, serverName, enabled),
     getCommands: (sessionId: string) => ipcRenderer.invoke(IPC_CHANNELS.SDK_GET_COMMANDS, sessionId)
   }
 };

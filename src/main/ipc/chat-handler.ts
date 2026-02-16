@@ -12,7 +12,7 @@
 import { ipcMain, type BrowserWindow } from 'electron';
 import { randomUUID } from 'crypto';
 import { IPC_CHANNELS } from '../../shared/ipc-channels';
-import type { IPCResponse, StreamEvent, PermissionMode } from '../../shared/types';
+import type { IPCResponse, StreamEvent } from '../../shared/types';
 import { ClaudeService } from '../services/claude-service';
 import { DatabaseService } from '../services/db-service';
 
@@ -61,17 +61,6 @@ export function registerChatHandlers(_win: BrowserWindow, claudeService: ClaudeS
       }
     }
   );
-
-  // Set permission mode
-  ipcMain.handle(IPC_CHANNELS.CHAT_SET_PERMISSION_MODE, async (_event, mode: PermissionMode) => {
-    try {
-      claudeService.setPermissionMode(mode);
-      return { success: true } as IPCResponse;
-    } catch (error) {
-      console.error('CHAT_SET_PERMISSION_MODE error:', error);
-      return { success: false, error: (error as Error).message } as IPCResponse;
-    }
-  });
 
   // Abort session
   ipcMain.handle(IPC_CHANNELS.CHAT_ABORT, async (_event, sessionId: string) => {

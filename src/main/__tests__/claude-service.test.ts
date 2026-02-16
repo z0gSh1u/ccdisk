@@ -56,16 +56,6 @@ describe('ClaudeService', () => {
     });
   });
 
-  describe('setPermissionMode', () => {
-    it('should update permission mode', () => {
-      // Test that it doesn't throw
-      claudeService.setPermissionMode('bypassPermissions');
-      claudeService.setPermissionMode('prompt');
-      claudeService.setPermissionMode('acceptEdits');
-      assert.ok(true, 'setPermissionMode executed without error');
-    });
-  });
-
   describe('respondToPermission', () => {
     it('should handle unknown permission request gracefully', () => {
       // Should not throw even if permission request doesn't exist
@@ -122,22 +112,6 @@ describe('ClaudeService', () => {
       ) => Promise<void> = claudeService.sendMessage.bind(claudeService);
 
       assert.ok(_typeCheck, 'sendMessage has correct type signature');
-    });
-  });
-
-  describe('type safety', () => {
-    it('should accept valid permission modes', () => {
-      const validModes: Array<'prompt' | 'acceptEdits' | 'bypassPermissions'> = [
-        'prompt',
-        'acceptEdits',
-        'bypassPermissions'
-      ];
-
-      for (const mode of validModes) {
-        claudeService.setPermissionMode(mode);
-      }
-
-      assert.ok(true, 'All valid permission modes accepted');
     });
   });
 });

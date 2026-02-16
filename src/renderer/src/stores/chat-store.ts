@@ -4,12 +4,24 @@
  */
 
 import { create } from 'zustand';
-import type { StreamEvent, Message, Session, PermissionMode, PermissionRequest } from '../../../shared/types';
+import type { StreamEvent, Message, Session, PermissionRequest } from '../../../shared/types';
+
+export type ChatContentBlock =
+  | { type: 'text'; text: string }
+  | {
+      type: 'tool_call';
+      toolUseId?: string;
+      toolName: string;
+      toolInput: Record<string, unknown>;
+      permissionStatus?: 'requested' | 'allowed' | 'denied';
+      result?: { content: string; is_error?: boolean };
+    };
 
 // Extended message type with local UI state
-export interface ChatMessage extends Message {
+export interface ChatMessage extends Omit<Message, 'content'> {
+  content: string | ChatContentBlock[];
   isStreaming?: boolean;
-  streamingText?: string;
+  streamingBlocks?: ChatContentBlock[];
 }
 
 export interface ChatSession extends Session {
@@ -21,8 +33,8 @@ interface ChatStore {
   // State
   sessions: ChatSession[];
   currentSessionId: string | null;
-  permissionMode: PermissionMode;
   pendingPermissionRequest: PermissionRequest | null;
+  pendingPermissionSessionId: string | null;
 
   // Actions - Session management
   loadSessions: () => Promise<void>;
@@ -37,21 +49,29 @@ interface ChatStore {
   abortSession: (sessionId: string) => Promise<void>;
 
   // Actions - Permissions
-  setPermissionMode: (mode: PermissionMode) => Promise<void>;
   respondToPermission: (permissionRequestId: string, approved: boolean) => Promise<void>;
 
   // Helpers
   addMessageToSession: (sessionId: string, message: ChatMessage) => void;
   updateStreamingMessage: (sessionId: string, text: string) => void;
+  upsertToolCall: (sessionId: string, update: ToolCallUpdate) => void;
   finalizeStreamingMessage: (sessionId: string) => void;
+}
+
+interface ToolCallUpdate {
+  toolUseId?: string;
+  toolName: string;
+  toolInput: Record<string, unknown>;
+  permissionStatus?: 'requested' | 'allowed' | 'denied';
+  result?: { content: string; is_error?: boolean };
 }
 
 export const useChatStore = create<ChatStore>((set, get) => ({
   // Initial state
   sessions: [],
   currentSessionId: null,
-  permissionMode: 'prompt',
   pendingPermissionRequest: null,
+  pendingPermissionSessionId: null,
 
   // Load all sessions from database
   loadSessions: async () => {
@@ -142,7 +162,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       id: crypto.randomUUID(),
       sessionId: currentSessionId,
       role: 'user',
-      content: JSON.stringify([{ type: 'text', text: message }]),
+      content: [{ type: 'text', text: message }],
       tokenUsage: null,
       createdAt: new Date()
     };
@@ -154,17 +174,22 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       id: crypto.randomUUID(),
       sessionId: currentSessionId,
       role: 'assistant',
-      content: JSON.stringify([]),
+      content: [],
       tokenUsage: null,
       isStreaming: true,
-      streamingText: '',
+      streamingBlocks: [],
       createdAt: new Date()
     };
 
     get().addMessageToSession(currentSessionId, streamingMessage);
 
     // Send to backend (returns immediately, streams via events)
-    const response = await window.api.chat.sendMessage(currentSessionId, message);
+    const response = await window.api.chat.sendMessage(
+      currentSessionId,
+      message,
+      undefined,
+      currentSession.sdkSessionId || undefined
+    );
 
     if (!response.success) {
       throw new Error(response.error || 'Failed to send message');
@@ -184,18 +209,39 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         break;
 
       case 'tool_use':
-        // Log tool use (could add to message content)
-        console.log('Tool use:', event.data);
+        // Add tool use block to streaming message
+        const toolUseData = event.data as { name: string; input: Record<string, unknown> };
+        get().upsertToolCall(sessionId, {
+          toolUseId: (event.data as { id?: string }).id,
+          toolName: toolUseData.name,
+          toolInput: toolUseData.input
+        });
         break;
 
       case 'tool_result':
-        // Log tool result
-        console.log('Tool result:', event.data);
+        // Add tool result block to streaming message
+        const toolResultData = event.data as { tool_use_id?: string; content: string; is_error?: boolean };
+        get().upsertToolCall(sessionId, {
+          toolUseId: toolResultData.tool_use_id,
+          toolName: 'tool',
+          toolInput: {},
+          result: { content: toolResultData.content, is_error: toolResultData.is_error }
+        });
         break;
 
       case 'permission_request':
         // Show permission request UI
-        set({ pendingPermissionRequest: event.data as PermissionRequest });
+        set({
+          pendingPermissionRequest: event.data as PermissionRequest,
+          pendingPermissionSessionId: sessionId
+        });
+        const permissionData = event.data as PermissionRequest;
+        get().upsertToolCall(sessionId, {
+          toolUseId: permissionData.toolUseId,
+          toolName: permissionData.toolName,
+          toolInput: permissionData.toolInput,
+          permissionStatus: 'requested'
+        });
         break;
 
       case 'status':
@@ -236,19 +282,21 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }
   },
 
-  // Set permission mode
-  setPermissionMode: async (mode: PermissionMode) => {
-    const response = await window.api.chat.setPermissionMode(mode);
-    if (response.success) {
-      set({ permissionMode: mode });
-    }
-  },
-
   // Respond to permission request
   respondToPermission: async (permissionRequestId: string, approved: boolean) => {
+    const pending = get().pendingPermissionRequest;
+    const pendingSessionId = get().pendingPermissionSessionId;
     const response = await window.api.chat.respondPermission(permissionRequestId, approved);
     if (response.success) {
-      set({ pendingPermissionRequest: null });
+      set({ pendingPermissionRequest: null, pendingPermissionSessionId: null });
+      if (pending && pendingSessionId) {
+        get().upsertToolCall(pendingSessionId, {
+          toolUseId: pending.toolUseId,
+          toolName: pending.toolName,
+          toolInput: pending.toolInput,
+          permissionStatus: approved ? 'allowed' : 'denied'
+        });
+      }
     }
   },
 
@@ -267,7 +315,60 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         const messages = [...s.messages];
         const lastMessage = messages[messages.length - 1];
         if (lastMessage && lastMessage.isStreaming) {
-          lastMessage.streamingText = (lastMessage.streamingText || '') + text;
+          const blocks = normalizeBlocks(lastMessage.streamingBlocks || lastMessage.content);
+          const lastBlock = blocks[blocks.length - 1];
+          if (lastBlock && lastBlock.type === 'text') {
+            lastBlock.text += text;
+          } else {
+            blocks.push({ type: 'text', text });
+          }
+          lastMessage.streamingBlocks = blocks;
+          lastMessage.content = blocks;
+        }
+        return { ...s, messages };
+      })
+    }));
+  },
+
+  upsertToolCall: (sessionId: string, update: ToolCallUpdate) => {
+    set((state) => ({
+      sessions: state.sessions.map((s) => {
+        if (s.id !== sessionId) return s;
+        const messages = [...s.messages];
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage && lastMessage.isStreaming) {
+          const blocks = normalizeBlocks(lastMessage.streamingBlocks || lastMessage.content);
+          const matchIndex = blocks.findIndex((block) =>
+            block.type === 'tool_call' && update.toolUseId
+              ? block.toolUseId === update.toolUseId
+              : block.type === 'tool_call' &&
+                block.toolName === update.toolName &&
+                JSON.stringify(block.toolInput) === JSON.stringify(update.toolInput)
+          );
+
+          if (matchIndex >= 0) {
+            const existing = blocks[matchIndex] as Extract<ChatContentBlock, { type: 'tool_call' }>;
+            blocks[matchIndex] = {
+              ...existing,
+              toolUseId: update.toolUseId || existing.toolUseId,
+              toolName: existing.toolName || update.toolName,
+              toolInput: Object.keys(existing.toolInput || {}).length ? existing.toolInput : update.toolInput,
+              permissionStatus: update.permissionStatus || existing.permissionStatus,
+              result: update.result || existing.result
+            };
+          } else {
+            blocks.push({
+              type: 'tool_call',
+              toolUseId: update.toolUseId,
+              toolName: update.toolName,
+              toolInput: update.toolInput,
+              permissionStatus: update.permissionStatus,
+              result: update.result
+            });
+          }
+
+          lastMessage.streamingBlocks = blocks;
+          lastMessage.content = blocks;
         }
         return { ...s, messages };
       })
@@ -283,14 +384,32 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         const lastMessage = messages[messages.length - 1];
         if (lastMessage && lastMessage.isStreaming) {
           lastMessage.isStreaming = false;
-          lastMessage.content = JSON.stringify([{ type: 'text', text: lastMessage.streamingText || '' }]);
-          delete lastMessage.streamingText;
+          const blocks = normalizeBlocks(lastMessage.streamingBlocks || lastMessage.content);
+          lastMessage.content = blocks;
+          delete lastMessage.streamingBlocks;
         }
         return { ...s, messages };
       })
     }));
   }
 }));
+
+function normalizeBlocks(content: string | ChatContentBlock[] | undefined): ChatContentBlock[] {
+  if (!content) return [];
+  if (Array.isArray(content)) return [...content];
+  try {
+    const parsed = JSON.parse(content) as unknown;
+    if (Array.isArray(parsed)) {
+      return parsed as ChatContentBlock[];
+    }
+    if (typeof parsed === 'string') {
+      return [{ type: 'text', text: parsed }];
+    }
+  } catch {
+    return [{ type: 'text', text: content }];
+  }
+  return [{ type: 'text', text: content }];
+}
 
 // Setup stream event listener (call once on app init)
 export function setupChatStreamListener() {

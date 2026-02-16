@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand';
-import type { MCPConfig, MCPServerConfig, MCPServerStatus } from '../../../shared/types';
+import type { MCPConfig, MCPServerConfig } from '../../../shared/types';
 
 type Scope = 'global' | 'workspace';
 
@@ -15,10 +15,6 @@ interface MCPStore {
   workspaceConfig: MCPConfig;
   selectedServer: string | null;
   isEditing: boolean;
-
-  // Live status (from active SDK session)
-  liveStatuses: MCPServerStatus[];
-  isStatusLoading: boolean;
 
   // Computed - merged config (workspace overrides global)
   getMergedConfig: () => MCPConfig;
@@ -31,11 +27,6 @@ interface MCPStore {
   deleteServer: (name: string) => Promise<void>;
   selectServer: (name: string | null) => void;
   setIsEditing: (isEditing: boolean) => void;
-
-  // Actions - Live status
-  loadLiveStatus: (sessionId: string) => Promise<void>;
-  reconnectServer: (sessionId: string, serverName: string) => Promise<void>;
-  toggleServer: (sessionId: string, serverName: string, enabled: boolean) => Promise<void>;
 }
 
 export const useMCPStore = create<MCPStore>((set, get) => ({
@@ -45,8 +36,6 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
   workspaceConfig: { mcpServers: {} },
   selectedServer: null,
   isEditing: false,
-  liveStatuses: [],
-  isStatusLoading: false,
 
   // Get merged config (workspace overrides global)
   getMergedConfig: () => {
@@ -192,41 +181,5 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
   // Toggle editing mode
   setIsEditing: (isEditing) => {
     set({ isEditing });
-  },
-
-  // Load live MCP server status from active SDK session
-  loadLiveStatus: async (sessionId: string) => {
-    set({ isStatusLoading: true });
-    try {
-      const response = await window.api.sdk.getMcpStatus(sessionId);
-      if (response.success && response.data) {
-        set({ liveStatuses: response.data as MCPServerStatus[], isStatusLoading: false });
-      } else {
-        set({ liveStatuses: [], isStatusLoading: false });
-      }
-    } catch (error) {
-      console.error('Failed to load MCP live status:', error);
-      set({ liveStatuses: [], isStatusLoading: false });
-    }
-  },
-
-  // Reconnect a failed MCP server
-  reconnectServer: async (sessionId: string, serverName: string) => {
-    try {
-      await window.api.sdk.reconnectMcpServer(sessionId, serverName);
-      await get().loadLiveStatus(sessionId);
-    } catch (error) {
-      console.error('Failed to reconnect server:', error);
-    }
-  },
-
-  // Toggle a MCP server enabled/disabled
-  toggleServer: async (sessionId: string, serverName: string, enabled: boolean) => {
-    try {
-      await window.api.sdk.toggleMcpServer(sessionId, serverName, enabled);
-      await get().loadLiveStatus(sessionId);
-    } catch (error) {
-      console.error('Failed to toggle server:', error);
-    }
   }
 }));

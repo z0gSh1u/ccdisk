@@ -58,11 +58,6 @@ export const IPC_CHANNELS = {
   SETTINGS_GET_CLAUDE_ENV: 'settings:get-claude-env',
   SETTINGS_UPDATE_CLAUDE_ENV: 'settings:update-claude-env',
 
-  // MCP live status (requires active session)
-  MCP_GET_STATUS: 'mcp:get-status',
-  MCP_RECONNECT: 'mcp:reconnect',
-  MCP_TOGGLE: 'mcp:toggle',
-
   // SDK commands (requires active session)
   SDK_GET_COMMANDS: 'sdk:get-commands'
 } as const;

@@ -30,13 +30,11 @@ import {
   type Query,
   type CanUseTool,
   type PermissionResult,
-  type McpServerStatus,
   type SlashCommand
 } from '@anthropic-ai/claude-agent-sdk';
 import type {
   StreamEvent,
   PermissionRequest,
-  PermissionMode,
   ToolUseData,
   ToolResultData,
   ResultData,
@@ -60,25 +58,19 @@ interface ActiveSession {
 interface PendingPermission {
   resolve: (result: PermissionResult) => void;
   reject: (error: Error) => void;
+  toolInput: Record<string, unknown>;
 }
 
 export class ClaudeService {
   private activeSessions: Map<string, ActiveSession> = new Map();
   private pendingPermissions: Map<string, PendingPermission> = new Map();
-  private permissionMode: PermissionMode = 'prompt';
+  private sessionStartTimes: Map<string, number> = new Map();
 
   constructor(
     private configService: ConfigService,
     private mcpService: MCPService,
     private onStreamEvent: (sessionId: string, event: StreamEvent) => void
   ) {}
-
-  /**
-   * Set permission mode for new sessions
-   */
-  setPermissionMode(mode: PermissionMode): void {
-    this.permissionMode = mode;
-  }
 
   /**
    * Send message and start streaming responses
@@ -98,12 +90,31 @@ export class ClaudeService {
     sdkSessionId?: string
   ): Promise<void> {
     try {
+      const startTime = Date.now();
+      this.sessionStartTimes.set(sessionId, startTime);
+
       // Abort any existing session for this sessionId
       this.abortSession(sessionId);
 
       // Get configuration
+      const settingsStart = Date.now();
       const settings = await this.configService.getSettings();
+      console.log(`[Claude ${sessionId}] settings loaded in ${Date.now() - settingsStart}ms`);
+
+      const mcpStart = Date.now();
       const mcpConfig = await this.mcpService.getConfig();
+      console.log(`[Claude ${sessionId}] mcp config loaded in ${Date.now() - mcpStart}ms`);
+
+      const env = (settings.env as Record<string, string>) || {};
+      const hasAuthToken = Boolean(env.ANTHROPIC_AUTH_TOKEN);
+      const hasBaseUrl = Boolean(env.ANTHROPIC_BASE_URL);
+      const model = env.ANTHROPIC_MODEL || env.ANTHROPIC_DEFAULT_SONNET_MODEL || 'unknown';
+      const mcpServers = Object.entries(mcpConfig.mcpServers || {}).map(([name, config]) => ({
+        name,
+        type: (config as { type?: string }).type || 'unknown'
+      }));
+      console.log(`[Claude ${sessionId}] env hasAuthToken=${hasAuthToken} hasBaseUrl=${hasBaseUrl} model=${model}`);
+      console.log(`[Claude ${sessionId}] mcp servers (${mcpServers.length}):`, mcpServers);
 
       // Get workspace path from settings or use current directory
       const workspacePath = (settings.workspacePath as string) || process.cwd();
@@ -113,28 +124,24 @@ export class ClaudeService {
 
       // Build canUseTool handler
       const canUseTool: CanUseTool = async (toolName, input, options) => {
-        // Handle permission modes
-        if (this.permissionMode === 'bypassPermissions') {
+        // acceptEdits mode: auto-approve non-destructive tools, prompt for destructive ones
+        const destructiveTools = ['bash', 'edit', 'write'];
+        const isDestructive = destructiveTools.some((dt) => toolName.toLowerCase().includes(dt));
+
+        if (!isDestructive) {
           return { behavior: 'allow' };
         }
 
-        if (this.permissionMode === 'acceptEdits') {
-          // Auto-approve most tools, prompt for destructive ones
-          const destructiveTools = ['bash', 'edit', 'write'];
-          const isDestructive = destructiveTools.some((dt) => toolName.toLowerCase().includes(dt));
-
-          if (!isDestructive) {
-            return { behavior: 'allow' };
-          }
-        }
-
-        // For 'prompt' mode or destructive tools in 'acceptEdits' mode
-        // Generate permission request
+        // For destructive tools, generate permission request
         const permissionRequestId = randomUUID();
 
         // Create promise that will be resolved by respondToPermission
         const permissionPromise = new Promise<PermissionResult>((resolve, reject) => {
-          this.pendingPermissions.set(permissionRequestId, { resolve, reject });
+          this.pendingPermissions.set(permissionRequestId, {
+            resolve,
+            reject,
+            toolInput: input as Record<string, unknown>
+          });
         });
 
         // Emit permission request event
@@ -179,6 +186,7 @@ export class ClaudeService {
       }
 
       // Create query
+      const queryStart = Date.now();
       const queryInstance = query({
         prompt: message,
         options: {
@@ -188,16 +196,19 @@ export class ClaudeService {
           abortController,
           resume: sdkSessionId,
           env: mergedEnv,
-          permissionMode: this.permissionMode === 'prompt' ? 'default' : this.permissionMode,
+          permissionMode: 'acceptEdits',
           includePartialMessages: true
         }
       });
+      console.log(`[Claude ${sessionId}] query created in ${Date.now() - queryStart}ms`);
 
       // Store active session
       this.activeSessions.set(sessionId, {
         query: queryInstance,
         abortController
       });
+
+      void this.logMcpStatus(sessionId, queryInstance);
 
       // Start processing messages in background
       this.processMessages(sessionId, queryInstance).catch((error) => {
@@ -228,8 +239,19 @@ export class ClaudeService {
       let sessionIdEmitted = false;
       let sawPartialText = false;
       let pendingAssistantText = '';
+      let sawFirstMessage = false;
+      let sawFirstAssistantBlock = false;
+      let sawFirstTextDelta = false;
 
       for await (const message of queryInstance) {
+        if (!sawFirstMessage) {
+          sawFirstMessage = true;
+          const startTime = this.sessionStartTimes.get(_sessionId);
+          if (startTime) {
+            console.log(`[Claude ${_sessionId}] first SDK message after ${Date.now() - startTime}ms`);
+          }
+        }
+
         // Extract session ID from message
         if ('session_id' in message && message.session_id) {
           actualSdkSessionId = message.session_id;
@@ -255,9 +277,22 @@ export class ClaudeService {
 
             // Process content blocks
             for (const block of betaMessage.content) {
+              if (!sawFirstAssistantBlock) {
+                sawFirstAssistantBlock = true;
+                const startTime = this.sessionStartTimes.get(_sessionId);
+                const elapsed = startTime ? `${Date.now() - startTime}ms` : 'unknown';
+                console.log(`[Claude ${_sessionId}] first assistant block at ${elapsed}`);
+              }
               if (block.type === 'text') {
                 pendingAssistantText += block.text;
               } else if (block.type === 'tool_use') {
+                if (pendingAssistantText) {
+                  this.onStreamEvent(_sessionId, {
+                    type: 'text',
+                    data: pendingAssistantText
+                  });
+                  pendingAssistantText = '';
+                }
                 // Emit tool_use event
                 const toolUseData: ToolUseData = {
                   id: block.id,
@@ -279,6 +314,13 @@ export class ClaudeService {
             if (userMsg.message?.content) {
               for (const block of userMsg.message.content) {
                 if (block.type === 'tool_result') {
+                  if (pendingAssistantText) {
+                    this.onStreamEvent(_sessionId, {
+                      type: 'text',
+                      data: pendingAssistantText
+                    });
+                    pendingAssistantText = '';
+                  }
                   const toolResultData: ToolResultData = {
                     tool_use_id: block.tool_use_id,
                     content: typeof block.content === 'string' ? block.content : JSON.stringify(block.content),
@@ -326,7 +368,9 @@ export class ClaudeService {
               });
             }
             // Log other system messages
-            console.log('System message:', message);
+            const startTime = this.sessionStartTimes.get(_sessionId);
+            const elapsed = startTime ? `${Date.now() - startTime}ms` : 'unknown';
+            console.log(`[Claude ${_sessionId}] system ${systemMsg.subtype || 'message'} at ${elapsed}:`, message);
             break;
           }
 
@@ -343,6 +387,12 @@ export class ClaudeService {
             const event = streamMsg.event;
             if (event.type === 'content_block_delta') {
               if (event.delta.type === 'text_delta') {
+                if (!sawFirstTextDelta) {
+                  sawFirstTextDelta = true;
+                  const startTime = this.sessionStartTimes.get(_sessionId);
+                  const elapsed = startTime ? `${Date.now() - startTime}ms` : 'unknown';
+                  console.log(`[Claude ${_sessionId}] first text delta at ${elapsed}`);
+                }
                 sawPartialText = true;
                 this.onStreamEvent(_sessionId, {
                   type: 'text',
@@ -354,10 +404,12 @@ export class ClaudeService {
           }
 
           case 'auth_status':
-          case 'tool_use_summary':
-            // Log but don't emit
-            console.log('SDK message:', message.type, message);
+          case 'tool_use_summary': {
+            const startTime = this.sessionStartTimes.get(_sessionId);
+            const elapsed = startTime ? `${Date.now() - startTime}ms` : 'unknown';
+            console.log(`[Claude ${_sessionId}] SDK ${message.type} at ${elapsed}:`, message);
             break;
+          }
 
           default:
             // Log unhandled message types
@@ -379,6 +431,7 @@ export class ClaudeService {
 
       // Clean up session
       this.activeSessions.delete(_sessionId);
+      this.sessionStartTimes.delete(_sessionId);
     } catch (error) {
       console.error('Error in processMessages:', error);
       this.onStreamEvent(_sessionId, {
@@ -388,6 +441,20 @@ export class ClaudeService {
 
       // Clean up session
       this.activeSessions.delete(_sessionId);
+      this.sessionStartTimes.delete(_sessionId);
+    }
+  }
+
+  private async logMcpStatus(sessionId: string, queryInstance: Query): Promise<void> {
+    const startTime = this.sessionStartTimes.get(sessionId);
+    const elapsed = (label: string) => (startTime ? `${Date.now() - startTime}ms` : label);
+
+    try {
+      console.log(`[Claude ${sessionId}] mcpServerStatus start at ${elapsed('unknown')}`);
+      const status = await queryInstance.mcpServerStatus();
+      console.log(`[Claude ${sessionId}] mcpServerStatus done at ${elapsed('unknown')}:`, status);
+    } catch (error) {
+      console.error(`[Claude ${sessionId}] mcpServerStatus failed at ${elapsed('unknown')}:`, error);
     }
   }
 
@@ -407,8 +474,8 @@ export class ClaudeService {
     // Resolve the promise
     if (approved) {
       pending.resolve({
-        behavior: 'allow'
-        // TODO: Support updatedInput if needed
+        behavior: 'allow',
+        updatedInput: _input ?? pending.toolInput
       });
     } else {
       pending.resolve({
@@ -450,51 +517,6 @@ export class ClaudeService {
   getActiveQuery(sessionId: string): Query | null {
     const session = this.activeSessions.get(sessionId);
     return session?.query || null;
-  }
-
-  /**
-   * Get MCP server status for an active session
-   * Returns null if no active session or SDK doesn't support it
-   */
-  async getMcpServerStatus(sessionId: string): Promise<McpServerStatus[] | null> {
-    const q = this.getActiveQuery(sessionId);
-    if (!q) return null;
-    try {
-      return await q.mcpServerStatus();
-    } catch (error) {
-      console.error('Failed to get MCP server status:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Reconnect an MCP server for an active session
-   */
-  async reconnectMcpServer(sessionId: string, serverName: string): Promise<boolean> {
-    const q = this.getActiveQuery(sessionId);
-    if (!q) return false;
-    try {
-      await q.reconnectMcpServer(serverName);
-      return true;
-    } catch (error) {
-      console.error('Failed to reconnect MCP server:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Toggle an MCP server for an active session
-   */
-  async toggleMcpServer(sessionId: string, serverName: string, enabled: boolean): Promise<boolean> {
-    const q = this.getActiveQuery(sessionId);
-    if (!q) return false;
-    try {
-      await q.toggleMcpServer(serverName, enabled);
-      return true;
-    } catch (error) {
-      console.error('Failed to toggle MCP server:', error);
-      return false;
-    }
   }
 
   /**

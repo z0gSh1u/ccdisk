@@ -278,17 +278,16 @@ export function ServerEditor({ mode, serverName = '', serverConfig, onSave, onCa
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex gap-3 pt-4">
-          {!isReadOnly && (
+        {!isReadOnly && (
+          <div className="flex gap-3 pt-4">
             <Button type="submit" variant="primary" disabled={isSaving}>
               {isSaving ? 'Saving...' : mode === 'create' ? 'Add Server' : 'Save Changes'}
             </Button>
-          )}
-          <Button type="button" variant="secondary" onClick={onCancel}>
-            {isReadOnly ? 'Close' : 'Cancel'}
-          </Button>
-        </div>
+            <Button type="button" variant="secondary" onClick={onCancel}>
+              Cancel
+            </Button>
+          </div>
+        )}
       </form>
     </div>
   );

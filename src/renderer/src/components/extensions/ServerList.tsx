@@ -2,19 +2,18 @@
  * Server List Component - Displays list of MCP servers
  */
 
-import { Button } from '../ui/Button';
 import type { MCPServerConfig } from '../../../../shared/types';
 
 interface ServerListProps {
   servers: Array<[string, MCPServerConfig]>;
   selectedServer: string | null;
   onSelect: (serverName: string) => void;
-  onEdit: (serverName: string) => void;
-  onDelete: (serverName: string) => void;
-  isEditing: boolean;
+  onEdit?: (serverName: string) => void;
+  onDelete?: (serverName: string) => void;
+  isEditing?: boolean;
 }
 
-export function ServerList({ servers, selectedServer, onSelect, onEdit, onDelete, isEditing }: ServerListProps) {
+export function ServerList({ servers, selectedServer, onSelect }: ServerListProps) {
   if (servers.length === 0) {
     return <div className="text-center text-gray-500 text-sm py-8">No servers configured</div>;
   }
@@ -44,33 +43,6 @@ export function ServerList({ servers, selectedServer, onSelect, onEdit, onDelete
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
             {config.type === 'stdio' ? <>Command: {config.command}</> : <>URL: {config.url}</>}
           </p>
-
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(name);
-              }}
-              disabled={isEditing}
-              className="text-xs"
-            >
-              Edit
-            </Button>
-            <Button
-              size="sm"
-              variant="danger"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(name);
-              }}
-              disabled={isEditing}
-              className="text-xs"
-            >
-              Delete
-            </Button>
-          </div>
         </div>
       ))}
     </div>

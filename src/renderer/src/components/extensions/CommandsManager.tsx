@@ -9,7 +9,7 @@ import type { Command } from '../../../../shared/types';
 import { Tabs, TabsList, TabsTrigger } from '../ui/Tabs';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { FileCode, Trash2, Plus, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { FileCode, Trash2, Plus, AlertCircle } from 'lucide-react';
 
 export function CommandsManager() {
   const {
@@ -147,16 +147,6 @@ export function CommandsManager() {
                       <FileCode className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{command.name}</p>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          {command.isExecutable ? (
-                            <CheckCircle2 className="w-3 h-3 text-green-600" />
-                          ) : (
-                            <AlertCircle className="w-3 h-3 text-yellow-600" />
-                          )}
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {command.isExecutable ? 'Executable' : 'Not executable'}
-                          </span>
-                        </div>
                       </div>
                     </div>
                     <button
@@ -185,21 +175,6 @@ export function CommandsManager() {
                   {selectedCommand.name}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{selectedCommand.path}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <span
-                    className={`
-                    inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium
-                    ${selectedCommand.isExecutable ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'}
-                  `}
-                  >
-                    {selectedCommand.isExecutable ? (
-                      <CheckCircle2 className="w-3 h-3" />
-                    ) : (
-                      <AlertCircle className="w-3 h-3" />
-                    )}
-                    {selectedCommand.isExecutable ? 'Executable' : 'Not Executable'}
-                  </span>
-                </div>
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-900 rounded-md border border-gray-200 dark:border-gray-700">
@@ -207,13 +182,6 @@ export function CommandsManager() {
                   <code className="text-gray-900 dark:text-gray-100">{commandContent}</code>
                 </pre>
               </div>
-
-              {!selectedCommand.isExecutable && (
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 text-sm">
-                  <AlertCircle className="w-4 h-4 inline mr-2" />
-                  This file is not executable. Commands must have executable permissions to run.
-                </div>
-              )}
             </div>
           ) : (
             <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">

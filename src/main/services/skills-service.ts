@@ -34,29 +34,52 @@ export class SkillsService {
   async listSkills(): Promise<Skill[]> {
     const skills: Skill[] = [];
 
-    // Read global skills
-    try {
-      const globalFiles = await fs.readdir(this.globalSkillsDir);
-      for (const file of globalFiles) {
-        if (file.endsWith('.md')) {
-          const skillPath = path.join(this.globalSkillsDir, file);
+    const readSkillFile = async (skillPath: string, name: string, scope: 'global' | 'workspace') => {
+      try {
+        const content = await fs.readFile(skillPath, 'utf-8');
+        const { frontmatter, body } = this.parseFrontmatter(content);
+        skills.push({
+          name,
+          content,
+          scope,
+          path: skillPath,
+          frontmatter,
+          body
+        });
+      } catch (error) {
+        console.error(`Failed to read skill file ${skillPath}:`, error);
+      }
+    };
+
+    const collectSkillsFromDir = async (dir: string, scope: 'global' | 'workspace') => {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const entryPath = path.join(dir, entry.name);
+
+        if (entry.isDirectory()) {
+          const skillPath = path.join(entryPath, 'SKILL.md');
+          await readSkillFile(skillPath, entry.name, scope);
+          continue;
+        }
+
+        if (entry.isSymbolicLink()) {
           try {
-            const content = await fs.readFile(skillPath, 'utf-8');
-            const name = file.replace(/\.md$/, '');
-            skills.push({
-              name,
-              content,
-              scope: 'global',
-              path: skillPath
-            });
+            const targetStats = await fs.stat(entryPath);
+            if (targetStats.isDirectory()) {
+              const skillPath = path.join(entryPath, 'SKILL.md');
+              await readSkillFile(skillPath, entry.name, scope);
+            }
           } catch (error) {
-            console.error(`Failed to read skill file ${skillPath}:`, error);
-            // Skip this file and continue
+            console.error(`Failed to resolve skill link ${entryPath}:`, error);
           }
         }
       }
+    };
+
+    // Read global skills
+    try {
+      await collectSkillsFromDir(this.globalSkillsDir, 'global');
     } catch (error) {
-      // Directory doesn't exist - that's fine, just skip
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
         console.error('Failed to read global skills directory:', error);
       }
@@ -65,27 +88,8 @@ export class SkillsService {
     // Read workspace skills (if workspace is set)
     if (this.workspaceSkillsDir) {
       try {
-        const workspaceFiles = await fs.readdir(this.workspaceSkillsDir);
-        for (const file of workspaceFiles) {
-          if (file.endsWith('.md')) {
-            const skillPath = path.join(this.workspaceSkillsDir, file);
-            try {
-              const content = await fs.readFile(skillPath, 'utf-8');
-              const name = file.replace(/\.md$/, '');
-              skills.push({
-                name,
-                content,
-                scope: 'workspace',
-                path: skillPath
-              });
-            } catch (error) {
-              console.error(`Failed to read skill file ${skillPath}:`, error);
-              // Skip this file and continue
-            }
-          }
-        }
+        await collectSkillsFromDir(this.workspaceSkillsDir, 'workspace');
       } catch (error) {
-        // Directory doesn't exist - that's fine, just skip
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
           console.error('Failed to read workspace skills directory:', error);
         }
@@ -93,6 +97,89 @@ export class SkillsService {
     }
 
     return skills;
+  }
+
+  private parseFrontmatter(content: string): { frontmatter?: Record<string, unknown>; body?: string } {
+    const trimmed = content.trimStart();
+    if (!trimmed.startsWith('---\n') && !trimmed.startsWith('---\r\n')) {
+      return { body: content };
+    }
+
+    const endIndex = trimmed.indexOf('\n---', 4);
+    const endIndexCrlf = trimmed.indexOf('\r\n---', 4);
+    const endMarkerIndex = endIndex === -1 ? endIndexCrlf : endIndex;
+    if (endMarkerIndex === -1) {
+      return { body: content };
+    }
+
+    const frontmatterRaw = trimmed.slice(4, endMarkerIndex).trim();
+    const bodyStart = trimmed.slice(endMarkerIndex + 4);
+    const body = bodyStart.replace(/^\r?\n/, '');
+
+    return {
+      frontmatter: this.parseYamlFrontmatter(frontmatterRaw),
+      body
+    };
+  }
+
+  private parseYamlFrontmatter(raw: string): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+    if (!raw) return result;
+
+    const lines = raw.split(/\r?\n/);
+    let currentKey: string | null = null;
+    let currentList: string[] = [];
+
+    const flushList = () => {
+      if (currentKey) {
+        result[currentKey] = [...currentList];
+      }
+      currentKey = null;
+      currentList = [];
+    };
+
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      if (!trimmedLine) continue;
+
+      if (trimmedLine.startsWith('- ')) {
+        if (!currentKey) continue;
+        currentList.push(trimmedLine.slice(2).trim());
+        continue;
+      }
+
+      if (currentKey) {
+        flushList();
+      }
+
+      const separatorIndex = trimmedLine.indexOf(':');
+      if (separatorIndex === -1) continue;
+
+      const key = trimmedLine.slice(0, separatorIndex).trim();
+      const value = trimmedLine.slice(separatorIndex + 1).trim();
+
+      if (!key) continue;
+
+      if (value === '') {
+        currentKey = key;
+        currentList = [];
+      } else {
+        const normalizedValue = value.replace(/^['"]|['"]$/g, '');
+        if (normalizedValue === 'true') result[key] = true;
+        else if (normalizedValue === 'false') result[key] = false;
+        else if (!Number.isNaN(Number(normalizedValue)) && normalizedValue !== '') {
+          result[key] = Number(normalizedValue);
+        } else {
+          result[key] = normalizedValue;
+        }
+      }
+    }
+
+    if (currentKey) {
+      flushList();
+    }
+
+    return result;
   }
 
   /**

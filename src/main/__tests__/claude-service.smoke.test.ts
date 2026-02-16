@@ -38,20 +38,6 @@ describe('ClaudeService - Smoke Tests', () => {
     assert.ok(_check);
   });
 
-  it('should set permission mode', () => {
-    const mockConfigService = {} as ConfigService;
-    const mockMCPService = {} as MCPService;
-    const onStreamEvent = (_sessionId: string, _event: StreamEvent): void => {};
-
-    const service = new ClaudeService(mockConfigService, mockMCPService, onStreamEvent);
-
-    service.setPermissionMode('prompt');
-    service.setPermissionMode('acceptEdits');
-    service.setPermissionMode('bypassPermissions');
-
-    assert.ok(true);
-  });
-
   it('should handle respondToPermission', () => {
     const mockConfigService = {} as ConfigService;
     const mockMCPService = {} as MCPService;

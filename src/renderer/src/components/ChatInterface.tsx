@@ -5,8 +5,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useChatStore } from '../stores/chat-store';
 import { Button, ScrollArea } from './ui';
-import type { ChatMessage } from '../stores/chat-store';
-import { User, Sparkles } from 'lucide-react';
+import type { ChatContentBlock, ChatMessage } from '../stores/chat-store';
+import { User, Sparkles, HelpCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { MarkdownRenderer } from './chat/MarkdownRenderer';
 import { LexicalMessageInput } from './chat/LexicalMessageInput';
 
@@ -79,6 +79,9 @@ export function ChatInterface() {
                   </span>
                   {pendingPermissionRequest.description}
                 </div>
+                <pre className="mb-3 rounded-lg bg-yellow-100/60 px-3 py-2 text-xs text-yellow-900 whitespace-pre-wrap break-words">
+                  {formatToolInput(pendingPermissionRequest.toolInput)}
+                </pre>
                 <div className="flex gap-2">
                   <Button
                     size="sm"
@@ -119,33 +122,8 @@ export function ChatInterface() {
 function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user';
 
-  // Parse content
-  let textContent = '';
-  try {
-    // Content might already be parsed or still be a string
-    let content = message.content;
-    if (typeof content === 'string') {
-      content = JSON.parse(content);
-    }
-
-    if (Array.isArray(content)) {
-      textContent = content
-        .filter((block) => block.type === 'text')
-        .map((block) => block.text)
-        .join(' ');
-    } else if (typeof content === 'string') {
-      textContent = content;
-    }
-  } catch {
-    // If parsing fails, try to use content as-is if it's a string
-    textContent = typeof message.content === 'string' ? message.content : '';
-  }
-
-  // Show streaming text if available
   const isStreaming = message.isStreaming || false;
-  if (isStreaming && message.streamingText) {
-    textContent = message.streamingText;
-  }
+  const blocks = getMessageBlocks(message);
 
   return (
     <div className={`group flex gap-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -161,9 +139,18 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         }`}
       >
         {isUser ? (
-          <div className="text-base leading-relaxed whitespace-pre-wrap">{textContent}</div>
+          <div className="text-base leading-relaxed whitespace-pre-wrap">
+            {blocks
+              .filter((block) => block.type === 'text')
+              .map((block) => block.text)
+              .join(' ')}
+          </div>
         ) : (
-          <MarkdownRenderer content={textContent} isStreaming={isStreaming} className="text-base leading-relaxed" />
+          <div className="space-y-3">
+            {blocks.map((block, index) => (
+              <MessageBlock key={`${message.id}-${index}`} block={block} isStreaming={isStreaming} />
+            ))}
+          </div>
         )}
 
         {isStreaming && (
@@ -184,4 +171,118 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       )}
     </div>
   );
+}
+
+function getMessageBlocks(message: ChatMessage): ChatContentBlock[] {
+  const isStreaming = message.isStreaming || false;
+  if (isStreaming && message.streamingBlocks) {
+    return message.streamingBlocks;
+  }
+  if (Array.isArray(message.content)) {
+    return message.content.map((block) => convertLegacyBlock(block));
+  }
+  if (typeof message.content === 'string') {
+    try {
+      const parsed = JSON.parse(message.content) as unknown;
+      if (Array.isArray(parsed)) {
+        return parsed.map((block) =>
+          typeof block === 'object' && block && 'type' in (block as any)
+            ? convertLegacyBlock(block)
+            : (block as ChatContentBlock)
+        );
+      }
+      if (typeof parsed === 'string') {
+        return [{ type: 'text', text: parsed }];
+      }
+    } catch {
+      return [{ type: 'text', text: message.content }];
+    }
+  }
+  return [];
+}
+
+function convertLegacyBlock(block: any): ChatContentBlock {
+  if (!block || typeof block !== 'object') {
+    return { type: 'text', text: String(block ?? '') };
+  }
+  if (block.type === 'tool_call' || block.type === 'text') return block as ChatContentBlock;
+  if (block.type === 'tool_use') {
+    return {
+      type: 'tool_call',
+      toolName: block.toolName,
+      toolInput: block.toolInput
+    };
+  }
+  if (block.type === 'tool_result') {
+    return {
+      type: 'tool_call',
+      toolName: 'tool',
+      toolInput: {},
+      result: { content: block.content, is_error: block.is_error }
+    };
+  }
+  if (block.type === 'permission') {
+    return {
+      type: 'tool_call',
+      toolName: block.toolName,
+      toolInput: block.toolInput,
+      permissionStatus: block.status
+    };
+  }
+  return { type: 'text', text: JSON.stringify(block) };
+}
+
+function MessageBlock({ block, isStreaming }: { block: ChatContentBlock; isStreaming: boolean }) {
+  switch (block.type) {
+    case 'text':
+      return <MarkdownRenderer content={block.text} isStreaming={isStreaming} className="text-base leading-relaxed" />;
+    case 'tool_call':
+      return (
+        <div className="rounded-lg border border-border-subtle bg-bg-secondary/60 px-3 py-2">
+          <div className="text-xs font-semibold text-text-secondary">Tool call</div>
+          <div className="text-sm font-mono text-text-primary">{block.toolName}</div>
+          <pre className="mt-2 text-xs text-text-secondary whitespace-pre-wrap break-words">
+            {formatToolInput(block.toolInput)}
+          </pre>
+          {block.permissionStatus && (
+            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-yellow-100/70 px-2 py-1 text-xs font-semibold text-yellow-900">
+              {renderPermissionIcon(block.permissionStatus)}
+              <span>Permission {block.permissionStatus}</span>
+            </div>
+          )}
+          {block.result && (
+            <div
+              className={`mt-2 rounded-md border px-2 py-1 text-xs whitespace-pre-wrap break-words ${
+                block.result.is_error
+                  ? 'border-red-300 bg-red-50 text-red-900'
+                  : 'border-border-subtle bg-bg-primary text-text-primary'
+              }`}
+            >
+              <div className="text-[10px] font-semibold">Tool result</div>
+              {block.result.content}
+            </div>
+          )}
+        </div>
+      );
+    default:
+      return null;
+  }
+}
+
+function formatToolInput(input: Record<string, unknown>) {
+  try {
+    return JSON.stringify(input, null, 2);
+  } catch {
+    return String(input);
+  }
+}
+
+function renderPermissionIcon(status: 'requested' | 'allowed' | 'denied') {
+  if (status === 'allowed') {
+    return <CheckCircle2 className="h-3.5 w-3.5" />;
+  }
+  if (status === 'denied') {
+    return <XCircle className="h-3.5 w-3.5" />;
+  }
+  return <HelpCircle className="h-3.5 w-3.5" />;
 }

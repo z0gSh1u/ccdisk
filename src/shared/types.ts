@@ -139,6 +139,8 @@ export interface Skill {
   content: string;
   scope: 'global' | 'workspace';
   path: string;
+  frontmatter?: Record<string, unknown>;
+  body?: string;
 }
 
 // Commands types
@@ -146,7 +148,6 @@ export interface Command {
   name: string;
   path: string;
   scope: 'global' | 'workspace';
-  isExecutable: boolean;
 }
 
 // File attachment types
@@ -182,9 +183,6 @@ export interface ClaudeEnvConfig {
   ANTHROPIC_AUTH_TOKEN?: string;
   ANTHROPIC_BASE_URL?: string;
   ANTHROPIC_MODEL?: string;
-  ANTHROPIC_DEFAULT_SONNET_MODEL?: string;
-  ANTHROPIC_DEFAULT_OPUS_MODEL?: string;
-  ANTHROPIC_DEFAULT_HAIKU_MODEL?: string;
 }
 
 /**

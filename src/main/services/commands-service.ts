@@ -50,14 +50,10 @@ export class CommandsService {
 
           // Only include regular files (not directories or symlinks)
           if (stats.isFile()) {
-            // Check if file has executable permissions
-            const isExecutable = (stats.mode & 0o111) !== 0;
-
             commands.push({
               name: file,
               path: commandPath,
-              scope: 'global',
-              isExecutable
+              scope: 'global'
             });
           }
         } catch (error) {
@@ -89,14 +85,10 @@ export class CommandsService {
 
             // Only include regular files (not directories or symlinks)
             if (stats.isFile()) {
-              // Check if file has executable permissions
-              const isExecutable = (stats.mode & 0o111) !== 0;
-
               commands.push({
                 name: file,
                 path: commandPath,
-                scope: 'workspace',
-                isExecutable
+                scope: 'workspace'
               });
             }
           } catch (error) {
@@ -127,15 +119,10 @@ export class CommandsService {
       // Read command content
       const content = await fs.readFile(commandPath, 'utf-8');
 
-      // Get file stats for executable check
-      const stats = await fs.lstat(commandPath);
-      const isExecutable = (stats.mode & 0o111) !== 0;
-
       const command: Command = {
         name,
         path: commandPath,
-        scope,
-        isExecutable
+        scope
       };
 
       return { command, content };
@@ -183,19 +170,10 @@ export class CommandsService {
       throw new Error(`Failed to create command: ${error}`);
     }
 
-    // Set executable permissions
-    try {
-      await fs.chmod(commandPath, 0o755);
-    } catch (error) {
-      console.error(`Failed to set executable permissions on ${name}:`, error);
-      throw new Error(`Failed to set executable permissions: ${error}`);
-    }
-
     return {
       name,
       path: commandPath,
-      scope,
-      isExecutable: true
+      scope
     };
   }
 

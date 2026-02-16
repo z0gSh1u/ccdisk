@@ -8,12 +8,12 @@ import os from 'os';
 import { MCPConfig, MCPServerConfig } from '../../shared/types';
 
 export class MCPService {
-  private globalMcpConfigPath: string;
+  private globalClaudeConfigPath: string;
   private workspaceMcpConfigPath: string | null;
 
   constructor(workspacePath?: string | null) {
-    // Global config at ~/.claude/mcp.json
-    this.globalMcpConfigPath = path.join(os.homedir(), '.claude', 'mcp.json');
+    // Global config at ~/.claude.json (top-level mcpServers)
+    this.globalClaudeConfigPath = path.join(os.homedir(), '.claude.json');
 
     // Workspace config at <workspace>/.claude/mcp.json
     this.workspaceMcpConfigPath = workspacePath ? path.join(workspacePath, '.claude', 'mcp.json') : null;
@@ -31,7 +31,7 @@ export class MCPService {
    * Returns empty config { mcpServers: {} } if no files exist
    */
   async getConfig(): Promise<MCPConfig> {
-    const globalConfig = await this.readConfigFile(this.globalMcpConfigPath);
+    const globalConfig = await this.readGlobalConfigFile();
     const workspaceConfig = this.workspaceMcpConfigPath
       ? await this.readConfigFile(this.workspaceMcpConfigPath)
       : { mcpServers: {} };
@@ -53,7 +53,7 @@ export class MCPService {
    */
   async getConfigByScope(scope: 'global' | 'workspace'): Promise<MCPConfig> {
     if (scope === 'global') {
-      return await this.readConfigFile(this.globalMcpConfigPath);
+      return await this.readGlobalConfigFile();
     } else {
       if (!this.workspaceMcpConfigPath) {
         throw new Error('Cannot get workspace config: no workspace path set');
@@ -76,7 +76,7 @@ export class MCPService {
     // Determine target path
     let targetPath: string;
     if (scope === 'global') {
-      targetPath = this.globalMcpConfigPath;
+      targetPath = this.globalClaudeConfigPath;
     } else {
       if (!this.workspaceMcpConfigPath) {
         throw new Error('Cannot update workspace config: no workspace path set');
@@ -89,10 +89,60 @@ export class MCPService {
       const dir = path.dirname(targetPath);
       await fs.mkdir(dir, { recursive: true });
 
-      // Write JSON with pretty formatting
-      await fs.writeFile(targetPath, JSON.stringify(config, null, 2), 'utf-8');
+      if (scope === 'global') {
+        const updated = await this.mergeGlobalConfig(config);
+        await fs.writeFile(targetPath, JSON.stringify(updated, null, 2), 'utf-8');
+      } else {
+        // Write JSON with pretty formatting
+        await fs.writeFile(targetPath, JSON.stringify(config, null, 2), 'utf-8');
+      }
     } catch (error) {
       console.error(`Failed to write MCP config to ${targetPath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Read and parse global MCP config from ~/.claude.json
+   */
+  private async readGlobalConfigFile(): Promise<MCPConfig> {
+    try {
+      const content = await fs.readFile(this.globalClaudeConfigPath, 'utf-8');
+      const parsed = JSON.parse(content) as Record<string, unknown>;
+      const mcpServers = parsed.mcpServers;
+
+      if (!mcpServers || typeof mcpServers !== 'object' || Array.isArray(mcpServers)) {
+        return { mcpServers: {} };
+      }
+
+      return { mcpServers: mcpServers as Record<string, MCPServerConfig> };
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return { mcpServers: {} };
+      }
+
+      console.error(`Failed to parse global MCP config from ${this.globalClaudeConfigPath}:`, error);
+      return { mcpServers: {} };
+    }
+  }
+
+  /**
+   * Merge updated MCP config into ~/.claude.json without losing other fields
+   */
+  private async mergeGlobalConfig(config: MCPConfig): Promise<Record<string, unknown>> {
+    try {
+      const content = await fs.readFile(this.globalClaudeConfigPath, 'utf-8');
+      const parsed = JSON.parse(content) as Record<string, unknown>;
+      return {
+        ...parsed,
+        mcpServers: config.mcpServers
+      };
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return { mcpServers: config.mcpServers };
+      }
+
+      console.error(`Failed to parse ${this.globalClaudeConfigPath} for update:`, error);
       throw error;
     }
   }
