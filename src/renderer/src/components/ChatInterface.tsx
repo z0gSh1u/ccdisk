@@ -11,9 +11,18 @@ import { MarkdownRenderer } from './chat/MarkdownRenderer';
 import { LexicalMessageInput } from './chat/LexicalMessageInput';
 
 export function ChatInterface() {
-  const { sessions, currentSessionId, sendMessage, pendingPermissionRequest, respondToPermission } = useChatStore();
+  const {
+    sessions,
+    currentSessionId,
+    sendMessage,
+    pendingPermissionRequest,
+    respondToPermission,
+    abortSession
+  } = useChatStore();
   const currentSession = sessions.find((session) => session.id === currentSessionId) || null;
+  const isResponding = Boolean(currentSession?.messages.some((message) => message.isStreaming));
   const [isLoading, setIsLoading] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when messages change
@@ -25,11 +34,16 @@ export function ChatInterface() {
     if (!message.trim() || !currentSession) return;
 
     setIsLoading(true);
+    setSendError(null);
     try {
       await sendMessage(message);
     } catch (error) {
       console.error('Failed to send message:', error);
-      alert('Failed to send message');
+      const messageText = error instanceof Error ? error.message : 'Failed to send message';
+      setSendError(messageText);
+      if (!messageText.includes('responding')) {
+        alert('Failed to send message');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -108,7 +122,23 @@ export function ChatInterface() {
       {/* Input area */}
       <div className="p-4 bg-bg-primary/80 backdrop-blur-md sticky bottom-0 z-10">
         <div className="mx-auto max-w-3xl relative">
-          <LexicalMessageInput onSend={handleSend} disabled={isLoading} placeholder="Ask Claude..." />
+          <LexicalMessageInput
+            onSend={handleSend}
+            disabled={isLoading || isResponding}
+            placeholder={isResponding ? 'Claude is responding...' : 'Ask Claude...'}
+          />
+          {isResponding && currentSessionId && (
+            <div className="mt-2 flex items-center justify-center">
+              <Button size="sm" variant="ghost" onClick={() => abortSession(currentSessionId)}>
+                Stop
+              </Button>
+            </div>
+          )}
+          {sendError && sendError.includes('responding') && (
+            <div className="mt-2 text-xs text-text-secondary">
+              Claude is responding. Click Stop to interrupt before sending another message.
+            </div>
+          )}
           <div className="mt-2 text-center text-xs text-text-tertiary">
             Claude can make mistakes. Please use with caution.
           </div>

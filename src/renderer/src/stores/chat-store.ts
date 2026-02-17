@@ -135,6 +135,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
   // Select active session
   selectSession: (sessionId: string) => {
+    const { currentSessionId } = get();
+    if (currentSessionId && currentSessionId !== sessionId) {
+      void window.api.chat.abort(currentSessionId);
+    }
     set({ currentSessionId: sessionId });
   },
 
@@ -155,6 +159,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     const currentSession = sessions.find((session) => session.id === currentSessionId) || null;
     if (!currentSessionId || !currentSession) {
       throw new Error('No active session');
+    }
+
+    if (currentSession.messages.some((msg) => msg.isStreaming)) {
+      throw new Error('Session is already responding');
     }
 
     // Add user message to UI immediately
