@@ -26,8 +26,9 @@
  * @see https://github.com/anthropics/anthropic-sdk-typescript
  */
 import {
-  query,
-  type Query,
+  unstable_v2_createSession,
+  unstable_v2_resumeSession,
+  type SDKSession,
   type CanUseTool,
   type PermissionResult,
   type SlashCommand
@@ -41,15 +42,16 @@ import type {
   StatusData
 } from '../../shared/types';
 import type { ConfigService } from './config-service';
-import type { MCPService } from './mcp-service';
 import { randomUUID } from 'crypto';
 
 /**
  * Structure for tracking active SDK sessions
  */
 interface ActiveSession {
-  query: Query;
-  abortController: AbortController;
+  session: SDKSession;
+  isStreaming: boolean;
+  sdkSessionId?: string;
+  isProcessing: boolean;
 }
 
 /**
@@ -68,7 +70,6 @@ export class ClaudeService {
 
   constructor(
     private configService: ConfigService,
-    private mcpService: MCPService,
     private onStreamEvent: (sessionId: string, event: StreamEvent) => void
   ) {}
 
@@ -90,37 +91,27 @@ export class ClaudeService {
     sdkSessionId?: string
   ): Promise<void> {
     try {
+      const existing = this.activeSessions.get(sessionId);
+      if (existing?.isStreaming) {
+        throw new Error('Session is already responding');
+      }
+
       const startTime = Date.now();
       this.sessionStartTimes.set(sessionId, startTime);
-
-      // Abort any existing session for this sessionId
-      this.abortSession(sessionId);
 
       // Get configuration
       const settingsStart = Date.now();
       const settings = await this.configService.getSettings();
       console.log(`[Claude ${sessionId}] settings loaded in ${Date.now() - settingsStart}ms`);
 
-      const mcpStart = Date.now();
-      const mcpConfig = await this.mcpService.getConfig();
-      console.log(`[Claude ${sessionId}] mcp config loaded in ${Date.now() - mcpStart}ms`);
-
       const env = (settings.env as Record<string, string>) || {};
       const hasAuthToken = Boolean(env.ANTHROPIC_AUTH_TOKEN);
       const hasBaseUrl = Boolean(env.ANTHROPIC_BASE_URL);
       const model = env.ANTHROPIC_MODEL || env.ANTHROPIC_DEFAULT_SONNET_MODEL || 'unknown';
-      const mcpServers = Object.entries(mcpConfig.mcpServers || {}).map(([name, config]) => ({
-        name,
-        type: (config as { type?: string }).type || 'unknown'
-      }));
       console.log(`[Claude ${sessionId}] env hasAuthToken=${hasAuthToken} hasBaseUrl=${hasBaseUrl} model=${model}`);
-      console.log(`[Claude ${sessionId}] mcp servers (${mcpServers.length}):`, mcpServers);
 
       // Get workspace path from settings or use current directory
       const workspacePath = (settings.workspacePath as string) || process.cwd();
-
-      // Create abort controller for this session
-      const abortController = new AbortController();
 
       // Build canUseTool handler
       const canUseTool: CanUseTool = async (toolName, input, options) => {
@@ -185,39 +176,26 @@ export class ClaudeService {
         Object.assign(mergedEnv, settings.env as Record<string, string>);
       }
 
-      // Create query
-      const queryStart = Date.now();
-      const queryInstance = query({
-        prompt: message,
-        options: {
-          cwd: workspacePath,
-          mcpServers: mcpConfig.mcpServers as Record<string, any>,
-          canUseTool,
-          abortController,
-          resume: sdkSessionId,
-          env: mergedEnv,
-          permissionMode: 'acceptEdits',
-          includePartialMessages: true
-        }
-      });
-      console.log(`[Claude ${sessionId}] query created in ${Date.now() - queryStart}ms`);
-
-      // Store active session
-      this.activeSessions.set(sessionId, {
-        query: queryInstance,
-        abortController
+      const active = await this.ensureSession(sessionId, {
+        sdkSessionId,
+        workspacePath,
+        canUseTool,
+        env: mergedEnv
       });
 
-      void this.logMcpStatus(sessionId, queryInstance);
+      active.isStreaming = true;
+      await active.session.send(message);
 
-      // Start processing messages in background
-      this.processMessages(sessionId, queryInstance).catch((error) => {
-        console.error('Error processing messages:', error);
-        this.onStreamEvent(sessionId, {
-          type: 'error',
-          data: error instanceof Error ? error.message : 'Unknown error'
+      if (!active.isProcessing) {
+        active.isProcessing = true;
+        this.processMessages(sessionId, active.session).catch((error) => {
+          console.error('Error processing messages:', error);
+          this.onStreamEvent(sessionId, {
+            type: 'error',
+            data: error instanceof Error ? error.message : 'Unknown error'
+          });
         });
-      });
+      }
 
       // Return immediately - SDK session ID will be emitted via status event
     } catch (error) {
@@ -233,7 +211,7 @@ export class ClaudeService {
   /**
    * Process SDK messages and emit stream events
    */
-  private async processMessages(_sessionId: string, queryInstance: Query): Promise<void> {
+  private async processMessages(_sessionId: string, session: SDKSession): Promise<void> {
     try {
       let actualSdkSessionId: string | undefined;
       let sessionIdEmitted = false;
@@ -243,7 +221,7 @@ export class ClaudeService {
       let sawFirstAssistantBlock = false;
       let sawFirstTextDelta = false;
 
-      for await (const message of queryInstance) {
+      for await (const message of session.stream()) {
         if (!sawFirstMessage) {
           sawFirstMessage = true;
           const startTime = this.sessionStartTimes.get(_sessionId);
@@ -424,13 +402,17 @@ export class ClaudeService {
           data: pendingAssistantText
         });
       }
-      this.onStreamEvent(_sessionId, {
-        type: 'done',
-        data: actualSdkSessionId || 'completed'
-      });
+        this.onStreamEvent(_sessionId, {
+          type: 'done',
+          data: actualSdkSessionId || 'completed'
+        });
 
-      // Clean up session
-      this.activeSessions.delete(_sessionId);
+      const active = this.activeSessions.get(_sessionId);
+      if (active) {
+        active.isStreaming = false;
+        active.sdkSessionId = actualSdkSessionId || active.sdkSessionId;
+        active.isProcessing = false;
+      }
       this.sessionStartTimes.delete(_sessionId);
     } catch (error) {
       console.error('Error in processMessages:', error);
@@ -439,23 +421,51 @@ export class ClaudeService {
         data: error instanceof Error ? error.message : 'Unknown error'
       });
 
-      // Clean up session
-      this.activeSessions.delete(_sessionId);
+      const active = this.activeSessions.get(_sessionId);
+      if (active) {
+        active.isStreaming = false;
+        active.isProcessing = false;
+      }
       this.sessionStartTimes.delete(_sessionId);
     }
   }
 
-  private async logMcpStatus(sessionId: string, queryInstance: Query): Promise<void> {
-    const startTime = this.sessionStartTimes.get(sessionId);
-    const elapsed = (label: string) => (startTime ? `${Date.now() - startTime}ms` : label);
-
-    try {
-      console.log(`[Claude ${sessionId}] mcpServerStatus start at ${elapsed('unknown')}`);
-      const status = await queryInstance.mcpServerStatus();
-      console.log(`[Claude ${sessionId}] mcpServerStatus done at ${elapsed('unknown')}:`, status);
-    } catch (error) {
-      console.error(`[Claude ${sessionId}] mcpServerStatus failed at ${elapsed('unknown')}:`, error);
+  private async ensureSession(
+    sessionId: string,
+    options: {
+      sdkSessionId?: string;
+      workspacePath: string;
+      canUseTool: CanUseTool;
+      env: Record<string, string>;
     }
+  ): Promise<ActiveSession> {
+    const existing = this.activeSessions.get(sessionId);
+    if (existing) {
+      return existing;
+    }
+
+    const { sdkSessionId, workspacePath, canUseTool, env } = options;
+    const sessionOptions = {
+      cwd: workspacePath,
+      canUseTool,
+      env,
+      model: env.ANTHROPIC_MODEL || env.ANTHROPIC_DEFAULT_SONNET_MODEL || 'claude-sonnet-4-5-20250929',
+      permissionMode: 'acceptEdits' as const,
+      includePartialMessages: true
+    };
+
+    const session = sdkSessionId
+      ? unstable_v2_resumeSession(sdkSessionId, sessionOptions)
+      : unstable_v2_createSession(sessionOptions);
+
+    const active: ActiveSession = {
+      session,
+      isStreaming: false,
+      isProcessing: false,
+      sdkSessionId
+    };
+    this.activeSessions.set(sessionId, active);
+    return active;
   }
 
   /**
@@ -495,11 +505,8 @@ export class ClaudeService {
   abortSession(sessionId: string): void {
     const session = this.activeSessions.get(sessionId);
     if (session) {
-      // Abort the query
-      session.abortController.abort();
-
       // Close the query to clean up resources
-      session.query.close();
+      session.session.close();
 
       // Remove from active sessions
       this.activeSessions.delete(sessionId);
@@ -514,23 +521,16 @@ export class ClaudeService {
    * Get active Query instance for a session (for MCP operations, commands, etc.)
    * Returns null if no active session
    */
-  getActiveQuery(sessionId: string): Query | null {
+  getActiveSession(sessionId: string): SDKSession | null {
     const session = this.activeSessions.get(sessionId);
-    return session?.query || null;
+    return session?.session || null;
   }
 
   /**
    * Get supported slash commands from SDK for an active session
    */
-  async getSupportedCommands(sessionId: string): Promise<SlashCommand[] | null> {
-    const q = this.getActiveQuery(sessionId);
-    if (!q) return null;
-    try {
-      return await q.supportedCommands();
-    } catch (error) {
-      console.error('Failed to get supported commands:', error);
-      return null;
-    }
+  async getSupportedCommands(_sessionId: string): Promise<SlashCommand[] | null> {
+    return null;
   }
 
   /**
@@ -545,8 +545,7 @@ export class ClaudeService {
    */
   cleanup(): void {
     for (const [_sessionId, session] of this.activeSessions.entries()) {
-      session.abortController.abort();
-      session.query.close();
+      session.session.close();
     }
     this.activeSessions.clear();
     this.pendingPermissions.clear();

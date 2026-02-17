@@ -90,7 +90,7 @@ function createWindow(): void {
 
   // Create stream event emitter for Claude service
   const streamEventEmitter = createStreamEventEmitter(mainWindow, dbService);
-  claudeService = new ClaudeService(configService, mcpService, streamEventEmitter);
+  claudeService = new ClaudeService(configService, streamEventEmitter);
 
   // Register IPC handlers
   registerWorkspaceHandlers(mainWindow, fileWatcher);

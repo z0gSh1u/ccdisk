@@ -10,13 +10,11 @@ import { describe, it, beforeEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { ClaudeService } from '../services/claude-service';
 import type { ConfigService } from '../services/config-service';
-import type { MCPService } from '../services/mcp-service';
 import type { StreamEvent } from '../../shared/types';
 
 describe('ClaudeService', () => {
   let claudeService: ClaudeService;
   let mockConfigService: ConfigService;
-  let mockMCPService: MCPService;
   let capturedEvents: Array<{ sessionId: string; event: StreamEvent }>;
 
   beforeEach(() => {
@@ -33,12 +31,6 @@ describe('ClaudeService', () => {
       }))
     } as unknown as ConfigService;
 
-    // Create mock MCPService
-    mockMCPService = {
-      getConfig: mock.fn(async () => ({
-        mcpServers: {}
-      }))
-    } as unknown as MCPService;
 
     // Create callback to capture stream events
     const onStreamEvent = (sessionId: string, event: StreamEvent): void => {
@@ -46,7 +38,7 @@ describe('ClaudeService', () => {
     };
 
     // Create ClaudeService instance
-    claudeService = new ClaudeService(mockConfigService, mockMCPService, onStreamEvent);
+    claudeService = new ClaudeService(mockConfigService, onStreamEvent);
   });
 
   describe('constructor', () => {
@@ -114,6 +106,25 @@ describe('ClaudeService', () => {
       assert.ok(_typeCheck, 'sendMessage has correct type signature');
     });
   });
+
+  describe('ClaudeService V2 sessions', () => {
+    it('reuses active session and blocks concurrent send', async () => {
+      const mockConfigService = {
+        getSettings: mock.fn(async () => ({
+          env: { ANTHROPIC_AUTH_TOKEN: 'x' },
+          workspacePath: '/tmp'
+        }))
+      } as any
+      const events: any[] = []
+      const onStreamEvent = (sessionId: string, event: any) => events.push({ sessionId, event })
+
+      const service = new ClaudeService(mockConfigService, onStreamEvent)
+
+      // First send sets streaming
+      await service.sendMessage('s1', 'hello')
+      await assert.rejects(() => service.sendMessage('s1', 'second'), /already responding/)
+    })
+  })
 });
 
 /**
