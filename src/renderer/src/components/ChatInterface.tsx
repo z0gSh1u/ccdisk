@@ -289,7 +289,7 @@ function MessageBlock({ block, isStreaming }: { block: ChatContentBlock; isStrea
               }`}
             >
               <div className="text-[10px] font-semibold">Tool result</div>
-              {block.result.content}
+              {formatToolResult(block.result.content, block.result.is_error)}
             </div>
           )}
         </div>
@@ -305,6 +305,17 @@ function formatToolInput(input: Record<string, unknown>) {
   } catch {
     return String(input);
   }
+}
+
+function formatToolResult(content: string, isError?: boolean) {
+  if (!isError) return content;
+  if (content.includes('ZodError')) {
+    return 'Tool call failed: invalid parameters.';
+  }
+  if (content.startsWith('Tool permission request failed')) {
+    return 'Tool call failed: permission request error.';
+  }
+  return content;
 }
 
 function renderPermissionIcon(status: 'requested' | 'allowed' | 'denied') {
