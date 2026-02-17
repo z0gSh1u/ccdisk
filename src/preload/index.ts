@@ -121,7 +121,10 @@ const api = {
   // SDK operations (requires active session)
   sdk: {
     getCommands: (sessionId: string) => ipcRenderer.invoke(IPC_CHANNELS.SDK_GET_COMMANDS, sessionId)
-  }
+  },
+
+  // Utility
+  openExternal: (url: string) => ipcRenderer.invoke(IPC_CHANNELS.UTIL_OPEN_EXTERNAL, url)
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

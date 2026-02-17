@@ -70,7 +70,13 @@ export function CollapsibleContent({ children, className }: CollapsibleContentPr
   const context = React.useContext(CollapsibleContext);
   if (!context) throw new Error('CollapsibleContent must be used within Collapsible');
 
-  if (!context.open) return null;
-
-  return <div className={className}>{children}</div>;
+  return (
+    <div
+      className={`overflow-hidden transition-all duration-200 ease-out ${
+        context.open ? 'animate-collapsible-open' : 'animate-collapsible-close'
+      } ${className || ''}`}
+    >
+      {children}
+    </div>
+  );
 }

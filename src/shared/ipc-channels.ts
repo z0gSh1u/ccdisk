@@ -58,6 +58,9 @@ export const IPC_CHANNELS = {
   SETTINGS_GET_CLAUDE_ENV: 'settings:get-claude-env',
   SETTINGS_UPDATE_CLAUDE_ENV: 'settings:update-claude-env',
 
+  // Open external URL
+  UTIL_OPEN_EXTERNAL: 'util:open-external',
+
   // SDK commands (requires active session)
   SDK_GET_COMMANDS: 'sdk:get-commands'
 } as const;

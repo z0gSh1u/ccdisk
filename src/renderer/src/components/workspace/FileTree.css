@@ -9,6 +9,9 @@
 
 .tree-node {
   width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
 }
 
 /* Override react-arborist default styles */
@@ -18,17 +21,61 @@
 
 .react-arborist-node {
   cursor: pointer;
+  transition: background-color 150ms ease;
 }
 
 .react-arborist-node-content {
   width: 100%;
+  padding: 0 8px;
+}
+
+.react-arborist-row {
+  display: flex;
+  align-items: center;
+}
+
+/* Chevron rotation animation */
+.chevron-icon {
+  transition: transform 200ms ease-out;
+}
+
+.chevron-icon.rotated {
+  transform: rotate(90deg);
+}
+
+/* Node fade-in animation on expand */
+.react-arborist-node {
+  animation: fadeInNode 200ms ease-out;
+}
+
+@keyframes fadeInNode {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Fallback icon for unrecognized file types */
 .default-icon:before {
   font-family: octicons;
   font-size: 16px;
-  top: 1px;
+  display: flex;
+  align-items: center;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 2px;
   content: '\f011';
   color: #6a9fb5;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  margin-left: 2px;
 }

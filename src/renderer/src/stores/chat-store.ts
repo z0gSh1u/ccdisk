@@ -114,7 +114,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         messages: []
       };
       set((state) => ({
-        sessions: [...state.sessions, newSession],
+        sessions: [newSession, ...state.sessions],
         currentSessionId: newSession.id
       }));
       return newSession.id;
@@ -265,8 +265,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         break;
 
       case 'result':
-        // Finalize streaming message
-        get().finalizeStreamingMessage(sessionId);
+        // Wait for done event to finalize to avoid early close
         break;
 
       case 'done':

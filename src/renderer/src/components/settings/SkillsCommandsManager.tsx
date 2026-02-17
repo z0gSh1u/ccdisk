@@ -167,7 +167,7 @@ export function SkillsCommandsManager() {
           <div className="text-center">
             <BookOpen className="mx-auto mb-3 h-12 w-12 opacity-20" />
             <p className="text-sm font-medium">No item selected</p>
-            <p className="mt-1 text-xs">Select a skill, command, or SDK command from the list</p>
+            <p className="mt-1 text-xs">Select a skill or command from the list</p>
           </div>
         </div>
       );

@@ -3,6 +3,41 @@ module.exports = {
   content: ['./src/renderer/index.html', './src/renderer/src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      // Animation durations for consistent timing
+      animation: {
+        'slide-in-right': 'slideInRight 300ms ease-out',
+        'slide-out-right': 'slideOutRight 300ms ease-in',
+        'fade-in': 'fadeIn 200ms ease-out',
+        'fade-out': 'fadeOut 200ms ease-in',
+        'collapsible-close': 'collapsibleClose 200ms ease-out forwards',
+        'collapsible-open': 'collapsibleOpen 200ms ease-out forwards'
+      },
+      keyframes: {
+        slideInRight: {
+          '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(0)' }
+        },
+        slideOutRight: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(100%)' }
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' }
+        },
+        fadeOut: {
+          '0%': { opacity: '1' },
+          '100%': { opacity: '0' }
+        },
+        collapsibleClose: {
+          '0%': { opacity: '1', maxHeight: '500px' },
+          '100%': { opacity: '0', maxHeight: '0' }
+        },
+        collapsibleOpen: {
+          '0%': { opacity: '0', maxHeight: '0' },
+          '100%': { opacity: '1', maxHeight: '500px' }
+        }
+      },
       // Font families migrated from CSS variables
       fontFamily: {
         sans: [
@@ -41,5 +76,5 @@ module.exports = {
       }
     }
   },
-  plugins: []
+  plugins: [require('tailwindcss-animate')]
 };

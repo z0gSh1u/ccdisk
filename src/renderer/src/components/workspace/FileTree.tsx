@@ -3,7 +3,7 @@
  */
 
 import { Tree } from 'react-arborist';
-import { FolderIcon, ChevronRight, ChevronDown } from 'lucide-react';
+import { FolderIcon, ChevronRight } from 'lucide-react';
 import { getClassWithColor } from 'file-icons-js';
 
 import { useWorkspaceStore } from '../../stores/workspace-store';
@@ -43,7 +43,7 @@ function NodeRenderer({ node, style, dragHandle }: any) {
     <div
       ref={dragHandle}
       style={style}
-      className={`tree-node flex items-center gap-2 px-4 py-1.5 cursor-pointer hover:bg-gray-100 transition-colors ${
+      className={`tree-node flex items-center gap-2 px-4 cursor-pointer hover:bg-gray-100 transition-colors ${
         isSelected ? 'bg-accent bg-opacity-10 text-accent' : 'text-text-primary'
       }`}
       onClick={() => node.toggle()}
@@ -51,7 +51,7 @@ function NodeRenderer({ node, style, dragHandle }: any) {
       {/* Expand/Collapse arrow for directories */}
       {data.type === 'directory' && (
         <span className="flex-shrink-0">
-          {node.isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          <ChevronRight className={`h-4 w-4 chevron-icon ${node.isOpen ? 'rotated' : ''}`} />
         </span>
       )}
 

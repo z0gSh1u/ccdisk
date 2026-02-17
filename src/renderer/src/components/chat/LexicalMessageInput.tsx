@@ -14,7 +14,6 @@ import { $getRoot, $createParagraphNode, KEY_ENTER_COMMAND, COMMAND_PRIORITY_HIG
 import { mergeRegister } from '@lexical/utils';
 import { Button } from '../ui';
 import { ArrowUp, Paperclip } from 'lucide-react';
-import { TypeaheadPlugin } from './TypeaheadPlugin';
 
 interface LexicalMessageInputProps {
   onSend: (message: string) => void;
@@ -209,7 +208,6 @@ export function LexicalMessageInput({
         />
         <EnterKeyPlugin onSend={onSend} disabled={disabled} onTextChange={handleTextChange} />
         <ClearEditorPlugin clearRef={clearEditorRef} />
-        <TypeaheadPlugin />
       </div>
     </LexicalComposer>
   );

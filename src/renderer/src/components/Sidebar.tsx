@@ -6,18 +6,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useChatStore } from '../stores/chat-store';
 import { useWorkspaceStore } from '../stores/workspace-store';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui';
-import {
-  Plus,
-  Folder,
-  MessageSquare,
-  ExternalLink,
-  ChevronDown,
-  ChevronRight,
-  Trash2,
-  Terminal,
-  Puzzle,
-  Activity
-} from 'lucide-react';
+import { Plus, Folder, MessageSquare, ExternalLink, Trash2, Terminal, Puzzle, Activity } from 'lucide-react';
 import { FileTree } from './workspace/FileTree';
 import type { PanelType } from './SidePanel';
 
@@ -29,7 +18,6 @@ interface SidebarProps {
 export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
   const { sessions, currentSessionId, selectSession, createSession, deleteSession, renameSession } = useChatStore();
   const { currentWorkspace, openWorkspaceInExplorer } = useWorkspaceStore();
-  const [isFileTreeExpanded, setIsFileTreeExpanded] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Inline rename state
@@ -99,21 +87,10 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
           <div className="font-semibold text-text-primary">CCDisk</div>
         </div>
 
-        {/* Workspace section */}
-        <div className="px-4 py-2">
+        {/* Workspace section - flexible height */}
+        <div className="px-4 py-2 flex-1 min-h-0">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-xs font-medium uppercase tracking-wider text-text-tertiary">Workspace</div>
-            <button
-              onClick={() => setIsFileTreeExpanded(!isFileTreeExpanded)}
-              className="p-1 rounded hover:bg-bg-accent transition-colors"
-              title={isFileTreeExpanded ? 'Hide Files' : 'Show Files'}
-            >
-              {isFileTreeExpanded ? (
-                <ChevronDown className="h-4 w-4 text-text-tertiary" />
-              ) : (
-                <ChevronRight className="h-4 w-4 text-text-tertiary" />
-              )}
-            </button>
           </div>
           <button
             onClick={handleOpenWorkspace}
@@ -127,20 +104,18 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
             <ExternalLink className="h-3 w-3 text-text-tertiary" />
           </button>
 
-          {/* File Tree */}
-          {isFileTreeExpanded && (
-            <div
-              className="bg-white rounded-md border border-border-subtle overflow-hidden"
-              style={{ height: '300px' }}
-            >
-              <FileTree />
-            </div>
-          )}
+          {/* File Tree - always visible */}
+          <div
+            className="bg-white rounded-md border border-border-subtle overflow-hidden"
+            style={{ height: 'calc(100% - 52px)' }}
+          >
+            <FileTree />
+          </div>
         </div>
 
-        {/* Sessions section */}
-        <div className="flex-1 overflow-y-auto px-2 py-4">
-          <div className="mb-2 px-2 flex items-center justify-between group">
+        {/* Sessions section - flexible height */}
+        <div className="px-2 py-4 flex-1 min-h-0 overflow-hidden">
+          <div className="mb-2 px-2 flex items-center justify-between shrink-0">
             <div className="text-xs font-medium uppercase tracking-wider text-text-tertiary">Recents</div>
             <button
               onClick={handleNewSession}
@@ -152,7 +127,7 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
             </button>
           </div>
 
-          <div className="space-y-0.5">
+          <div className="overflow-y-auto h-[calc(100%-32px)] space-y-0.5">
             {sessions.map((session) => (
               <div
                 key={session.id}
@@ -162,7 +137,10 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
                     : 'text-text-secondary hover:bg-bg-accent hover:text-text-primary'
                 }`}
               >
-                <button onClick={() => selectSession(session.id)} className="flex items-center gap-2 flex-1 min-w-0">
+                <button
+                  onClick={() => selectSession(session.id)}
+                  className="flex items-center gap-2 flex-1 min-w-0 justify-start"
+                >
                   <MessageSquare
                     className={`h-4 w-4 shrink-0 ${currentSessionId === session.id ? 'text-accent' : 'text-text-tertiary group-hover:text-text-secondary'}`}
                   />
@@ -184,7 +162,7 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
                     />
                   ) : (
                     <div
-                      className="truncate flex-1"
+                      className="truncate flex-1 text-left"
                       onDoubleClick={(e) => {
                         e.stopPropagation();
                         handleStartRename(session.id, session.name);

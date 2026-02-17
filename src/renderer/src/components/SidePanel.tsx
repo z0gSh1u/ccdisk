@@ -38,12 +38,12 @@ export function SidePanel({ isOpen, panelType, onClose }: SidePanelProps) {
   }, [isOpen, onClose]);
 
   return (
-    <div className={`fixed inset-0 z-50 ${isOpen ? 'block' : 'hidden'}`}>
+    <div className={`fixed inset-0 z-50 pointer-events-none ${isOpen ? 'pointer-events-auto' : ''}`}>
       {/* Overlay - blocks all interactions with content below */}
       <div
         className={`
-          absolute inset-0 bg-black/30
-          transition-opacity duration-300
+          absolute inset-0 bg-black/30 backdrop-blur-sm
+          transition-opacity duration-300 ease-out
           ${isOpen ? 'opacity-100' : 'opacity-0'}
         `}
         onClick={onClose}
@@ -55,7 +55,7 @@ export function SidePanel({ isOpen, panelType, onClose }: SidePanelProps) {
           absolute right-0 top-0 bottom-0
           w-[80vw]
           bg-white shadow-2xl flex flex-col
-          transform transition-transform duration-300 ease-in-out
+          transition-transform duration-300 ease-out
           ${isOpen ? 'translate-x-0' : 'translate-x-full'}
         `}
       >
@@ -71,7 +71,7 @@ export function SidePanel({ isOpen, panelType, onClose }: SidePanelProps) {
         <div className="flex-1 overflow-y-auto p-4">
           {panelType === 'skills' && <SkillsCommandsManager />}
           {panelType === 'mcp' && <MCPManager />}
-          {panelType === 'claude' && <ClaudeConfigEditor />}
+          {panelType === 'claude' && <ClaudeConfigEditor onClose={onClose} />}
         </div>
       </div>
     </div>

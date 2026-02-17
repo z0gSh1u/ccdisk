@@ -4,7 +4,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 
-import { Save, Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { Save, Eye, EyeOff, ExternalLink } from 'lucide-react';
 
 import { Button, Input, Label } from '../ui';
 
@@ -14,6 +14,38 @@ interface EnvField {
   placeholder: string;
   isSecret: boolean;
 }
+
+interface ProviderPreset {
+  id: string;
+  name: string;
+  baseUrl: string;
+  model: string;
+  apiKeyUrl: string;
+}
+
+const PRESETS: ProviderPreset[] = [
+  {
+    id: 'deepseek',
+    name: 'DeepSeek',
+    baseUrl: 'https://api.deepseek.com/anthropic',
+    model: 'DeepSeek-V3.2',
+    apiKeyUrl: 'https://platform.deepseek.com'
+  },
+  {
+    id: 'zhipu',
+    name: '智谱 GLM (国内版)',
+    baseUrl: 'https://open.bigmodel.cn/api/anthropic',
+    model: 'glm-4.7',
+    apiKeyUrl: 'https://www.bigmodel.cn/claude-code'
+  },
+  {
+    id: 'minimax',
+    name: 'Minimax (国内版)',
+    baseUrl: 'https://api.minimaxi.com/anthropic',
+    model: 'MiniMax-M2.5',
+    apiKeyUrl: 'https://platform.minimaxi.com/subscribe/coding-plan'
+  }
+];
 
 const ENV_FIELDS: EnvField[] = [
   { key: 'ANTHROPIC_AUTH_TOKEN', label: 'Auth Token', placeholder: 'sk-ant-...', isSecret: true },
@@ -31,12 +63,16 @@ const ENV_FIELDS: EnvField[] = [
   }
 ];
 
-export function ClaudeConfigEditor() {
+interface ClaudeConfigEditorProps {
+  onClose?: () => void;
+}
+
+export function ClaudeConfigEditor({ onClose }: ClaudeConfigEditorProps) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [visibleSecrets, setVisibleSecrets] = useState<Record<string, boolean>>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [selectedPreset, setSelectedPreset] = useState<string>('');
 
   const showMessage = useCallback((type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
@@ -44,19 +80,23 @@ export function ClaudeConfigEditor() {
   }, []);
 
   const loadEnv = useCallback(async () => {
-    setIsLoading(true);
     try {
       const response = await window.api.settings.getClaudeEnv();
       if (response.success && response.data) {
         setValues(response.data);
+
+        const matchedPreset = PRESETS.find((p) => p.baseUrl === response.data?.ANTHROPIC_BASE_URL);
+        if (matchedPreset) {
+          setSelectedPreset(matchedPreset.id);
+        } else {
+          setSelectedPreset('');
+        }
       } else {
         showMessage('error', response.error || 'Failed to load configuration');
       }
     } catch (error) {
       console.error('Failed to load Claude env:', error);
       showMessage('error', (error as Error).message);
-    } finally {
-      setIsLoading(false);
     }
   }, [showMessage]);
 
@@ -64,10 +104,31 @@ export function ClaudeConfigEditor() {
     loadEnv();
   }, [loadEnv]);
 
+  const handlePresetChange = (presetId: string) => {
+    setSelectedPreset(presetId);
+    if (presetId) {
+      const preset = PRESETS.find((p) => p.id === presetId);
+      if (preset) {
+        setValues((prev) => ({
+          ...prev,
+          ANTHROPIC_BASE_URL: preset.baseUrl,
+          ANTHROPIC_MODEL: preset.model
+        }));
+      }
+    }
+  };
+
+  const handleOpenApiKeyUrl = async (url: string) => {
+    try {
+      await window.api.openExternal(url);
+    } catch (error) {
+      console.error('Failed to open URL:', error);
+    }
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Only send non-empty values
       const envUpdates: Record<string, string> = {};
       for (const field of ENV_FIELDS) {
         const value = values[field.key]?.trim();
@@ -85,6 +146,9 @@ export function ClaudeConfigEditor() {
       const response = await window.api.settings.updateClaudeEnv(envUpdates);
       if (response.success) {
         showMessage('success', 'Configuration saved successfully');
+        setTimeout(() => {
+          onClose?.();
+        }, 500);
       } else {
         showMessage('error', response.error || 'Failed to save configuration');
       }
@@ -98,11 +162,14 @@ export function ClaudeConfigEditor() {
 
   const handleFieldChange = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value }));
+    setSelectedPreset('');
   };
 
   const toggleSecretVisibility = (key: string) => {
     setVisibleSecrets((prev) => ({ ...prev, [key]: !prev[key] }));
   };
+
+  const currentPreset = PRESETS.find((p) => p.id === selectedPreset);
 
   return (
     <div className="space-y-6">
@@ -114,6 +181,32 @@ export function ClaudeConfigEditor() {
       </div>
 
       <div className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="preset">Provider Preset</Label>
+          <select
+            id="preset"
+            value={selectedPreset}
+            onChange={(e) => handlePresetChange(e.target.value)}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value="">Custom (manual configuration)</option>
+            {PRESETS.map((preset) => (
+              <option key={preset.id} value={preset.id}>
+                {preset.name}
+              </option>
+            ))}
+          </select>
+          {currentPreset && (
+            <button
+              onClick={() => handleOpenApiKeyUrl(currentPreset.apiKeyUrl)}
+              className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Get API Key
+            </button>
+          )}
+        </div>
+
         {ENV_FIELDS.map((field) => (
           <div key={field.key} className="space-y-1.5">
             <Label htmlFor={field.key}>{field.label}</Label>
@@ -138,7 +231,6 @@ export function ClaudeConfigEditor() {
                 </Button>
               )}
             </div>
-            <p className="text-xs text-gray-400 font-mono">{field.key}</p>
           </div>
         ))}
       </div>
@@ -159,10 +251,6 @@ export function ClaudeConfigEditor() {
         <Button variant="primary" size="sm" onClick={handleSave} disabled={isSaving}>
           <Save className="mr-1.5 h-4 w-4" />
           {isSaving ? 'Saving...' : 'Save Configuration'}
-        </Button>
-        <Button variant="ghost" size="sm" onClick={loadEnv} disabled={isLoading}>
-          <RefreshCw className={`mr-1.5 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
         </Button>
       </div>
     </div>

@@ -22,6 +22,7 @@ import { registerCommandsHandlers } from './ipc/commands-handler';
 import { registerMcpHandlers } from './ipc/mcp-handler';
 import { registerChatHandlers, createStreamEventEmitter } from './ipc/chat-handler';
 import { registerSdkHandlers } from './ipc/sdk-handler';
+import { IPC_CHANNELS } from '../shared/ipc-channels';
 
 // Global services (initialized once)
 let dbService: DatabaseService;
@@ -101,6 +102,17 @@ function createWindow(): void {
   registerMcpHandlers(mcpService);
   registerChatHandlers(mainWindow, claudeService, dbService);
   registerSdkHandlers(claudeService);
+
+  // Utility handlers
+  ipcMain.handle(IPC_CHANNELS.UTIL_OPEN_EXTERNAL, async (_event, url: string) => {
+    try {
+      await shell.openExternal(url);
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to open external URL:', error);
+      return { success: false, error: (error as Error).message };
+    }
+  });
 
   // Cleanup on window close
   mainWindow.on('close', async (event) => {

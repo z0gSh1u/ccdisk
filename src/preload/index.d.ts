@@ -79,6 +79,7 @@ interface API {
   sdk: {
     getCommands: (sessionId: string) => Promise<IPCResponse<SlashCommand[] | null>>;
   };
+  openExternal: (url: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 declare global {
