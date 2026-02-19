@@ -18,6 +18,7 @@ import { DatabaseService } from '../services/db-service';
 import { SkillsService } from '../services/skills-service';
 import { CommandsService } from '../services/commands-service';
 import { FileWatcherService } from '../services/file-watcher';
+import { ConfigService } from '../services/config-service';
 
 /**
  * Resolve mention markers in a message string.
@@ -73,6 +74,49 @@ async function resolveMentions(
   }
 
   return resolved;
+}
+
+/**
+ * Generate a chat title using the Anthropic Messages API directly (no SDK session).
+ * Returns the generated title string, or null on failure.
+ */
+export async function generateTitleWithAI(userMessage: string, configService: ConfigService): Promise<string | null> {
+  try {
+    const env = await configService.getClaudeEnv();
+    const apiKey = env.ANTHROPIC_AUTH_TOKEN;
+    if (!apiKey) return null;
+
+    const baseUrl = env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com';
+    const model = env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
+
+    const response = await fetch(`${baseUrl}/v1/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 30,
+        system:
+          'Generate a short title (under 10 characters) for this conversation based on the user message. Return only the title text, nothing else. No quotes, no punctuation at the end.',
+        messages: [{ role: 'user', content: userMessage }]
+      })
+    });
+
+    if (!response.ok) {
+      console.error('Title generation API error:', response.status, response.statusText);
+      return null;
+    }
+
+    const data = await response.json();
+    const title = data?.content?.[0]?.text?.trim();
+    return title || null;
+  } catch (error) {
+    console.error('Failed to generate title with AI:', error);
+    return null;
+  }
 }
 
 export function registerChatHandlers(
