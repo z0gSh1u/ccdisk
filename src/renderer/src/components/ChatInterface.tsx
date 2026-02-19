@@ -9,16 +9,12 @@ import type { ChatContentBlock, ChatMessage } from '../stores/chat-store';
 import { User, Sparkles, HelpCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { MarkdownRenderer } from './chat/MarkdownRenderer';
 import { LexicalMessageInput } from './chat/LexicalMessageInput';
+import { parseMentions } from './chat/utils/mention-serialization';
+import { MentionBadge } from './chat/MentionBadge';
 
 export function ChatInterface() {
-  const {
-    sessions,
-    currentSessionId,
-    sendMessage,
-    pendingPermissionRequest,
-    respondToPermission,
-    abortSession
-  } = useChatStore();
+  const { sessions, currentSessionId, sendMessage, pendingPermissionRequest, respondToPermission, abortSession } =
+    useChatStore();
   const currentSession = sessions.find((session) => session.id === currentSessionId) || null;
   const isResponding = Boolean(currentSession?.messages.some((message) => message.isStreaming));
   const [isLoading, setIsLoading] = useState(false);
@@ -172,8 +168,17 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           <div className="text-base leading-relaxed whitespace-pre-wrap">
             {blocks
               .filter((block) => block.type === 'text')
-              .map((block) => block.text)
-              .join(' ')}
+              .map((block, blockIndex) => (
+                <span key={blockIndex}>
+                  {parseMentions(block.text).map((segment, i) =>
+                    segment.type === 'text' ? (
+                      <span key={i}>{segment.content}</span>
+                    ) : (
+                      <MentionBadge key={i} type={segment.mentionType} name={segment.name} />
+                    )
+                  )}
+                </span>
+              ))}
           </div>
         ) : (
           <div className="space-y-3">
