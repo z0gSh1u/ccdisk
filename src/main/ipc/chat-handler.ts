@@ -33,6 +33,10 @@ async function resolveMentions(
   let resolved = message;
   const matches = [...message.matchAll(mentionRegex)];
 
+  // Hoist listSkills() outside the loop: only call once if any skill mentions exist
+  const hasSkillMentions = matches.some((m) => m[1] === 'skill');
+  const skills = hasSkillMentions ? await skillsService.listSkills() : [];
+
   // Process in reverse order to preserve indices
   for (let i = matches.length - 1; i >= 0; i--) {
     const match = matches[i];
@@ -50,7 +54,6 @@ async function resolveMentions(
         }
         replacement = `[Command: ${match[2]}]\n\`\`\`\n${result.content}\n\`\`\``;
       } else if (match[1] === 'skill' && match[2]) {
-        const skills = await skillsService.listSkills();
         const skill = skills.find((s) => s.name === match[2]);
         if (skill) {
           replacement = `[Skill: ${match[2]}]\n${skill.content}`;
