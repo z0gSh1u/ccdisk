@@ -1,6 +1,7 @@
 /**
  * LexicalMessageInput - Lexical-based plain text input for chat messages
  * Uses PlainTextPlugin for simple text editing with Enter to send
+ * Supports / slash commands and @ file mentions via plugins
  */
 
 import { useCallback, useEffect, useRef } from 'react';
@@ -14,6 +15,10 @@ import { $getRoot, $createParagraphNode, KEY_ENTER_COMMAND, COMMAND_PRIORITY_HIG
 import { mergeRegister } from '@lexical/utils';
 import { Button } from '../ui';
 import { ArrowUp, Paperclip } from 'lucide-react';
+import { MentionNode } from './nodes/MentionNode';
+import { SlashCommandPlugin } from './plugins/SlashCommandPlugin';
+import { FileMentionPlugin } from './plugins/FileMentionPlugin';
+import { $serializeToMarkedText } from './utils/mention-serialization';
 
 interface LexicalMessageInputProps {
   onSend: (message: string) => void;
@@ -26,13 +31,15 @@ const theme = {
   paragraph: 'mb-0',
   text: {
     base: 'text-text-primary'
-  }
+  },
+  mention: 'inline'
 };
 
 // Initial editor configuration
 const initialConfig = {
   namespace: 'ChatInput',
   theme,
+  nodes: [MentionNode],
   onError: (error: Error) => {
     console.error('Lexical error:', error);
   }
@@ -66,8 +73,7 @@ function EnterKeyPlugin({
           event.preventDefault();
 
           editor.getEditorState().read(() => {
-            const root = $getRoot();
-            const text = root.getTextContent().trim();
+            const text = $serializeToMarkedText().trim();
 
             if (text) {
               onSend(text);
@@ -123,9 +129,6 @@ export function LexicalMessageInput({
   const handleSend = useCallback(() => {
     if (disabled || !hasText.current) return;
 
-    // Get current text and send
-    // Note: The actual sending is handled by EnterKeyPlugin
-    // This button click simulates an Enter key press
     const event = new KeyboardEvent('keydown', {
       key: 'Enter',
       code: 'Enter',
@@ -200,14 +203,15 @@ export function LexicalMessageInput({
         <OnChangePlugin
           onChange={(editorState) => {
             editorState.read(() => {
-              const root = $getRoot();
-              const text = root.getTextContent();
+              const text = $serializeToMarkedText();
               handleTextChange(text);
             });
           }}
         />
         <EnterKeyPlugin onSend={onSend} disabled={disabled} onTextChange={handleTextChange} />
         <ClearEditorPlugin clearRef={clearEditorRef} />
+        <SlashCommandPlugin />
+        <FileMentionPlugin />
       </div>
     </LexicalComposer>
   );
