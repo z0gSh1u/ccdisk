@@ -31,7 +31,7 @@ describe('FileWatcherService', () => {
     // Clean up test files
     try {
       await fs.rm(tempDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });
@@ -100,7 +100,7 @@ describe('FileWatcherService', () => {
       // Cleanup new temp dir
       try {
         await fs.rm(newTempDir, { recursive: true, force: true });
-      } catch (error) {
+      } catch (_error) {
         // Ignore
       }
     });
@@ -469,29 +469,6 @@ describe('FileWatcherService', () => {
 
       // Should not detect files in .ccdisk
       assert.ok(!changes.some((p) => p.includes('.ccdisk')));
-    });
-
-    it('should ignore .codepilot-uploads directory', async () => {
-      const changes: string[] = [];
-      fileWatcher = new FileWatcherService(tempDir, (filePath) => {
-        changes.push(filePath);
-      });
-
-      await fileWatcher.startWatching();
-
-      // Create .codepilot-uploads directory and file
-      const uploadsDir = path.join(tempDir, '.codepilot-uploads');
-      await fs.mkdir(uploadsDir);
-      await wait(100);
-
-      const uploadFile = path.join(uploadsDir, 'file.txt');
-      await fs.writeFile(uploadFile, 'uploaded');
-
-      // Wait for potential events
-      await wait(600);
-
-      // Should not detect files in .codepilot-uploads
-      assert.ok(!changes.some((p) => p.includes('.codepilot-uploads')));
     });
 
     it('should detect non-ignored files while ignoring others', async () => {

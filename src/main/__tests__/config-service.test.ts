@@ -36,7 +36,7 @@ describe('ConfigService', () => {
     try {
       const tempDir = path.dirname(path.dirname(testSettingsPath));
       await fs.rm(tempDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });

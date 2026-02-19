@@ -30,9 +30,8 @@ export function PseudoTitleBar({ children, className }: PseudoTitleBarProps) {
   );
 }
 
-/**
- * Apply this inline style to interactive elements to prevent drag
- */
+// Apply this inline style to interactive elements to prevent drag
+// eslint-disable-next-line react-refresh/only-export-components
 export const noDragStyle: React.CSSProperties = {
   WebkitAppRegion: 'no-drag'
 } as React.CSSProperties;

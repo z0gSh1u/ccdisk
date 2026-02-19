@@ -284,7 +284,7 @@ export function SkillsManager() {
               }}
             />
             <p className="mt-1 text-xs text-gray-500">
-              Name should be lowercase with hyphens (e.g., "my-custom-skill")
+              Name should be lowercase with hyphens (e.g., &quot;my-custom-skill&quot;)
             </p>
           </div>
           <DialogFooter>

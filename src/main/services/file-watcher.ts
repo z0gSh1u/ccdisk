@@ -63,8 +63,7 @@ export class FileWatcherService {
         /(^|[\/\\])\../, // Ignore hidden files
         '**/node_modules/**',
         '**/.git/**',
-        '**/.ccdisk/**',
-        '**/.codepilot-uploads/**'
+        '**/.ccdisk/**'
       ],
       persistent: true,
       ignoreInitial: true, // Don't emit events for initial scan

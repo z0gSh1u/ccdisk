@@ -12,7 +12,7 @@ import { FileWatcherService } from '../services/file-watcher';
 
 const MAX_FILE_SIZE = 1024 * 1024; // 1MB
 const MAX_DEPTH = 5;
-const IGNORED_DIRS = new Set(['.git', 'node_modules', '.ccdisk', '.codepilot-uploads']);
+const IGNORED_DIRS = new Set(['.git', 'node_modules', '.ccdisk']);
 
 /**
  * Build file tree recursively
