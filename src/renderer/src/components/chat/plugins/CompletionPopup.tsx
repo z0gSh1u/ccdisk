@@ -68,7 +68,7 @@ export function CompletionPopup({
 
   return (
     <div
-      // eslint-disable-next-line react-hooks/refs
+      // eslint-disable-next-line react-hooks/refs -- refs.setFloating is a callback ref from @floating-ui/react, not a mutable ref
       ref={refs.setFloating}
       style={floatingStyles}
       className="z-50 overflow-y-auto rounded-lg border border-border-subtle bg-white shadow-lg"

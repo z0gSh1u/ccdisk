@@ -23,6 +23,7 @@ import { $createMentionNode } from '../nodes/MentionNode';
 import { CompletionPopup } from './CompletionPopup';
 import type { CompletionItem } from './CompletionPopup';
 import type { FileNode } from '../../../../../shared/types';
+import { getCaretRect } from '../utils/caret-rect';
 
 /**
  * Flatten a FileNode tree into a list of paths
@@ -36,24 +37,6 @@ function flattenFileTree(nodes: FileNode[]): Array<{ path: string; type: 'file' 
     }
   }
   return result;
-}
-
-function getCaretRect(): DOMRect | null {
-  const selection = window.getSelection();
-  if (!selection || selection.rangeCount === 0) return null;
-  const range = selection.getRangeAt(0);
-  const rect = range.getBoundingClientRect();
-  if (rect.width === 0 && rect.height === 0) {
-    const span = document.createElement('span');
-    span.textContent = '\u200b';
-    range.insertNode(span);
-    const spanRect = span.getBoundingClientRect();
-    span.parentNode?.removeChild(span);
-    selection.removeAllRanges();
-    selection.addRange(range);
-    return spanRect;
-  }
-  return rect;
 }
 
 /**
@@ -93,22 +76,28 @@ export function FileMentionPlugin(): JSX.Element | null {
   const flatFiles = useMemo(() => flattenFileTree(fileTree), [fileTree]);
 
   // Build completion items
-  const allItems: CompletionItem[] = flatFiles.map((file) => ({
-    id: `file:${file.path}`,
-    label: file.path,
-    icon:
-      file.type === 'directory' ? (
-        <Folder className="h-4 w-4 text-emerald-600" />
-      ) : (
-        <FileText className="h-4 w-4 text-emerald-600" />
-      ),
-    type: file.type
-  }));
+  const allItems: CompletionItem[] = useMemo(
+    () =>
+      flatFiles.map((file) => ({
+        id: `file:${file.path}`,
+        label: file.path,
+        icon:
+          file.type === 'directory' ? (
+            <Folder className="h-4 w-4 text-emerald-600" />
+          ) : (
+            <FileText className="h-4 w-4 text-emerald-600" />
+          ),
+        type: file.type
+      })),
+    [flatFiles]
+  );
 
   // Filter by query
-  const filteredItems = query
-    ? allItems.filter((item) => item.label.toLowerCase().includes(query.toLowerCase()))
-    : allItems.slice(0, 50); // Limit initial list
+  const filteredItems = useMemo(
+    () =>
+      query ? allItems.filter((item) => item.label.toLowerCase().includes(query.toLowerCase())) : allItems.slice(0, 50),
+    [allItems, query]
+  );
 
   // Clamp selectedIndex at render time (avoid setState in useEffect)
   const clampedSelectedIndex = Math.min(selectedIndex, Math.max(0, filteredItems.length - 1));

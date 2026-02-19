@@ -4,7 +4,7 @@
  * Inserts MentionNode on selection
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { JSX } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import {
@@ -24,26 +24,7 @@ import { useCommandsStore } from '../../../stores/commands-store';
 import { $createMentionNode } from '../nodes/MentionNode';
 import { CompletionPopup } from './CompletionPopup';
 import type { CompletionItem } from './CompletionPopup';
-
-function getCaretRect(): DOMRect | null {
-  const selection = window.getSelection();
-  if (!selection || selection.rangeCount === 0) return null;
-  const range = selection.getRangeAt(0);
-  const rect = range.getBoundingClientRect();
-  // If rect is zero-size (collapsed cursor), use range's start container
-  if (rect.width === 0 && rect.height === 0) {
-    const span = document.createElement('span');
-    span.textContent = '\u200b'; // zero-width space
-    range.insertNode(span);
-    const spanRect = span.getBoundingClientRect();
-    span.parentNode?.removeChild(span);
-    // Restore selection
-    selection.removeAllRanges();
-    selection.addRange(range);
-    return spanRect;
-  }
-  return rect;
-}
+import { getCaretRect } from '../utils/caret-rect';
 
 export function SlashCommandPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
@@ -56,27 +37,31 @@ export function SlashCommandPlugin(): JSX.Element | null {
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
 
   // Build completion items from skills + commands
-  const allItems: CompletionItem[] = [
-    ...commands.map((cmd) => ({
-      id: `command:${cmd.name}`,
-      label: cmd.name,
-      description: cmd.scope,
-      icon: <Terminal className="h-4 w-4 text-amber-600" />,
-      type: 'command'
-    })),
-    ...skills.map((skill) => ({
-      id: `skill:${skill.name}`,
-      label: skill.name,
-      description: skill.scope,
-      icon: <BookOpen className="h-4 w-4 text-blue-600" />,
-      type: 'skill'
-    }))
-  ];
+  const allItems: CompletionItem[] = useMemo(
+    () => [
+      ...commands.map((cmd) => ({
+        id: `command:${cmd.name}`,
+        label: cmd.name,
+        description: cmd.scope,
+        icon: <Terminal className="h-4 w-4 text-amber-600" />,
+        type: 'command'
+      })),
+      ...skills.map((skill) => ({
+        id: `skill:${skill.name}`,
+        label: skill.name,
+        description: skill.scope,
+        icon: <BookOpen className="h-4 w-4 text-blue-600" />,
+        type: 'skill'
+      }))
+    ],
+    [commands, skills]
+  );
 
   // Filter items by query
-  const filteredItems = query
-    ? allItems.filter((item) => item.label.toLowerCase().includes(query.toLowerCase()))
-    : allItems;
+  const filteredItems = useMemo(
+    () => (query ? allItems.filter((item) => item.label.toLowerCase().includes(query.toLowerCase())) : allItems),
+    [allItems, query]
+  );
 
   // Clamp selectedIndex at render time (avoid setState in useEffect)
   const clampedSelectedIndex = Math.min(selectedIndex, Math.max(0, filteredItems.length - 1));
