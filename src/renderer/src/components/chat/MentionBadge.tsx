@@ -3,6 +3,7 @@
  * Used in both the Lexical editor (MentionNode) and chat history (MessageBubble)
  */
 
+import React from 'react';
 import { Terminal, BookOpen, FileText } from 'lucide-react';
 import type { MentionType } from './nodes/MentionNode';
 
@@ -29,7 +30,7 @@ const mentionConfig: Record<MentionType, { icon: typeof Terminal; bgClass: strin
   }
 };
 
-export function MentionBadge({ type, name }: MentionBadgeProps) {
+export function MentionBadge({ type, name }: MentionBadgeProps): React.JSX.Element {
   const config = mentionConfig[type];
   const Icon = config.icon;
   const prefix = type === 'file' ? '@' : '/';

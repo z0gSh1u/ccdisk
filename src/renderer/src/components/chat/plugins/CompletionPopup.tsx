@@ -5,7 +5,7 @@
 
 import { useRef, useEffect } from 'react';
 import { useFloating, offset, flip, shift, size } from '@floating-ui/react';
-import type { ReactNode } from 'react';
+import type { ReactNode, JSX } from 'react';
 
 export interface CompletionItem {
   id: string;
@@ -23,7 +23,13 @@ interface CompletionPopupProps {
   onSelect: (item: CompletionItem) => void;
 }
 
-export function CompletionPopup({ items, selectedIndex, isOpen, anchorRect, onSelect }: CompletionPopupProps) {
+export function CompletionPopup({
+  items,
+  selectedIndex,
+  isOpen,
+  anchorRect,
+  onSelect
+}: CompletionPopupProps): JSX.Element | null {
   const listRef = useRef<HTMLDivElement>(null);
 
   const { refs, floatingStyles } = useFloating({
@@ -62,6 +68,7 @@ export function CompletionPopup({ items, selectedIndex, isOpen, anchorRect, onSe
 
   return (
     <div
+      // eslint-disable-next-line react-hooks/refs
       ref={refs.setFloating}
       style={floatingStyles}
       className="z-50 overflow-y-auto rounded-lg border border-border-subtle bg-white shadow-lg"

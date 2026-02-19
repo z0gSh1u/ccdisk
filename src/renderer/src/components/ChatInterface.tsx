@@ -2,7 +2,7 @@
  * ChatInterface Component - Main chat interface with message list and input
  */
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useChatStore } from '../stores/chat-store';
 import { Button, ScrollArea } from './ui';
 import type { ChatContentBlock, ChatMessage } from '../stores/chat-store';
@@ -12,7 +12,7 @@ import { LexicalMessageInput } from './chat/LexicalMessageInput';
 import { parseMentions } from './chat/utils/mention-serialization';
 import { MentionBadge } from './chat/MentionBadge';
 
-export function ChatInterface() {
+export function ChatInterface(): React.JSX.Element {
   const { sessions, currentSessionId, sendMessage, pendingPermissionRequest, respondToPermission, abortSession } =
     useChatStore();
   const currentSession = sessions.find((session) => session.id === currentSessionId) || null;
@@ -26,7 +26,7 @@ export function ChatInterface() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [currentSession?.messages]);
 
-  const handleSend = async (message: string) => {
+  const handleSend = async (message: string): Promise<void> => {
     if (!message.trim() || !currentSession) return;
 
     setIsLoading(true);
@@ -145,7 +145,7 @@ export function ChatInterface() {
 }
 
 // MessageBubble sub-component
-function MessageBubble({ message }: { message: ChatMessage }) {
+function MessageBubble({ message }: { message: ChatMessage }): React.JSX.Element {
   const isUser = message.role === 'user';
 
   const isStreaming = message.isStreaming || false;
@@ -221,7 +221,7 @@ function getMessageBlocks(message: ChatMessage): ChatContentBlock[] {
       const parsed = JSON.parse(message.content) as unknown;
       if (Array.isArray(parsed)) {
         return parsed.map((block) =>
-          typeof block === 'object' && block && 'type' in (block as any)
+          typeof block === 'object' && block && 'type' in (block as object)
             ? convertLegacyBlock(block)
             : (block as ChatContentBlock)
         );
@@ -236,7 +236,7 @@ function getMessageBlocks(message: ChatMessage): ChatContentBlock[] {
   return [];
 }
 
-function convertLegacyBlock(block: any): ChatContentBlock {
+function convertLegacyBlock(block: Record<string, unknown>): ChatContentBlock {
   if (!block || typeof block !== 'object') {
     return { type: 'text', text: String(block ?? '') };
   }
@@ -244,8 +244,8 @@ function convertLegacyBlock(block: any): ChatContentBlock {
   if (block.type === 'tool_use') {
     return {
       type: 'tool_call',
-      toolName: block.toolName,
-      toolInput: block.toolInput
+      toolName: block.toolName as string,
+      toolInput: block.toolInput as Record<string, unknown>
     };
   }
   if (block.type === 'tool_result') {
@@ -253,21 +253,27 @@ function convertLegacyBlock(block: any): ChatContentBlock {
       type: 'tool_call',
       toolName: 'tool',
       toolInput: {},
-      result: { content: block.content, is_error: block.is_error }
+      result: { content: block.content as string, is_error: block.is_error as boolean | undefined }
     };
   }
   if (block.type === 'permission') {
     return {
       type: 'tool_call',
-      toolName: block.toolName,
-      toolInput: block.toolInput,
-      permissionStatus: block.status
+      toolName: block.toolName as string,
+      toolInput: block.toolInput as Record<string, unknown>,
+      permissionStatus: block.status as 'requested' | 'allowed' | 'denied' | undefined
     };
   }
   return { type: 'text', text: JSON.stringify(block) };
 }
 
-function MessageBlock({ block, isStreaming }: { block: ChatContentBlock; isStreaming: boolean }) {
+function MessageBlock({
+  block,
+  isStreaming
+}: {
+  block: ChatContentBlock;
+  isStreaming: boolean;
+}): React.JSX.Element | null {
   switch (block.type) {
     case 'text':
       return <MarkdownRenderer content={block.text} isStreaming={isStreaming} className="text-base leading-relaxed" />;
@@ -304,7 +310,7 @@ function MessageBlock({ block, isStreaming }: { block: ChatContentBlock; isStrea
   }
 }
 
-function formatToolInput(input: Record<string, unknown>) {
+function formatToolInput(input: Record<string, unknown>): string {
   try {
     return JSON.stringify(input, null, 2);
   } catch {
@@ -312,7 +318,7 @@ function formatToolInput(input: Record<string, unknown>) {
   }
 }
 
-function formatToolResult(content: string, isError?: boolean) {
+function formatToolResult(content: string, isError?: boolean): string {
   if (!isError) return content;
   if (content.includes('ZodError')) {
     return 'Tool call failed: invalid parameters.';
@@ -323,7 +329,7 @@ function formatToolResult(content: string, isError?: boolean) {
   return content;
 }
 
-function renderPermissionIcon(status: 'requested' | 'allowed' | 'denied') {
+function renderPermissionIcon(status: 'requested' | 'allowed' | 'denied'): React.JSX.Element {
   if (status === 'allowed') {
     return <CheckCircle2 className="h-3.5 w-3.5" />;
   }

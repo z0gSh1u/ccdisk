@@ -77,7 +77,7 @@ export function registerChatHandlers(
   dbService: DatabaseService,
   skillsService: SkillsService,
   commandsService: CommandsService
-) {
+): void {
   // Send message and start streaming
   ipcMain.handle(
     IPC_CHANNELS.CHAT_SEND,

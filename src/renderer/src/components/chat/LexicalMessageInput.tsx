@@ -4,7 +4,8 @@
  * Supports / slash commands and @ file mentions via plugins
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
@@ -54,7 +55,7 @@ function EnterKeyPlugin({
   onSend: (message: string) => void;
   disabled: boolean;
   onTextChange: (text: string) => void;
-}) {
+}): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -100,7 +101,7 @@ function EnterKeyPlugin({
 }
 
 // Clear editor plugin (expose method to parent)
-function ClearEditorPlugin({ clearRef }: { clearRef: React.MutableRefObject<(() => void) | null> }) {
+function ClearEditorPlugin({ clearRef }: { clearRef: React.MutableRefObject<(() => void) | null> }): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -122,12 +123,12 @@ export function LexicalMessageInput({
   onSend,
   disabled = false,
   placeholder = 'Ask Claude...'
-}: LexicalMessageInputProps) {
-  const hasText = useRef(false);
+}: LexicalMessageInputProps): React.JSX.Element {
+  const [hasText, setHasText] = useState(false);
   const clearEditorRef = useRef<(() => void) | null>(null);
 
   const handleSend = useCallback(() => {
-    if (disabled || !hasText.current) return;
+    if (disabled || !hasText) return;
 
     const event = new KeyboardEvent('keydown', {
       key: 'Enter',
@@ -138,10 +139,10 @@ export function LexicalMessageInput({
       cancelable: true
     });
     document.querySelector('[contenteditable="true"]')?.dispatchEvent(event);
-  }, [disabled]);
+  }, [disabled, hasText]);
 
   const handleTextChange = useCallback((text: string) => {
-    hasText.current = text.trim().length > 0;
+    setHasText(text.trim().length > 0);
   }, []);
 
   const handleFileUpload = useCallback(() => {
@@ -183,9 +184,9 @@ export function LexicalMessageInput({
         <div className="absolute right-2 bottom-2">
           <Button
             onClick={handleSend}
-            disabled={disabled || !hasText.current}
+            disabled={disabled || !hasText}
             className={`h-8 w-8 p-0 rounded-lg transition-colors flex items-center justify-center ${
-              !hasText.current
+              !hasText
                 ? 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                 : 'bg-accent text-white hover:bg-accent-hover shadow-sm'
             }`}

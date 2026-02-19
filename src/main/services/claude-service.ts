@@ -402,10 +402,10 @@ export class ClaudeService {
           data: pendingAssistantText
         });
       }
-        this.onStreamEvent(_sessionId, {
-          type: 'done',
-          data: actualSdkSessionId || 'completed'
-        });
+      this.onStreamEvent(_sessionId, {
+        type: 'done',
+        data: actualSdkSessionId || 'completed'
+      });
 
       const active = this.activeSessions.get(_sessionId);
       if (active) {

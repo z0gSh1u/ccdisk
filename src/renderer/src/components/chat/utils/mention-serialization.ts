@@ -3,8 +3,8 @@
  * Converts between Lexical editor state and marked-up strings
  */
 
-import type { LexicalNode } from 'lexical';
-import { $getRoot, $isTextNode, $isLineBreakNode } from 'lexical';
+import type { LexicalNode, ElementNode } from 'lexical';
+import { $getRoot, $isTextNode, $isLineBreakNode, $isElementNode } from 'lexical';
 import { $isMentionNode } from '../nodes/MentionNode';
 import type { MentionType } from '../nodes/MentionNode';
 
@@ -40,7 +40,7 @@ export function $serializeToMarkedText(): string {
       parts.push('\n');
     } else {
       // ElementNode (ParagraphNode, etc.) — process children
-      const children = 'getChildren' in node ? (node as any).getChildren() : [];
+      const children = $isElementNode(node) ? (node as ElementNode).getChildren() : [];
       for (let i = 0; i < children.length; i++) {
         processNode(children[i]);
       }

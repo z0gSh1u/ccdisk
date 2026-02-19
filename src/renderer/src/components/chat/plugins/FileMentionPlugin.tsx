@@ -5,6 +5,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { JSX } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import {
   $getSelection,
@@ -75,7 +76,7 @@ function findAtTrigger(text: string, cursorOffset: number): { query: string; sta
   return null;
 }
 
-export function FileMentionPlugin() {
+export function FileMentionPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const { fileTree } = useWorkspaceStore();
 
@@ -109,10 +110,8 @@ export function FileMentionPlugin() {
     ? allItems.filter((item) => item.label.toLowerCase().includes(query.toLowerCase()))
     : allItems.slice(0, 50); // Limit initial list
 
-  // Clamp selectedIndex
-  useEffect(() => {
-    setSelectedIndex((prev) => Math.min(prev, Math.max(0, filteredItems.length - 1)));
-  }, [filteredItems.length]);
+  // Clamp selectedIndex at render time (avoid setState in useEffect)
+  const clampedSelectedIndex = Math.min(selectedIndex, Math.max(0, filteredItems.length - 1));
 
   // Detect @ trigger
   useEffect(() => {
@@ -223,8 +222,8 @@ export function FileMentionPlugin() {
             case 'Enter':
               event.preventDefault();
               event.stopPropagation();
-              if (filteredItems[selectedIndex]) {
-                handleSelect(filteredItems[selectedIndex]);
+              if (filteredItems[clampedSelectedIndex]) {
+                handleSelect(filteredItems[clampedSelectedIndex]);
               }
               return true;
             case 'Escape':
@@ -249,12 +248,12 @@ export function FileMentionPlugin() {
         COMMAND_PRIORITY_HIGH
       )
     );
-  }, [editor, isOpen, filteredItems, selectedIndex, handleSelect]);
+  }, [editor, isOpen, filteredItems, clampedSelectedIndex, handleSelect]);
 
   return (
     <CompletionPopup
       items={filteredItems}
-      selectedIndex={selectedIndex}
+      selectedIndex={clampedSelectedIndex}
       isOpen={isOpen}
       anchorRect={anchorRect}
       onSelect={handleSelect}

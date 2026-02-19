@@ -31,7 +31,6 @@ describe('ClaudeService', () => {
       }))
     } as unknown as ConfigService;
 
-
     // Create callback to capture stream events
     const onStreamEvent = (sessionId: string, event: StreamEvent): void => {
       capturedEvents.push({ sessionId, event });
@@ -114,17 +113,17 @@ describe('ClaudeService', () => {
           env: { ANTHROPIC_AUTH_TOKEN: 'x' },
           workspacePath: '/tmp'
         }))
-      } as any
-      const events: any[] = []
-      const onStreamEvent = (sessionId: string, event: any) => events.push({ sessionId, event })
+      } as any;
+      const events: any[] = [];
+      const onStreamEvent = (sessionId: string, event: any) => events.push({ sessionId, event });
 
-      const service = new ClaudeService(mockConfigService, onStreamEvent)
+      const service = new ClaudeService(mockConfigService, onStreamEvent);
 
       // First send sets streaming
-      await service.sendMessage('s1', 'hello')
-      await assert.rejects(() => service.sendMessage('s1', 'second'), /already responding/)
-    })
-  })
+      await service.sendMessage('s1', 'hello');
+      await assert.rejects(() => service.sendMessage('s1', 'second'), /already responding/);
+    });
+  });
 });
 
 /**

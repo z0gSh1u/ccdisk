@@ -5,6 +5,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import type { JSX } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import {
   $getRoot,
@@ -44,7 +45,7 @@ function getCaretRect(): DOMRect | null {
   return rect;
 }
 
-export function SlashCommandPlugin() {
+export function SlashCommandPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const { skills } = useSkillsStore();
   const { commands } = useCommandsStore();
@@ -77,10 +78,8 @@ export function SlashCommandPlugin() {
     ? allItems.filter((item) => item.label.toLowerCase().includes(query.toLowerCase()))
     : allItems;
 
-  // Clamp selectedIndex when filtered list changes
-  useEffect(() => {
-    setSelectedIndex((prev) => Math.min(prev, Math.max(0, filteredItems.length - 1)));
-  }, [filteredItems.length]);
+  // Clamp selectedIndex at render time (avoid setState in useEffect)
+  const clampedSelectedIndex = Math.min(selectedIndex, Math.max(0, filteredItems.length - 1));
 
   // Detect / trigger at start of input
   useEffect(() => {
@@ -164,8 +163,8 @@ export function SlashCommandPlugin() {
             case 'Enter':
               event.preventDefault();
               event.stopPropagation();
-              if (filteredItems[selectedIndex]) {
-                handleSelect(filteredItems[selectedIndex]);
+              if (filteredItems[clampedSelectedIndex]) {
+                handleSelect(filteredItems[clampedSelectedIndex]);
               }
               return true;
             case 'Escape':
@@ -190,12 +189,12 @@ export function SlashCommandPlugin() {
         COMMAND_PRIORITY_HIGH
       )
     );
-  }, [editor, isOpen, filteredItems, selectedIndex, handleSelect]);
+  }, [editor, isOpen, filteredItems, clampedSelectedIndex, handleSelect]);
 
   return (
     <CompletionPopup
       items={filteredItems}
-      selectedIndex={selectedIndex}
+      selectedIndex={clampedSelectedIndex}
       isOpen={isOpen}
       anchorRect={anchorRect}
       onSelect={handleSelect}
