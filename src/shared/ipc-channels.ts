@@ -9,6 +9,7 @@ export const IPC_CHANNELS = {
   CHAT_PERMISSION_RESPONSE: 'chat:permission-response',
   CHAT_SET_PERMISSION_MODE: 'chat:set-permission-mode',
   CHAT_ABORT: 'chat:abort',
+  CHAT_TITLE_UPDATED: 'chat:title-updated',
 
   // Session management
   SESSIONS_CREATE: 'sessions:create',
@@ -57,6 +58,8 @@ export const IPC_CHANNELS = {
   // Claude env config (replaces provider system)
   SETTINGS_GET_CLAUDE_ENV: 'settings:get-claude-env',
   SETTINGS_UPDATE_CLAUDE_ENV: 'settings:update-claude-env',
+  SETTINGS_GET: 'settings:get',
+  SETTINGS_SET: 'settings:set',
 
   // Open external URL
   UTIL_OPEN_EXTERNAL: 'util:open-external',
