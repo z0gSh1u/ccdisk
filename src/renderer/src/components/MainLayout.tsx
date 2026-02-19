@@ -47,7 +47,7 @@ export function MainLayout({ children, sidebar, toolbar, preview }: MainLayoutPr
       <main className="flex flex-1 flex-col overflow-hidden relative">
         {/* PseudoTitleBar with draggable region */}
         <PseudoTitleBar className="h-12 px-4">
-          <div className="flex items-center h-full pl-16">
+          <div className={cn('flex items-center h-full', isSidebarOpen ? 'pl-0' : 'pl-16')}>
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="rounded-lg p-2 text-text-tertiary hover:bg-bg-accent hover:text-text-secondary transition-colors"

@@ -52,6 +52,7 @@ interface ActiveSession {
   isStreaming: boolean;
   sdkSessionId?: string;
   isProcessing: boolean;
+  workspacePath: string;
 }
 
 /**
@@ -67,11 +68,15 @@ export class ClaudeService {
   private activeSessions: Map<string, ActiveSession> = new Map();
   private pendingPermissions: Map<string, PendingPermission> = new Map();
   private sessionStartTimes: Map<string, number> = new Map();
+  private getWorkspacePath: (() => string | null) | null;
 
   constructor(
     private configService: ConfigService,
-    private onStreamEvent: (sessionId: string, event: StreamEvent) => void
-  ) {}
+    private onStreamEvent: (sessionId: string, event: StreamEvent) => void,
+    getWorkspacePath?: () => string | null
+  ) {
+    this.getWorkspacePath = getWorkspacePath ?? null;
+  }
 
   /**
    * Send message and start streaming responses
@@ -111,16 +116,45 @@ export class ClaudeService {
       console.log(`[Claude ${sessionId}] env hasAuthToken=${hasAuthToken} hasBaseUrl=${hasBaseUrl} model=${model}`);
 
       // Get workspace path from settings or use current directory
-      const workspacePath = (settings.workspacePath as string) || process.cwd();
+      const workspacePath =
+        this.getWorkspacePath?.() ||
+        (settings.workspacePath as string) ||
+        process.env.CCDISK_WORKSPACE_PATH ||
+        process.cwd();
+      console.log(`[Claude ${sessionId}] workspacePath=${workspacePath}`);
+
+      const normalizeToolInput = (toolName: string, toolInput: Record<string, unknown>) => {
+        const input = { ...toolInput } as Record<string, unknown>;
+        if (typeof input.filePath === 'string' && typeof input.file_path !== 'string') {
+          input.file_path = input.filePath;
+          delete input.filePath;
+        }
+        const inputKeys = Object.keys(input).sort();
+        const rawKeys = Object.keys(toolInput).sort();
+        if (inputKeys.length || rawKeys.length) {
+          console.log(
+            `[Claude ${sessionId}] canUseTool ${toolName} input keys raw=${rawKeys.join(',')} normalized=${inputKeys.join(',')}`
+          );
+        }
+        return input;
+      };
 
       // Build canUseTool handler
       const canUseTool: CanUseTool = async (toolName, input, options) => {
+        const rawKeys = Object.keys((input as Record<string, unknown>) || {})
+          .sort()
+          .join(',');
+        console.log(
+          `[Claude ${sessionId}] canUseTool called tool=${toolName} rawKeys=${rawKeys} toolUseId=${options.toolUseID ?? 'unknown'}`
+        );
+        const normalizedInput = normalizeToolInput(toolName, input as Record<string, unknown>);
+
         // acceptEdits mode: auto-approve non-destructive tools, prompt for destructive ones
         const destructiveTools = ['bash', 'edit', 'write'];
         const isDestructive = destructiveTools.some((dt) => toolName.toLowerCase().includes(dt));
 
         if (!isDestructive) {
-          return { behavior: 'allow' };
+          return { behavior: 'allow', updatedInput: normalizedInput };
         }
 
         // For destructive tools, generate permission request
@@ -131,7 +165,7 @@ export class ClaudeService {
           this.pendingPermissions.set(permissionRequestId, {
             resolve,
             reject,
-            toolInput: input as Record<string, unknown>
+            toolInput: normalizedInput
           });
         });
 
@@ -139,7 +173,7 @@ export class ClaudeService {
         const permissionRequest: PermissionRequest = {
           permissionRequestId,
           toolName,
-          toolInput: input,
+          toolInput: normalizedInput,
           suggestions: options.suggestions ? [] : undefined, // SDK's PermissionUpdate[] doesn't match our simple suggestion structure
           decisionReason: options.decisionReason,
           blockedPath: options.blockedPath,
@@ -441,7 +475,15 @@ export class ClaudeService {
   ): Promise<ActiveSession> {
     const existing = this.activeSessions.get(sessionId);
     if (existing) {
-      return existing;
+      if (existing.workspacePath !== options.workspacePath) {
+        console.log(
+          `[Claude ${sessionId}] workspacePath changed (${existing.workspacePath} -> ${options.workspacePath}), recreating session`
+        );
+        existing.session.close();
+        this.activeSessions.delete(sessionId);
+      } else {
+        return existing;
+      }
     }
 
     const { sdkSessionId, workspacePath, canUseTool, env } = options;
@@ -462,7 +504,8 @@ export class ClaudeService {
       session,
       isStreaming: false,
       isProcessing: false,
-      sdkSessionId
+      sdkSessionId,
+      workspacePath
     };
     this.activeSessions.set(sessionId, active);
     return active;

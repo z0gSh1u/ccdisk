@@ -4,8 +4,9 @@
  */
 
 import { useRef, useEffect } from 'react';
-import { useFloating, offset, flip, shift, size } from '@floating-ui/react';
+import { FloatingPortal, useFloating, offset, flip, shift, size } from '@floating-ui/react';
 import type { ReactNode, JSX } from 'react';
+import type { Placement } from '@floating-ui/react';
 
 export interface CompletionItem {
   id: string;
@@ -13,6 +14,8 @@ export interface CompletionItem {
   description?: string;
   icon?: ReactNode;
   type: string;
+  commandName?: string;
+  commandScope?: 'global' | 'workspace';
 }
 
 interface CompletionPopupProps {
@@ -21,6 +24,7 @@ interface CompletionPopupProps {
   isOpen: boolean;
   anchorRect: DOMRect | null;
   onSelect: (item: CompletionItem) => void;
+  placement?: Placement;
 }
 
 export function CompletionPopup({
@@ -28,13 +32,15 @@ export function CompletionPopup({
   selectedIndex,
   isOpen,
   anchorRect,
-  onSelect
+  onSelect,
+  placement = 'bottom-start'
 }: CompletionPopupProps): JSX.Element | null {
   const listRef = useRef<HTMLDivElement>(null);
 
   const { refs, floatingStyles } = useFloating({
     open: isOpen,
-    placement: 'bottom-start',
+    placement,
+    strategy: 'fixed',
     middleware: [
       offset(8),
       flip({ padding: 8 }),
@@ -67,35 +73,37 @@ export function CompletionPopup({
   if (!isOpen || items.length === 0 || !anchorRect) return null;
 
   return (
-    <div
-      // eslint-disable-next-line react-hooks/refs -- refs.setFloating is a callback ref from @floating-ui/react, not a mutable ref
-      ref={refs.setFloating}
-      style={floatingStyles}
-      className="z-50 overflow-y-auto rounded-lg border border-border-subtle bg-white shadow-lg"
-    >
-      <div ref={listRef} className="py-1" role="listbox">
-        {items.map((item, index) => (
-          <div
-            key={item.id}
-            role="option"
-            aria-selected={index === selectedIndex}
-            className={`flex items-center gap-2 px-3 py-2 cursor-pointer text-sm ${
-              index === selectedIndex ? 'bg-accent/10 text-text-primary' : 'text-text-secondary hover:bg-bg-secondary'
-            }`}
-            onMouseDown={(e) => {
-              e.preventDefault(); // Prevent editor blur
-              onSelect(item);
-            }}
-          >
-            {item.icon && <span className="shrink-0">{item.icon}</span>}
-            <div className="flex-1 min-w-0">
-              <div className="font-medium truncate">{item.label}</div>
-              {item.description && <div className="text-xs text-text-tertiary truncate">{item.description}</div>}
+    <FloatingPortal>
+      <div
+        // eslint-disable-next-line react-hooks/refs -- refs.setFloating is a callback ref from @floating-ui/react, not a mutable ref
+        ref={refs.setFloating}
+        style={floatingStyles}
+        className="z-50 overflow-y-auto rounded-lg border border-border-subtle bg-white shadow-lg"
+      >
+        <div ref={listRef} className="py-1" role="listbox">
+          {items.map((item, index) => (
+            <div
+              key={item.id}
+              role="option"
+              aria-selected={index === selectedIndex}
+              className={`flex items-center gap-2 px-3 py-2 cursor-pointer text-sm ${
+                index === selectedIndex ? 'bg-accent/10 text-text-primary' : 'text-text-secondary hover:bg-bg-secondary'
+              }`}
+              onMouseDown={(e) => {
+                e.preventDefault(); // Prevent editor blur
+                onSelect(item);
+              }}
+            >
+              {item.icon && <span className="shrink-0">{item.icon}</span>}
+              <div className="flex-1 min-w-0">
+                <div className="font-medium truncate">{item.label}</div>
+                {item.description && <div className="text-xs text-text-tertiary truncate">{item.description}</div>}
+              </div>
+              <span className="text-[10px] text-text-tertiary uppercase shrink-0">{item.type}</span>
             </div>
-            <span className="text-[10px] text-text-tertiary uppercase shrink-0">{item.type}</span>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+    </FloatingPortal>
   );
 }

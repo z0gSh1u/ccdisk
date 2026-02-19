@@ -17,6 +17,7 @@ import { ClaudeService } from '../services/claude-service';
 import { DatabaseService } from '../services/db-service';
 import { SkillsService } from '../services/skills-service';
 import { CommandsService } from '../services/commands-service';
+import { FileWatcherService } from '../services/file-watcher';
 
 /**
  * Resolve mention markers in a message string.
@@ -27,7 +28,8 @@ import { CommandsService } from '../services/commands-service';
 async function resolveMentions(
   message: string,
   skillsService: SkillsService,
-  commandsService: CommandsService
+  commandsService: CommandsService,
+  fileWatcher: FileWatcherService
 ): Promise<string> {
   const mentionRegex = /\[\/(command|skill):([^\]]+)\]|\[@file:([^\]]+)\]/g;
   let resolved = message;
@@ -59,7 +61,9 @@ async function resolveMentions(
           replacement = `[Skill: ${match[2]}]\n${skill.content}`;
         }
       } else if (match[3]) {
-        replacement = `(See file: ${match[3]})`;
+        const workspacePath = fileWatcher.getWorkspacePath();
+        const filePath = workspacePath ? `${workspacePath}/${match[3]}` : match[3];
+        replacement = `(See file: ${filePath})`;
       }
     } catch (error) {
       console.error(`Failed to resolve mention ${match[0]}:`, error);
@@ -76,7 +80,8 @@ export function registerChatHandlers(
   claudeService: ClaudeService,
   dbService: DatabaseService,
   skillsService: SkillsService,
-  commandsService: CommandsService
+  commandsService: CommandsService,
+  fileWatcher: FileWatcherService
 ): void {
   // Send message and start streaming
   ipcMain.handle(
@@ -90,7 +95,7 @@ export function registerChatHandlers(
     ) => {
       try {
         // Resolve mentions for Claude
-        const resolvedMessage = await resolveMentions(message, skillsService, commandsService);
+        const resolvedMessage = await resolveMentions(message, skillsService, commandsService, fileWatcher);
 
         // Send resolved message to Claude service (returns immediately)
         await claudeService.sendMessage(sessionId, resolvedMessage, files, sdkSessionId);

@@ -245,6 +245,7 @@ export function FileMentionPlugin(): JSX.Element | null {
       selectedIndex={clampedSelectedIndex}
       isOpen={isOpen}
       anchorRect={anchorRect}
+      placement="top-start"
       onSelect={handleSelect}
     />
   );

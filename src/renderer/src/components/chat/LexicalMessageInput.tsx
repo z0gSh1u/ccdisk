@@ -12,6 +12,7 @@ import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
 import { $getRoot, $createParagraphNode, KEY_ENTER_COMMAND, COMMAND_PRIORITY_HIGH } from 'lexical';
 import { mergeRegister } from '@lexical/utils';
 import { Button } from '../ui';
@@ -19,12 +20,14 @@ import { ArrowUp, Paperclip } from 'lucide-react';
 import { MentionNode } from './nodes/MentionNode';
 import { SlashCommandPlugin } from './plugins/SlashCommandPlugin';
 import { FileMentionPlugin } from './plugins/FileMentionPlugin';
+import { MentionDeletePlugin } from './plugins/MentionDeletePlugin';
 import { $serializeToMarkedText } from './utils/mention-serialization';
 
 interface LexicalMessageInputProps {
   onSend: (message: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  onStop?: () => void;
 }
 
 // Theme configuration for Lexical
@@ -122,24 +125,30 @@ function ClearEditorPlugin({ clearRef }: { clearRef: React.MutableRefObject<(() 
 export function LexicalMessageInput({
   onSend,
   disabled = false,
-  placeholder = 'Ask Claude...'
+  placeholder = 'Ask Claude...',
+  onStop
 }: LexicalMessageInputProps): React.JSX.Element {
   const [hasText, setHasText] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
   const clearEditorRef = useRef<(() => void) | null>(null);
 
-  const handleSend = useCallback(() => {
-    if (disabled || !hasText) return;
+  const showStop = onStop && disabled;
 
-    const event = new KeyboardEvent('keydown', {
-      key: 'Enter',
-      code: 'Enter',
-      keyCode: 13,
-      which: 13,
-      bubbles: true,
-      cancelable: true
-    });
-    document.querySelector('[contenteditable="true"]')?.dispatchEvent(event);
-  }, [disabled, hasText]);
+  const handleClick = useCallback(() => {
+    if (showStop) {
+      onStop();
+    } else if (!disabled && hasText) {
+      const event = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        code: 'Enter',
+        keyCode: 13,
+        which: 13,
+        bubbles: true,
+        cancelable: true
+      });
+      document.querySelector('[contenteditable="true"]')?.dispatchEvent(event);
+    }
+  }, [showStop, onStop, disabled, hasText]);
 
   const handleTextChange = useCallback((text: string) => {
     setHasText(text.trim().length > 0);
@@ -152,9 +161,24 @@ export function LexicalMessageInput({
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <div className="relative rounded-2xl border border-border-strong bg-white shadow-sm transition-shadow focus-within:shadow-md focus-within:border-accent overflow-hidden">
-        {/* File upload button */}
-        <div className="absolute left-2 bottom-2 z-10">
+      <div className="rounded-2xl border border-border-strong bg-white shadow-sm transition-shadow focus-within:shadow-md focus-within:border-accent overflow-hidden">
+        {/* Input area - fixed 2 rows */}
+        <div className="relative">
+          <PlainTextPlugin
+            contentEditable={
+              <ContentEditable className="w-full h-[60px] overflow-y-auto border-none bg-transparent py-2 px-4 text-text-primary placeholder-text-tertiary focus:outline-none text-base resize-none leading-6" />
+            }
+            placeholder={
+              <div className="absolute top-2 left-4 text-text-tertiary pointer-events-none select-none leading-6">
+                {placeholder}
+              </div>
+            }
+            ErrorBoundary={LexicalErrorBoundary}
+          />
+        </div>
+
+        {/* Button bar */}
+        <div className="flex items-center justify-end gap-2 px-4 pb-3">
           <Button
             onClick={handleFileUpload}
             disabled={disabled}
@@ -163,38 +187,36 @@ export function LexicalMessageInput({
           >
             <Paperclip className="h-4 w-4" />
           </Button>
-        </div>
-
-        {/* Lexical editor */}
-        <div className="relative">
-          <PlainTextPlugin
-            contentEditable={
-              <ContentEditable className="w-full min-h-[48px] max-h-[200px] overflow-y-auto border-none bg-transparent py-4 pl-12 pr-12 text-text-primary placeholder-text-tertiary focus:outline-none text-base resize-none" />
-            }
-            placeholder={
-              <div className="absolute top-4 left-12 text-text-tertiary pointer-events-none select-none">
-                {placeholder}
-              </div>
-            }
-            ErrorBoundary={() => <div>Error loading editor</div>}
-          />
-        </div>
-
-        {/* Send button */}
-        <div className="absolute right-2 bottom-2">
           <Button
-            onClick={handleSend}
-            disabled={disabled || !hasText}
-            className={`h-8 w-8 p-0 rounded-lg transition-colors flex items-center justify-center ${
-              !hasText
-                ? 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                : 'bg-accent text-white hover:bg-accent-hover shadow-sm'
+            onClick={handleClick}
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+            disabled={disabled && !onStop}
+            className={`h-8 px-3 rounded-lg transition-colors flex items-center justify-center gap-1.5 text-sm font-medium ${
+              showStop
+                ? isHovering
+                  ? 'bg-red-500 text-white hover:bg-red-600 shadow-sm'
+                  : 'bg-accent text-white'
+                : !hasText
+                  ? 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                  : 'bg-accent text-white hover:bg-accent-hover shadow-sm'
             }`}
           >
-            {disabled ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            {showStop ? (
+              isHovering ? (
+                <>
+                  <span>Stop</span>
+                </>
+              ) : (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                </>
+              )
             ) : (
-              <ArrowUp className="h-4 w-4" />
+              <>
+                <ArrowUp className="h-4 w-4" />
+                <span>Send</span>
+              </>
             )}
           </Button>
         </div>
@@ -213,6 +235,7 @@ export function LexicalMessageInput({
         <ClearEditorPlugin clearRef={clearEditorRef} />
         <SlashCommandPlugin />
         <FileMentionPlugin />
+        <MentionDeletePlugin />
       </div>
     </LexicalComposer>
   );

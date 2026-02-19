@@ -56,10 +56,14 @@ function App() {
 }
 
 function Toolbar() {
+  const sessions = useChatStore((s) => s.sessions);
+  const currentSessionId = useChatStore((s) => s.currentSessionId);
+  const currentSession = sessions.find((session) => session.id === currentSessionId);
+
   return (
     <div className="flex items-center justify-between w-full">
       <div className="flex items-center gap-2">
-        <div className="text-sm font-semibold text-text-primary">CCDisk</div>
+        <div className="text-sm font-semibold text-text-primary">{currentSession?.name || 'New Conversation'}</div>
       </div>
     </div>
   );

@@ -103,6 +103,10 @@ export class MentionNode extends DecoratorNode<ReactNode> {
     return true;
   }
 
+  isKeyboardSelectable(): true {
+    return true;
+  }
+
   decorate(): ReactNode {
     return <MentionBadge type={this.__mentionType} name={this.__mentionName} />;
   }

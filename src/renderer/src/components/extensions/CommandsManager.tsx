@@ -146,7 +146,9 @@ export function CommandsManager() {
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <FileCode className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{command.name}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {command.name.endsWith('.md') ? command.name.slice(0, -3) : command.name}
+                        </p>
                       </div>
                     </div>
                     <button

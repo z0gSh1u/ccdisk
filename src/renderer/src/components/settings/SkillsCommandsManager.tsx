@@ -141,6 +141,8 @@ export function SkillsCommandsManager() {
       selected.command?.name === command.name &&
       selected.command?.scope === command.scope;
 
+    const displayName = command.name.endsWith('.md') ? command.name.slice(0, -3) : command.name;
+
     return (
       <div
         key={`cmd-${command.scope}-${command.name}`}
@@ -153,7 +155,7 @@ export function SkillsCommandsManager() {
       >
         <div className="flex items-center gap-2 min-w-0">
           <FileCode className="h-3.5 w-3.5 flex-shrink-0 text-gray-400" />
-          <span className="truncate font-medium">{command.name}</span>
+          <span className="truncate font-medium">{displayName}</span>
         </div>
       </div>
     );

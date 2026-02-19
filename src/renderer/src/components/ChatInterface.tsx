@@ -122,22 +122,13 @@ export function ChatInterface(): React.JSX.Element {
             onSend={handleSend}
             disabled={isLoading || isResponding}
             placeholder={isResponding ? 'Claude is responding...' : 'Ask Claude...'}
+            onStop={isResponding && currentSessionId ? () => abortSession(currentSessionId) : undefined}
           />
-          {isResponding && currentSessionId && (
-            <div className="mt-2 flex items-center justify-center">
-              <Button size="sm" variant="ghost" onClick={() => abortSession(currentSessionId)}>
-                Stop
-              </Button>
-            </div>
-          )}
           {sendError && sendError.includes('responding') && (
             <div className="mt-2 text-xs text-text-secondary">
               Claude is responding. Click Stop to interrupt before sending another message.
             </div>
           )}
-          <div className="mt-2 text-center text-xs text-text-tertiary">
-            Claude can make mistakes. Please use with caution.
-          </div>
         </div>
       </div>
     </div>
@@ -293,7 +284,7 @@ function MessageBlock({
           )}
           {block.result && (
             <div
-              className={`mt-2 rounded-md border px-2 py-1 text-xs whitespace-pre-wrap break-words ${
+              className={`mt-2 max-h-[300px] overflow-y-auto rounded-md border px-2 py-1 text-xs whitespace-pre-wrap break-words ${
                 block.result.is_error
                   ? 'border-red-300 bg-red-50 text-red-900'
                   : 'border-border-subtle bg-bg-primary text-text-primary'

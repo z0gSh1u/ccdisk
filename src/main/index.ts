@@ -76,6 +76,8 @@ function createWindow(): void {
   // Ensure workspace directory exists and initialize with it
   ensureWorkspaceDirectory();
 
+  process.env.CCDISK_WORKSPACE_PATH = DEFAULT_WORKSPACE_PATH;
+
   mcpService = new MCPService();
   mcpService.setWorkspacePath(DEFAULT_WORKSPACE_PATH);
 
@@ -91,7 +93,7 @@ function createWindow(): void {
 
   // Create stream event emitter for Claude service
   const streamEventEmitter = createStreamEventEmitter(mainWindow, dbService);
-  claudeService = new ClaudeService(configService, streamEventEmitter);
+  claudeService = new ClaudeService(configService, streamEventEmitter, () => fileWatcher.getWorkspacePath());
 
   // Register IPC handlers
   registerWorkspaceHandlers(mainWindow, fileWatcher);
@@ -100,7 +102,7 @@ function createWindow(): void {
   registerSkillsHandlers(skillsService);
   registerCommandsHandlers(commandsService);
   registerMcpHandlers(mcpService);
-  registerChatHandlers(mainWindow, claudeService, dbService, skillsService, commandsService);
+  registerChatHandlers(mainWindow, claudeService, dbService, skillsService, commandsService, fileWatcher);
   registerSdkHandlers(claudeService);
 
   // Utility handlers
