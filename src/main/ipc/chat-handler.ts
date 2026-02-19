@@ -87,7 +87,8 @@ export async function generateTitleWithAI(userMessage: string, configService: Co
     if (!apiKey) return null;
 
     const baseUrl = env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com';
-    const model = env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
+    const model = env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
+    const truncatedMessage = userMessage.substring(0, 500);
 
     const response = await fetch(`${baseUrl}/v1/messages`, {
       method: 'POST',
@@ -98,10 +99,10 @@ export async function generateTitleWithAI(userMessage: string, configService: Co
       },
       body: JSON.stringify({
         model,
-        max_tokens: 30,
+        max_tokens: 20,
         system:
-          'Generate a short title (under 10 characters) for this conversation based on the user message. Return only the title text, nothing else. No quotes, no punctuation at the end.',
-        messages: [{ role: 'user', content: userMessage }]
+          'Generate a short title in 5 words or fewer for this conversation based on the user message. Return only the title text, nothing else. No quotes, no punctuation at the end.',
+        messages: [{ role: 'user', content: truncatedMessage }]
       })
     });
 
@@ -110,7 +111,7 @@ export async function generateTitleWithAI(userMessage: string, configService: Co
       return null;
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as { content?: Array<{ text?: string }> };
     const title = data?.content?.[0]?.text?.trim();
     return title || null;
   } catch (error) {
