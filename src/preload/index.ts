@@ -29,7 +29,13 @@ const api = {
     },
     respondPermission: (requestId: string, approved: boolean, input?: Record<string, unknown>) =>
       ipcRenderer.invoke(IPC_CHANNELS.CHAT_PERMISSION_RESPONSE, requestId, approved, input),
-    abort: (sessionId: string) => ipcRenderer.invoke(IPC_CHANNELS.CHAT_ABORT, sessionId)
+    abort: (sessionId: string) => ipcRenderer.invoke(IPC_CHANNELS.CHAT_ABORT, sessionId),
+    onTitleUpdated: (callback: (sessionId: string, newTitle: string) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, sessionId: string, newTitle: string) =>
+        callback(sessionId, newTitle);
+      ipcRenderer.on(IPC_CHANNELS.CHAT_TITLE_UPDATED, handler);
+      return () => ipcRenderer.removeListener(IPC_CHANNELS.CHAT_TITLE_UPDATED, handler);
+    }
   },
 
   // Session management
@@ -72,7 +78,10 @@ const api = {
     syncToFile: (providerId: string) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SYNC_TO_FILE, providerId),
     getClaudeEnv: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_CLAUDE_ENV),
     updateClaudeEnv: (envUpdates: Record<string, string>) =>
-      ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_UPDATE_CLAUDE_ENV, envUpdates)
+      ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_UPDATE_CLAUDE_ENV, envUpdates),
+    get: (key: string): Promise<IPCResponse<string | undefined>> => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET, key),
+    set: (key: string, value: string): Promise<IPCResponse<void>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET, key, value)
   },
 
   // Skills management

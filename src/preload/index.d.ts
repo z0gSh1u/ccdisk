@@ -29,6 +29,7 @@ interface API {
       input?: Record<string, unknown>
     ) => Promise<IPCResponse<void>>;
     abort: (sessionId: string) => Promise<IPCResponse<void>>;
+    onTitleUpdated: (callback: (sessionId: string, newTitle: string) => void) => () => void;
   };
   sessions: {
     create: (name: string) => Promise<IPCResponse<Session>>;
@@ -55,6 +56,8 @@ interface API {
     syncToFile: (providerId: string) => Promise<IPCResponse<void>>;
     getClaudeEnv: () => Promise<IPCResponse<Record<string, string>>>;
     updateClaudeEnv: (envUpdates: Record<string, string>) => Promise<IPCResponse<void>>;
+    get: (key: string) => Promise<IPCResponse<string | undefined>>;
+    set: (key: string, value: string) => Promise<IPCResponse<void>>;
   };
   skills: {
     list: () => Promise<IPCResponse<Skill[]>>;
