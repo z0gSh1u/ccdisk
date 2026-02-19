@@ -15,8 +15,66 @@ import { IPC_CHANNELS } from '../../shared/ipc-channels';
 import type { IPCResponse, StreamEvent } from '../../shared/types';
 import { ClaudeService } from '../services/claude-service';
 import { DatabaseService } from '../services/db-service';
+import { SkillsService } from '../services/skills-service';
+import { CommandsService } from '../services/commands-service';
 
-export function registerChatHandlers(_win: BrowserWindow, claudeService: ClaudeService, dbService: DatabaseService) {
+/**
+ * Resolve mention markers in a message string.
+ * [/command:name] -> resolves command content
+ * [/skill:name] -> resolves skill content
+ * [@file:path] -> transforms to file reference
+ */
+async function resolveMentions(
+  message: string,
+  skillsService: SkillsService,
+  commandsService: CommandsService
+): Promise<string> {
+  const mentionRegex = /\[\/(command|skill):([^\]]+)\]|\[@file:([^\]]+)\]/g;
+  let resolved = message;
+  const matches = [...message.matchAll(mentionRegex)];
+
+  // Process in reverse order to preserve indices
+  for (let i = matches.length - 1; i >= 0; i--) {
+    const match = matches[i];
+    const start = match.index!;
+    const end = start + match[0].length;
+    let replacement = match[0]; // fallback to original
+
+    try {
+      if (match[1] === 'command' && match[2]) {
+        let result: { command: { name: string; path: string; scope: string }; content: string };
+        try {
+          result = await commandsService.getCommand(match[2], 'global');
+        } catch {
+          result = await commandsService.getCommand(match[2], 'workspace');
+        }
+        replacement = `[Command: ${match[2]}]\n\`\`\`\n${result.content}\n\`\`\``;
+      } else if (match[1] === 'skill' && match[2]) {
+        const skills = await skillsService.listSkills();
+        const skill = skills.find((s) => s.name === match[2]);
+        if (skill) {
+          replacement = `[Skill: ${match[2]}]\n${skill.content}`;
+        }
+      } else if (match[3]) {
+        replacement = `(See file: ${match[3]})`;
+      }
+    } catch (error) {
+      console.error(`Failed to resolve mention ${match[0]}:`, error);
+    }
+
+    resolved = resolved.slice(0, start) + replacement + resolved.slice(end);
+  }
+
+  return resolved;
+}
+
+export function registerChatHandlers(
+  _win: BrowserWindow,
+  claudeService: ClaudeService,
+  dbService: DatabaseService,
+  skillsService: SkillsService,
+  commandsService: CommandsService
+) {
   // Send message and start streaming
   ipcMain.handle(
     IPC_CHANNELS.CHAT_SEND,
@@ -28,10 +86,13 @@ export function registerChatHandlers(_win: BrowserWindow, claudeService: ClaudeS
       sdkSessionId?: string
     ) => {
       try {
-        // Send message to Claude service (returns immediately)
-        await claudeService.sendMessage(sessionId, message, files, sdkSessionId);
+        // Resolve mentions for Claude
+        const resolvedMessage = await resolveMentions(message, skillsService, commandsService);
 
-        // Save user message to database
+        // Send resolved message to Claude service (returns immediately)
+        await claudeService.sendMessage(sessionId, resolvedMessage, files, sdkSessionId);
+
+        // Save original (with markers) to database
         await dbService.createMessage({
           id: randomUUID(),
           sessionId,

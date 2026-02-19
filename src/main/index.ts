@@ -100,7 +100,7 @@ function createWindow(): void {
   registerSkillsHandlers(skillsService);
   registerCommandsHandlers(commandsService);
   registerMcpHandlers(mcpService);
-  registerChatHandlers(mainWindow, claudeService, dbService);
+  registerChatHandlers(mainWindow, claudeService, dbService, skillsService, commandsService);
   registerSdkHandlers(claudeService);
 
   // Utility handlers
