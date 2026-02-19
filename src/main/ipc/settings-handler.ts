@@ -127,4 +127,26 @@ export function registerSettingsHandlers(dbService: DatabaseService, configServi
       return { success: false, error: (error as Error).message } as IPCResponse;
     }
   });
+
+  // Get a setting by key
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, async (_event, key: string) => {
+    try {
+      const value = await dbService.getSetting(key);
+      return { success: true, data: value } as IPCResponse;
+    } catch (error) {
+      console.error('SETTINGS_GET error:', error);
+      return { success: false, error: (error as Error).message } as IPCResponse;
+    }
+  });
+
+  // Set a setting by key
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_SET, async (_event, key: string, value: string) => {
+    try {
+      await dbService.setSetting(key, value);
+      return { success: true } as IPCResponse;
+    } catch (error) {
+      console.error('SETTINGS_SET error:', error);
+      return { success: false, error: (error as Error).message } as IPCResponse;
+    }
+  });
 }

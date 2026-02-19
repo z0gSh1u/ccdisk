@@ -58,6 +58,8 @@ export const IPC_CHANNELS = {
   // Claude env config (replaces provider system)
   SETTINGS_GET_CLAUDE_ENV: 'settings:get-claude-env',
   SETTINGS_UPDATE_CLAUDE_ENV: 'settings:update-claude-env',
+
+  // Generic settings key/value
   SETTINGS_GET: 'settings:get',
   SETTINGS_SET: 'settings:set',
 
