@@ -24,6 +24,7 @@
     "@anthropic-ai/claude-agent-sdk": "^0.2.37",
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "@floating-ui/react": "^0.27.18",
     "@lexical/plain-text": "^0.40.0",
     "@lexical/react": "^0.40.0",
     "@lexical/utils": "^0.40.0",
