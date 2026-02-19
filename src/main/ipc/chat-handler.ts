@@ -20,6 +20,14 @@ import { CommandsService } from '../services/commands-service';
 import { FileWatcherService } from '../services/file-watcher';
 import { ConfigService } from '../services/config-service';
 
+/** Truncate a message to use as a chat title */
+function truncateTitle(message: string, maxLength = 20): string {
+  // Strip mention markers for cleaner titles
+  const clean = message.replace(/\[\/(command|skill):[^\]]+\]|\[@file:[^\]]+\]/g, '').trim();
+  if (clean.length <= maxLength) return clean;
+  return clean.slice(0, maxLength) + '...';
+}
+
 /**
  * Resolve mention markers in a message string.
  * [/command:name] -> resolves command content
@@ -121,12 +129,13 @@ export async function generateTitleWithAI(userMessage: string, configService: Co
 }
 
 export function registerChatHandlers(
-  _win: BrowserWindow,
+  win: BrowserWindow,
   claudeService: ClaudeService,
   dbService: DatabaseService,
   skillsService: SkillsService,
   commandsService: CommandsService,
-  fileWatcher: FileWatcherService
+  fileWatcher: FileWatcherService,
+  configService: ConfigService
 ): void {
   // Send message and start streaming
   ipcMain.handle(
@@ -153,6 +162,35 @@ export function registerChatHandlers(
           content: JSON.stringify([{ type: 'text', text: message }]),
           createdAt: new Date()
         });
+
+        // Auto-update title on first message
+        const existingMessages = await dbService.getMessages(sessionId);
+        // Only 1 message means this is the first (the one we just saved)
+        if (existingMessages.length === 1) {
+          const aiTitlesSetting = await dbService.getSetting('ai_generate_titles');
+          const useAI = aiTitlesSetting === 'true';
+
+          if (useAI) {
+            // Fire-and-forget: generate title with AI, fallback to truncation
+            generateTitleWithAI(message, configService)
+              .then(async (title) => {
+                const finalTitle = title || truncateTitle(message);
+                await dbService.updateSession(sessionId, { name: finalTitle, updatedAt: new Date() });
+                win.webContents.send(IPC_CHANNELS.CHAT_TITLE_UPDATED, sessionId, finalTitle);
+              })
+              .catch(async (err) => {
+                console.error('AI title generation failed, using truncation:', err);
+                const fallbackTitle = truncateTitle(message);
+                await dbService.updateSession(sessionId, { name: fallbackTitle, updatedAt: new Date() });
+                win.webContents.send(IPC_CHANNELS.CHAT_TITLE_UPDATED, sessionId, fallbackTitle);
+              });
+          } else {
+            // Truncate user message immediately
+            const title = truncateTitle(message);
+            await dbService.updateSession(sessionId, { name: title, updatedAt: new Date() });
+            win.webContents.send(IPC_CHANNELS.CHAT_TITLE_UPDATED, sessionId, title);
+          }
+        }
 
         return { success: true } as IPCResponse;
       } catch (error) {
