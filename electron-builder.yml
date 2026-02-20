@@ -11,6 +11,7 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**
+  - '**/@anthropic-ai/claude-agent-sdk/**/*'
 win:
   executableName: ccdisk
 nsis:
@@ -26,6 +27,8 @@ mac:
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: false
+  sign: false
+  identity: null
 dmg:
   artifactName: ${name}-${version}.${ext}
 linux:
@@ -41,5 +44,3 @@ npmRebuild: false
 publish:
   provider: generic
   url: https://example.com/auto-updates
-electronDownload:
-  mirror: https://npmmirror.com/mirrors/electron/

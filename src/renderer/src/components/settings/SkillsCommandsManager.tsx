@@ -365,7 +365,7 @@ export function SkillsCommandsManager() {
   );
 
   return (
-    <div className="flex h-[500px] flex-col">
+    <div className="flex h-full flex-col">
       {/* Header with scope tabs and create button */}
       <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
         <Tabs value={scope} onValueChange={(v) => handleScopeChange(v as Scope)}>

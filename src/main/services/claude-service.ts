@@ -25,13 +25,16 @@
  *
  * @see https://github.com/anthropics/anthropic-sdk-typescript
  */
+import { app } from 'electron';
+import { join } from 'path';
 import {
   unstable_v2_createSession,
   unstable_v2_resumeSession,
   type SDKSession,
   type CanUseTool,
   type PermissionResult,
-  type SlashCommand
+  type SlashCommand,
+  SDKSessionOptions
 } from '@anthropic-ai/claude-agent-sdk';
 import type {
   StreamEvent,
@@ -487,13 +490,24 @@ export class ClaudeService {
     }
 
     const { sdkSessionId, workspacePath, canUseTool, env } = options;
-    const sessionOptions = {
-      cwd: workspacePath,
+
+    const isDev = !app.isPackaged;
+    const cliPath = isDev
+      ? undefined
+      : join(
+          app.getAppPath().replace('app.asar', 'app.asar.unpacked'),
+          'node_modules',
+          '@anthropic-ai',
+          'claude-agent-sdk',
+          'cli.js'
+        );
+
+    const sessionOptions: SDKSessionOptions = {
       canUseTool,
       env,
-      model: env.ANTHROPIC_MODEL || env.ANTHROPIC_DEFAULT_SONNET_MODEL || 'claude-sonnet-4-5-20250929',
+      model: env.ANTHROPIC_MODEL || env.ANTHROPIC_DEFAULT_SONNET_MODEL,
       permissionMode: 'acceptEdits' as const,
-      includePartialMessages: true
+      ...(cliPath && { pathToClaudeCodeExecutable: cliPath })
     };
 
     const session = sdkSessionId

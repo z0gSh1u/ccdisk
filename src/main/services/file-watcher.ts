@@ -60,7 +60,7 @@ export class FileWatcherService {
     // Initialize chokidar watcher
     this.watcher = chokidar.watch(this.workspacePath, {
       ignored: [
-        /(^|[\/\\])\../, // Ignore hidden files
+        /(^|[/\\])\../, // Ignore hidden files
         '**/node_modules/**',
         '**/.git/**',
         '**/.ccdisk/**'
