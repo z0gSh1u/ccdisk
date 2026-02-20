@@ -420,7 +420,18 @@ function normalizeBlocks(content: string | ChatContentBlock[] | undefined): Chat
 
 // Setup stream event listener (call once on app init)
 export function setupChatStreamListener() {
-  return window.api.chat.onStream((sessionId, event) => {
+  const teardownStream = window.api.chat.onStream((sessionId, event) => {
     useChatStore.getState().handleStreamEvent(sessionId, event);
   });
+
+  const teardownTitle = window.api.chat.onTitleUpdated((sessionId, newTitle) => {
+    useChatStore.setState((state) => ({
+      sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, name: newTitle } : s))
+    }));
+  });
+
+  return () => {
+    teardownStream();
+    teardownTitle();
+  };
 }
