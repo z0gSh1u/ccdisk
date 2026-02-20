@@ -73,6 +73,8 @@ export function ClaudeConfigEditor({ onClose }: ClaudeConfigEditorProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<string>('');
+  const [aiTitles, setAiTitles] = useState(false);
+  const [aiTitlesLoaded, setAiTitlesLoaded] = useState(false);
 
   const showMessage = useCallback((type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
@@ -103,6 +105,15 @@ export function ClaudeConfigEditor({ onClose }: ClaudeConfigEditorProps) {
   useEffect(() => {
     loadEnv();
   }, [loadEnv]);
+
+  useEffect(() => {
+    window.api.settings.get('ai_generate_titles').then((res) => {
+      if (res.success) {
+        setAiTitles(res.data === 'true');
+      }
+      setAiTitlesLoaded(true);
+    });
+  }, []);
 
   const handlePresetChange = (presetId: string) => {
     setSelectedPreset(presetId);
@@ -169,6 +180,16 @@ export function ClaudeConfigEditor({ onClose }: ClaudeConfigEditorProps) {
     setVisibleSecrets((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const handleAiTitlesToggle = async (enabled: boolean) => {
+    setAiTitles(enabled);
+    try {
+      await window.api.settings.set('ai_generate_titles', enabled ? 'true' : 'false');
+    } catch (error) {
+      console.error('Failed to save AI titles setting:', error);
+      setAiTitles(!enabled); // revert on error
+    }
+  };
+
   const currentPreset = PRESETS.find((p) => p.id === selectedPreset);
 
   return (
@@ -233,6 +254,32 @@ export function ClaudeConfigEditor({ onClose }: ClaudeConfigEditorProps) {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="border-t border-gray-200 pt-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label>AI Generate Chat Titles</Label>
+            <p className="text-xs text-gray-500">
+              Use AI to automatically generate titles for new chats. Incurs additional API call costs.
+            </p>
+          </div>
+          <button
+            role="switch"
+            aria-checked={aiTitles}
+            disabled={!aiTitlesLoaded}
+            onClick={() => handleAiTitlesToggle(!aiTitles)}
+            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+              aiTitles ? 'bg-blue-600' : 'bg-gray-200'
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                aiTitles ? 'translate-x-4' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       {message && (
