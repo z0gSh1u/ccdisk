@@ -12,13 +12,14 @@
 import { ipcMain, type BrowserWindow } from 'electron';
 import { randomUUID } from 'crypto';
 import { IPC_CHANNELS } from '../../shared/ipc-channels';
-import type { IPCResponse, StreamEvent } from '../../shared/types';
+import type { IPCResponse, StreamEvent, Skill } from '../../shared/types';
 import { ClaudeService } from '../services/claude-service';
 import { DatabaseService } from '../services/db-service';
 import { SkillsService } from '../services/skills-service';
 import { CommandsService } from '../services/commands-service';
 import { FileWatcherService } from '../services/file-watcher';
 import { ConfigService } from '../services/config-service';
+import { DiskService } from '../services/disk-service';
 
 /** Truncate a message to use as a chat title */
 function truncateTitle(message: string, maxLength = 20): string {
@@ -38,15 +39,29 @@ async function resolveMentions(
   message: string,
   skillsService: SkillsService,
   commandsService: CommandsService,
-  fileWatcher: FileWatcherService
+  fileWatcher: FileWatcherService,
+  diskService: DiskService
 ): Promise<string> {
   const mentionRegex = /\[\/(command|skill):([^\]]+)\]|\[@file:([^\]]+)\]/g;
   let resolved = message;
   const matches = [...message.matchAll(mentionRegex)];
 
-  // Hoist listSkills() outside the loop: only call once if any skill mentions exist
+  // Load skills based on current disk
   const hasSkillMentions = matches.some((m) => m[1] === 'skill');
-  const skills = hasSkillMentions ? await skillsService.listSkills() : [];
+
+  let skills: Skill[] = [];
+  if (hasSkillMentions) {
+    const currentDiskId = await diskService.getCurrentDiskId();
+    const currentDisk = await diskService.getDisk(currentDiskId);
+
+    if (currentDisk.isDefault) {
+      // Default disk: use existing SkillsService (reads ~/.claude/skills/)
+      skills = await skillsService.listSkills();
+    } else {
+      // Other disks: read from pool, filtered by disk references
+      skills = await diskService.getActiveSkillsForDisk(currentDiskId);
+    }
+  }
 
   // Process in reverse order to preserve indices
   for (let i = matches.length - 1; i >= 0; i--) {
@@ -135,7 +150,8 @@ export function registerChatHandlers(
   skillsService: SkillsService,
   commandsService: CommandsService,
   fileWatcher: FileWatcherService,
-  configService: ConfigService
+  configService: ConfigService,
+  diskService: DiskService
 ): void {
   // Send message and start streaming
   ipcMain.handle(
@@ -149,10 +165,23 @@ export function registerChatHandlers(
     ) => {
       try {
         // Resolve mentions for Claude
-        const resolvedMessage = await resolveMentions(message, skillsService, commandsService, fileWatcher);
+        const resolvedMessage = await resolveMentions(
+          message,
+          skillsService,
+          commandsService,
+          fileWatcher,
+          diskService
+        );
+
+        // Prepend disk system prompt if set
+        let finalMessage = resolvedMessage;
+        const currentDisk = await diskService.getCurrentDisk();
+        if (currentDisk.systemPrompt) {
+          finalMessage = `[System Context]\n${currentDisk.systemPrompt}\n\n[User Message]\n${resolvedMessage}`;
+        }
 
         // Send resolved message to Claude service (returns immediately)
-        await claudeService.sendMessage(sessionId, resolvedMessage, files, sdkSessionId);
+        await claudeService.sendMessage(sessionId, finalMessage, files, sdkSessionId);
 
         // Save original (with markers) to database
         await dbService.createMessage({

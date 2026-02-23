@@ -114,7 +114,8 @@ function createWindow(): void {
     skillsService,
     commandsService,
     fileWatcher,
-    configService
+    configService,
+    diskService
   );
   registerSdkHandlers(claudeService);
   registerDiskHandlers(mainWindow, diskService);
