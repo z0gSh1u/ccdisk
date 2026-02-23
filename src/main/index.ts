@@ -12,6 +12,7 @@ import { SkillsService } from './services/skills-service';
 import { CommandsService } from './services/commands-service';
 import { FileWatcherService } from './services/file-watcher';
 import { ClaudeService } from './services/claude-service';
+import { DiskService } from './services/disk-service';
 
 // Import IPC handlers
 import { registerWorkspaceHandlers } from './ipc/workspace-handler';
@@ -22,6 +23,7 @@ import { registerCommandsHandlers } from './ipc/commands-handler';
 import { registerMcpHandlers } from './ipc/mcp-handler';
 import { registerChatHandlers, createStreamEventEmitter } from './ipc/chat-handler';
 import { registerSdkHandlers } from './ipc/sdk-handler';
+import { registerDiskHandlers } from './ipc/disk-handler';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 
 // Global services (initialized once)
@@ -32,6 +34,7 @@ let skillsService: SkillsService;
 let commandsService: CommandsService;
 let fileWatcher: FileWatcherService;
 let claudeService: ClaudeService;
+let diskService: DiskService;
 let isCleaningUp = false;
 
 // Default workspace path
@@ -71,6 +74,8 @@ function createWindow(): void {
 
   // Initialize services
   dbService = new DatabaseService();
+  diskService = new DiskService(dbService);
+  diskService.initialize().catch((err) => console.error('DiskService init error:', err));
   configService = new ConfigService();
 
   // Ensure workspace directory exists and initialize with it
@@ -112,6 +117,7 @@ function createWindow(): void {
     configService
   );
   registerSdkHandlers(claudeService);
+  registerDiskHandlers(mainWindow, diskService);
 
   // Utility handlers
   ipcMain.handle(IPC_CHANNELS.UTIL_OPEN_EXTERNAL, async (_event, url: string) => {
