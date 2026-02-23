@@ -7,11 +7,13 @@ import type {
   Skill,
   Command,
   MCPConfig,
+  MCPServerConfig,
   SlashCommand,
   StreamEvent,
   IPCResponse,
   FileAttachment,
-  FileContentResponse
+  FileContentResponse,
+  DiskDefinition
 } from '../shared/types';
 
 interface API {
@@ -81,6 +83,20 @@ interface API {
   };
   sdk: {
     getCommands: (sessionId: string) => Promise<IPCResponse<SlashCommand[] | null>>;
+  };
+  disk: {
+    list: () => Promise<IPCResponse<DiskDefinition[]>>;
+    get: (diskId: string) => Promise<IPCResponse<DiskDefinition>>;
+    getCurrent: () => Promise<IPCResponse<DiskDefinition>>;
+    switch: (diskId: string) => Promise<IPCResponse<DiskDefinition>>;
+    create: (input: Omit<DiskDefinition, 'id' | 'builtIn'>) => Promise<IPCResponse<DiskDefinition>>;
+    update: (diskId: string, updates: Partial<DiskDefinition>) => Promise<IPCResponse<DiskDefinition>>;
+    delete: (diskId: string) => Promise<IPCResponse<void>>;
+    duplicate: (diskId: string, newName: string) => Promise<IPCResponse<DiskDefinition>>;
+    listPoolSkills: () => Promise<IPCResponse<Skill[]>>;
+    listPoolCommands: () => Promise<IPCResponse<Array<{ name: string; path: string }>>>;
+    listPoolMCP: () => Promise<IPCResponse<Record<string, MCPServerConfig>>>;
+    onSwitched: (callback: (disk: DiskDefinition) => void) => () => void;
   };
   openExternal: (url: string) => Promise<{ success: boolean; error?: string }>;
 }

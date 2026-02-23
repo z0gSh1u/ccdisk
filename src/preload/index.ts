@@ -12,7 +12,8 @@ import type {
   StreamEvent,
   IPCResponse,
   FileAttachment,
-  FileContentResponse
+  FileContentResponse,
+  DiskDefinition
 } from '../shared/types';
 
 // Custom APIs for renderer
@@ -130,6 +131,32 @@ const api = {
   // SDK operations (requires active session)
   sdk: {
     getCommands: (sessionId: string) => ipcRenderer.invoke(IPC_CHANNELS.SDK_GET_COMMANDS, sessionId)
+  },
+
+  // Disk management
+  disk: {
+    list: (): Promise<IPCResponse<DiskDefinition[]>> => ipcRenderer.invoke(IPC_CHANNELS.DISK_LIST),
+    get: (diskId: string): Promise<IPCResponse<DiskDefinition>> => ipcRenderer.invoke(IPC_CHANNELS.DISK_GET, diskId),
+    getCurrent: (): Promise<IPCResponse<DiskDefinition>> => ipcRenderer.invoke(IPC_CHANNELS.DISK_GET_CURRENT),
+    switch: (diskId: string): Promise<IPCResponse<DiskDefinition>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.DISK_SWITCH, diskId),
+    create: (input: Omit<DiskDefinition, 'id' | 'builtIn'>): Promise<IPCResponse<DiskDefinition>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.DISK_CREATE, input),
+    update: (diskId: string, updates: Partial<DiskDefinition>): Promise<IPCResponse<DiskDefinition>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.DISK_UPDATE, diskId, updates),
+    delete: (diskId: string): Promise<IPCResponse<void>> => ipcRenderer.invoke(IPC_CHANNELS.DISK_DELETE, diskId),
+    duplicate: (diskId: string, newName: string): Promise<IPCResponse<DiskDefinition>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.DISK_DUPLICATE, diskId, newName),
+    listPoolSkills: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_LIST_POOL_SKILLS),
+    listPoolCommands: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_LIST_POOL_COMMANDS),
+    listPoolMCP: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_LIST_POOL_MCP),
+    onSwitched: (callback: (disk: DiskDefinition) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, disk: DiskDefinition): void => callback(disk);
+      ipcRenderer.on(IPC_CHANNELS.DISK_SWITCHED, handler);
+      return (): void => {
+        ipcRenderer.removeListener(IPC_CHANNELS.DISK_SWITCHED, handler);
+      };
+    }
   },
 
   // Utility
