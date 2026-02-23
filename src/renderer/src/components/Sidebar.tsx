@@ -8,6 +8,7 @@ import { useWorkspaceStore } from '../stores/workspace-store';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui';
 import { Plus, Folder, MessageSquare, ExternalLink, Trash2, Terminal, Puzzle, Activity } from 'lucide-react';
 import { FileTree } from './workspace/FileTree';
+import { DiskSwitcher } from './DiskSwitcher';
 import type { PanelType } from './SidePanel';
 
 interface SidebarProps {
@@ -80,11 +81,8 @@ export function Sidebar({ activePanelType, onPanelTypeChange }: SidebarProps) {
   return (
     <>
       <div className="flex flex-col h-full bg-bg-secondary border-r border-border-subtle">
-        <div className="shrink-0 pt-6 p-4 flex items-center gap-2">
-          <div className="h-6 w-6 rounded bg-accent flex items-center justify-center text-white font-serif font-bold text-xs">
-            C
-          </div>
-          <div className="font-semibold text-text-primary">CCDisk</div>
+        <div className="shrink-0 pt-6 px-2 pb-2">
+          <DiskSwitcher onManageDisks={() => onPanelTypeChange('disks')} />
         </div>
 
         {/* Workspace section - flexible height */}

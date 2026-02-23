@@ -11,6 +11,7 @@ import { SidePanel, type PanelType } from './components/SidePanel';
 import { useChatStore, setupChatStreamListener } from './stores/chat-store';
 import { useWorkspaceStore } from './stores/workspace-store';
 import { useSettingsStore } from './stores/settings-store';
+import { useDiskStore, setupDiskSwitchedListener } from './stores/disk-store';
 
 function App() {
   const { loadSessions } = useChatStore();
@@ -23,11 +24,16 @@ function App() {
   useEffect(() => {
     // Setup stream listener for real-time chat updates
     const teardownStreamListener = setupChatStreamListener();
+    const teardownDiskListener = setupDiskSwitchedListener();
 
     // Load initial data
     loadWorkspace(); // Load default workspace first
     loadSessions();
     loadProviders();
+
+    // Load disk data
+    useDiskStore.getState().loadDisks();
+    useDiskStore.getState().loadCurrentDisk();
 
     // Setup file watcher
     const unwatchFiles = setupFileWatcher();
@@ -35,6 +41,7 @@ function App() {
     // Cleanup on unmount
     return () => {
       teardownStreamListener();
+      teardownDiskListener();
       unwatchFiles();
     };
   }, [loadSessions, loadProviders, loadWorkspace, setupFileWatcher]);

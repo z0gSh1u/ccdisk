@@ -6,6 +6,8 @@
 import { create } from 'zustand';
 import type { StreamEvent, Message, Session, PermissionRequest } from '../../../shared/types';
 
+import { useDiskStore } from './disk-store';
+
 export type ChatContentBlock =
   | { type: 'text'; text: string }
   | {
@@ -109,6 +111,12 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
     const response = await window.api.sessions.create(sessionName);
     if (response.success && response.data) {
+      // Tag session with current disk
+      const currentDisk = useDiskStore.getState().currentDisk;
+      if (currentDisk) {
+        await window.api.sessions.update(response.data.id, { diskId: currentDisk.id });
+      }
+
       const newSession: ChatSession = {
         ...response.data,
         messages: []

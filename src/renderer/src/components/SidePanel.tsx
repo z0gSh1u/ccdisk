@@ -7,8 +7,9 @@ import { X } from 'lucide-react';
 import { ClaudeConfigEditor } from './settings/ClaudeConfigEditor';
 import { MCPManager } from './extensions/MCPManager';
 import { SkillsCommandsManager } from './settings/SkillsCommandsManager';
+import { DiskManager } from './settings/DiskManager';
 
-export type PanelType = 'skills' | 'mcp' | 'claude';
+export type PanelType = 'skills' | 'mcp' | 'claude' | 'disks';
 
 interface SidePanelProps {
   isOpen: boolean;
@@ -19,7 +20,8 @@ interface SidePanelProps {
 const PANEL_TITLES: Record<PanelType, string> = {
   skills: 'Skills & Commands',
   mcp: 'MCP Servers',
-  claude: 'Claude Configuration'
+  claude: 'Claude Configuration',
+  disks: 'Disk Management'
 };
 
 export function SidePanel({ isOpen, panelType, onClose }: SidePanelProps) {
@@ -72,6 +74,7 @@ export function SidePanel({ isOpen, panelType, onClose }: SidePanelProps) {
           {panelType === 'skills' && <SkillsCommandsManager />}
           {panelType === 'mcp' && <MCPManager />}
           {panelType === 'claude' && <ClaudeConfigEditor onClose={onClose} />}
+          {panelType === 'disks' && <DiskManager />}
         </div>
       </div>
     </div>
