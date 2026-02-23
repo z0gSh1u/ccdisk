@@ -67,7 +67,21 @@ export const IPC_CHANNELS = {
   UTIL_OPEN_EXTERNAL: 'util:open-external',
 
   // SDK commands (requires active session)
-  SDK_GET_COMMANDS: 'sdk:get-commands'
+  SDK_GET_COMMANDS: 'sdk:get-commands',
+
+  // Disk management
+  DISK_LIST: 'disk:list',
+  DISK_GET: 'disk:get',
+  DISK_GET_CURRENT: 'disk:get-current',
+  DISK_SWITCH: 'disk:switch',
+  DISK_CREATE: 'disk:create',
+  DISK_UPDATE: 'disk:update',
+  DISK_DELETE: 'disk:delete',
+  DISK_DUPLICATE: 'disk:duplicate',
+  DISK_SWITCHED: 'disk:switched',
+  DISK_LIST_POOL_SKILLS: 'disk:list-pool-skills',
+  DISK_LIST_POOL_COMMANDS: 'disk:list-pool-commands',
+  DISK_LIST_POOL_MCP: 'disk:list-pool-mcp'
 } as const;
 
 export type IPCChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
