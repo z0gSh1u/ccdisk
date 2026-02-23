@@ -121,6 +121,15 @@ export class DatabaseService {
       CREATE INDEX IF NOT EXISTS idx_sessions_updated_at ON sessions(updated_at);
       CREATE INDEX IF NOT EXISTS idx_providers_is_active ON providers(is_active);
     `);
+
+    // Add disk_id column if not exists (Disk feature migration)
+    const sessionColumns = this.sqlite.prepare("PRAGMA table_info('sessions')").all() as Array<{ name: string }>;
+    const hasDiskId = sessionColumns.some((col) => col.name === 'disk_id');
+    if (!hasDiskId) {
+      console.log('Migrating sessions table: adding disk_id column...');
+      this.sqlite.exec("ALTER TABLE sessions ADD COLUMN disk_id TEXT DEFAULT 'default'");
+      console.log('disk_id migration completed');
+    }
   }
 
   // Sessions CRUD

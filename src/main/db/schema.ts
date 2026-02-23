@@ -8,6 +8,7 @@ export const sessions = sqliteTable('sessions', {
   name: text('name').notNull(),
   sdkSessionId: text('sdk_session_id'),
   model: text('model'),
+  diskId: text('disk_id').default('default'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
 });
