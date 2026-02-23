@@ -72,6 +72,7 @@ export interface Session {
   name: string;
   sdkSessionId: string | null;
   model: string | null;
+  diskId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -203,3 +204,22 @@ export interface SlashCommand {
   description: string;
   argumentHint?: string;
 }
+
+/**
+ * Disk (盘片) - self-contained working environment profile
+ */
+export interface DiskDefinition {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  builtIn: boolean;
+  isDefault?: boolean;
+  systemPrompt: string | null;
+  model: string | null;
+  skills: string[];
+  commands: string[];
+  mcpServers: string[];
+}
+
+export type DiskScope = 'pool' | 'global';
