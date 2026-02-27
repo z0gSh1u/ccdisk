@@ -24,6 +24,7 @@ English | [简体中文](README_zh-CN.md)
 ### Key Features
 
 - **🤖 Real-time Claude AI Chat** - Stream responses with syntax highlighting, math rendering, and Mermaid diagrams
+- **💿 Disk Management (盘片)** - Switch between curated working environment profiles (Coding, Data, Writing) with different Skills, MCP servers, and system prompts
 - **📁 Workspace Management** - File tree browser with real-time watching and syntax-highlighted previews
 - **🔐 Permission Control** - Granular control over tool execution with inline approval UI
 - **🔌 MCP Server Support** - Extend Claude's capabilities through Model Context Protocol
@@ -156,6 +157,63 @@ Three permission modes for controlling tool execution:
 - **Bypass Permissions** - Skip all prompts (use with caution)
 
 Interactive inline permission bubbles appear in the chat flow, allowing you to approve or deny tool requests without disrupting the conversation.
+
+### Disk Management (盘片)
+
+**Disk** is CCDisk's innovative workspace environment system that solves the "context pollution" problem where too many loaded tools overwhelm the AI. A Disk is a self-contained working environment profile that defines the AI assistant's complete capability set for specific scenarios.
+
+#### What is a Disk?
+
+Each Disk bundles:
+
+- **Skills** - Curated markdown-based behavior patterns for the AI
+- **MCP Servers** - Model Context Protocol servers to extend Claude's capabilities
+- **Commands** - Executable scripts for task automation
+- **System Prompt** - Behavioral instructions that define the AI's role, style, and constraints
+- **Model Preference** - Preferred Claude model identifier (e.g., `claude-sonnet-4-20250514`)
+
+#### How Disks Work
+
+- **Complete Replacement** - Switching Disks fully replaces the active Skills/MCP/Commands; no layering or merging
+- **Global Switch** - Disk selection is a global setting affecting all new sessions
+- **Session Tagging** - Sessions are tagged with the Disk they were created under, but all sessions remain visible in the sidebar with labels
+- **Pool + Reference Model** - Skills, Commands, and MCP configs live in central pools (`~/.ccdisk/`); Disks only reference them by ID to avoid duplication
+
+#### Built-in Disks
+
+CCDisk comes with four pre-configured Disks:
+
+1. **Default** - General purpose mode using your existing global configuration from `~/.claude/` (zero migration cost)
+2. **Coding** - Optimized for software development with frontend-design, React best practices, MCP builder, and Playwright skills
+3. **Data** - Focused on data processing and analysis with CSV summarizer, Excel, and PostgreSQL skills
+4. **Writing** - Professional document creation with DOCX, PDF, PPTX, and EPUB skills
+
+#### Custom Disks
+
+Create custom Disks tailored to your specific workflows:
+
+- Duplicate existing Disks as starting templates
+- Select Skills, Commands, and MCP servers from the central pool
+- Define custom system prompts to shape AI behavior
+- Choose preferred models for specific tasks
+- Manage Disks through the intuitive UI in **Settings → Disk Management**
+
+#### File Structure
+
+```
+~/.ccdisk/
+├── disks/              # Disk definitions (reference only)
+│   ├── default/
+│   ├── coding/
+│   ├── data/
+│   ├── writing/
+│   └── my-custom/
+├── skills/             # Global skill pool
+├── commands/           # Global command pool
+└── mcp-servers.json    # Global MCP server pool
+```
+
+Disks enable you to instantly switch between different AI "modes" - from a focused coding assistant to a data analyst to a professional writer - with a single click, ensuring Claude always has exactly the right tools for your current task.
 
 ### Workspace Management
 
